@@ -1,0 +1,19 @@
+name: merino
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.12
+  - pip
+  - numpy
+  - scipy
+  - pandas
+  - matplotlib
+  - seaborn
+  - statsmodels
+  - linearmodels
+  - patsy
+  - jupyter
+  - pip:
+      - pandas-datareader
+      - wooldridge
