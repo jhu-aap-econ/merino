@@ -2,7 +2,7 @@
 version: 1
 project:
   id: ece0387a-4e0b-4c95-8b5c-b7484546c4f5
-  title: Mastering Econometrics Regressions, Inference, and Numerical Optimization
+  title: merino
   jupyter: true
   # description:
   # keywords: []
@@ -20,6 +20,18 @@ project:
 
 site:
   template: book-theme
-  # options:
-  #   favicon: favicon.ico
-  #   logo: site_logo.png
+  options:
+    favicon: resources/H-color.png
+    logo: resources/university.shield.rgb.blue.png
+    logo_text: "JHU AAP Economics"
+    logo_dark: resources/university.shield.rgb.white.png
+  nav:
+    - title: Advanced Academic Programs
+      url: https://advanced.jhu.edu/
+    - title: Economics Graduate Programs
+      url: https://advanced.jhu.edu/academics/fields-of-study/applied-economics/
+    - title: Canvas
+      url: https://canvas.jhu.edu/
+  actions:
+    - title: "GitHub Source"
+      url: "https://github.com/jhu-aap-econ/merino"
