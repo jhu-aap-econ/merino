@@ -1,5 +1,7 @@
 # merino: Mastering Econometrics Regressions, Inference, and Numerical Optimization
 
+![](resources/advanced.jhu.edu.svg 'JHU AAP')
+
 ## Introduction
 
 Welcome to merino, a comprehensive collection of Jupyter notebooks designed to help you master econometrics. These notebooks cover various topics in regression analysis, inference, and numerical optimization, making them an excellent resource for students, researchers, and practitioners in the field of econometrics.
