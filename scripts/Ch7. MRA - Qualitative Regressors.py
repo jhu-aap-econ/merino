@@ -21,6 +21,7 @@ import pandas as pd
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
 import wooldridge as wool
+import numpy as np
 
 # ## 7.1 Linear Regression with Dummy Variables as Regressors
 #
