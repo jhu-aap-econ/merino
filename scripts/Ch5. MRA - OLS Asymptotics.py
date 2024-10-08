@@ -13,7 +13,7 @@
 #     name: python3
 # ---
 
-# # Ch5. Multiple Regression Analysis: OLS Asymptotics
+# # 5. Multiple Regression Analysis: OLS Asymptotics
 
 # %pip install matplotlib numpy statsmodels wooldridge scipy -q
 

@@ -1,10 +1,10 @@
-# merino: Mastering Econometrics Regressions, Inference, and Numerical Optimization
+# `merino`: Mastering Econometrics Regressions, Inference, and Numerical Optimization
 
 ![](resources/advanced.jhu.edu.svg 'JHU AAP')
 
 ## Introduction
 
-Welcome to merino, a comprehensive collection of Jupyter notebooks designed to help you master econometrics. These notebooks cover various topics in regression analysis, inference, and numerical optimization, making them an excellent resource for students, researchers, and practitioners in the field of econometrics.
+Welcome to `merino`, a comprehensive collection of Jupyter notebooks designed to help you master econometrics. These notebooks cover various topics in regression analysis, inference, and numerical optimization, making them an excellent resource for students, researchers, and practitioners in the field of econometrics.
 
 ## Source
 
@@ -38,6 +38,11 @@ Each notebook corresponds to a chapter from the source material. Click on the "O
 
 5. **Ch6. MRA - Further Issues** 
    <a target="_blank" href="https://colab.research.google.com/github/alanlujan91/merino/blob/main/notebooks/Ch6.%20MRA%20-%20Further%20Issues.ipynb">
+   <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
+   </a>
+
+6. **Ch7. MRA - Qualitative Regressors** 
+   <a target="_blank" href="https://colab.research.google.com/github/alanlujan91/merino/blob/main/notebooks/Ch7.%20MRA%20-%20Qualitative%20Regressors.ipynb">
    <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
    </a>
 

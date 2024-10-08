@@ -13,7 +13,7 @@
 #     name: python3
 # ---
 
-# # Ch6. Multiple Regression Analysis: Further Issues
+# # 6. Multiple Regression Analysis: Further Issues
 
 # %pip install matplotlib numpy pandas statsmodels wooldridge -q
 
