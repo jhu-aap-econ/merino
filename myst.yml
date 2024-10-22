@@ -18,6 +18,7 @@ project:
     - file: notebooks/Ch5. MRA - OLS Asymptotics.ipynb
     - file: notebooks/Ch6. MRA - Further Issues.ipynb
     - file: notebooks/Ch7. MRA - Qualitative Regressors.ipynb
+    - file: notebooks/Ch8. Heteroskedasticity.ipynb
 
 site:
   template: book-theme
