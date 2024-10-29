@@ -13,7 +13,7 @@
 #     name: python3
 # ---
 
-# # Ch9. Specification and Data Issues
+# # 9. Specification and Data Issues
 
 # %pip install matplotlib numpy pandas statsmodels wooldridge scipy -q
 
