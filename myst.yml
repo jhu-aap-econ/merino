@@ -19,6 +19,7 @@ project:
     - file: notebooks/Ch6. MRA - Further Issues.ipynb
     - file: notebooks/Ch7. MRA - Qualitative Regressors.ipynb
     - file: notebooks/Ch8. Heteroskedasticity.ipynb
+    - file: notebooks/Ch9. Specification and Data Issues.ipynb
 
 site:
   template: book-theme

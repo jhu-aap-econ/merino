@@ -51,6 +51,11 @@ Each notebook corresponds to a chapter from the source material. Click on the "O
    <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
    </a>
 
+8. **Ch9. Specification and Data Issues**
+   <a target="_blank" href="https://colab.research.google.com/github/alanlujan91/merino/blob/main/notebooks/Ch9.%20Specification%20and%20Data%20Issues.ipynb">
+   <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
+   </a>
+
 ## How to Use
 
 1. Click on the "Open in Colab" badge next to the notebook you want to explore.
