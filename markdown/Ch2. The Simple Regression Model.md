@@ -75,6 +75,7 @@ b = results.params
 print(f"b: \n{b}")
 ```
 
+
 ```python
 def plot_regression(x, y, data, results, title):
     # scatter plot and fitted values:

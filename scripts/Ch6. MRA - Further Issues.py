@@ -70,6 +70,9 @@ print(f"table: \n{table}\n")
 # ### Example 6.1: Effects of Pollution on Housing Prices
 #
 # $$\text{price\_sc} = \beta_0 + \beta_1 \cdot \text{nox\_sc} + \beta_2 \cdot \text{crime\_sc} + \beta_3 \cdot \text{rooms\_sc} + \beta_4 \cdot \text{dist\_sc} + \beta_5 \cdot \text{stratio\_sc} + u$$
+#
+#
+#
 
 # +
 # define a function for the standardization:
