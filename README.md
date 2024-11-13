@@ -56,6 +56,19 @@ Each notebook corresponds to a chapter from the source material. Click on the "O
    <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
    </a>
 
+9. **Ch10. Basic Regression Analysis with Time Series Data**
+   <a target="_blank" href="https://colab.research.google.com/github/alanlujan91/merino/blob/main/notebooks/Ch10.%20Basic%20Regression%20Analysis%20with%20Time%20Series%20Data.ipynb">
+   <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
+   </a>
+
+10. **Ch11. Further Issues in Using OLS with Time Series Data**
+   <a target="_blank" href="https://colab.research.google.com/github/alanlujan91/merino/blob/main/notebooks/Ch11.%20Further%20Issues%20in%20Using%20OLS%20with%20Time%20Series%20Data.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
+   </a>
+
+11. **Ch12. Serial Correlation and Heteroskedasticity in Time Series Regressions**
+   <a target="_blank" href="https://colab.research.google.com/github/alanlujan91/merino/blob/main/notebooks/Ch12.%20Serial%20Correlation%20and%20Heteroskedasticity%20in%20Time%20Series%20Regressions.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
+   </a>
+
 ## How to Use
 
 1. Click on the "Open in Colab" badge next to the notebook you want to explore.

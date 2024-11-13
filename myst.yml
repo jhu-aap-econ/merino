@@ -20,6 +20,9 @@ project:
     - file: notebooks/Ch7. MRA - Qualitative Regressors.ipynb
     - file: notebooks/Ch8. Heteroskedasticity.ipynb
     - file: notebooks/Ch9. Specification and Data Issues.ipynb
+    - file: notebooks/Ch10. Basic Regression Analysis with Time Series Data.ipynb
+    - file: notebooks/Ch11. Further Issues in Using OLS with Time Series Data.ipynb
+    - file: notebooks/Ch12. Serial Correlation and Heteroskedasticity in Time Series Regressions.ipynb
 
 site:
   template: book-theme

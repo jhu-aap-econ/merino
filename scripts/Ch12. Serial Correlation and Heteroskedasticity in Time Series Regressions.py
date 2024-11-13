@@ -1,0 +1,261 @@
+# ---
+# jupyter:
+#   jupytext:
+#     formats: notebooks//ipynb,markdown//md,scripts//py
+#     text_representation:
+#       extension: .py
+#       format_name: light
+#       format_version: '1.5'
+#       jupytext_version: 1.16.4
+#   kernelspec:
+#     display_name: merino
+#     language: python
+#     name: python3
+# ---
+
+# # 12. Serial Correlation and Heteroskedasticity in Time Series Regressions
+
+# %pip install numpy pandas pandas_datareader patsy statsmodels wooldridge -q
+
+import numpy as np  # noqa
+import pandas as pd
+import patsy as pt
+import statsmodels.api as sm
+import statsmodels.formula.api as smf
+import wooldridge as wool
+
+# ## 12.1 Testing for Serial Correlation of the Error Term
+#
+# ### Example 12.2: Testing for AR(1) Serial Correlation
+
+# +
+phillips = wool.data("phillips")
+T = len(phillips)
+
+# define yearly time series beginning in 1948:
+date_range = pd.date_range(start="1948", periods=T, freq="YE")
+phillips.index = date_range.year
+
+# estimation of static Phillips curve:
+yt96 = phillips["year"] <= 1996
+reg_s = smf.ols(formula='Q("inf") ~ unem', data=phillips, subset=yt96)
+results_s = reg_s.fit()
+
+# residuals and AR(1) test:
+phillips["resid_s"] = results_s.resid
+phillips["resid_s_lag1"] = phillips["resid_s"].shift(1)
+reg = smf.ols(formula="resid_s ~ resid_s_lag1", data=phillips, subset=yt96)
+results = reg.fit()
+
+# print regression table:
+table = pd.DataFrame(
+    {
+        "b": round(results.params, 4),
+        "se": round(results.bse, 4),
+        "t": round(results.tvalues, 4),
+        "pval": round(results.pvalues, 4),
+    },
+)
+print(f"table: \n{table}\n")
+
+# +
+phillips = wool.data("phillips")
+T = len(phillips)
+
+# define yearly time series beginning in 1948:
+date_range = pd.date_range(start="1948", periods=T, freq="YE")
+phillips.index = date_range.year
+
+# estimation of expectations-augmented Phillips curve:
+yt96 = phillips["year"] <= 1996
+phillips["inf_diff1"] = phillips["inf"].diff()
+reg_ea = smf.ols(formula="inf_diff1 ~ unem", data=phillips, subset=yt96)
+results_ea = reg_ea.fit()
+
+phillips["resid_ea"] = results_ea.resid
+phillips["resid_ea_lag1"] = phillips["resid_ea"].shift(1)
+reg = smf.ols(formula="resid_ea ~ resid_ea_lag1", data=phillips, subset=yt96)
+results = reg.fit()
+
+# print regression table:
+table = pd.DataFrame(
+    {
+        "b": round(results.params, 4),
+        "se": round(results.bse, 4),
+        "t": round(results.tvalues, 4),
+        "pval": round(results.pvalues, 4),
+    },
+)
+print(f"table: \n{table}\n")
+# -
+
+# ### Example 12.4: Testing for AR(3) Serial Correlation
+
+# +
+barium = wool.data("barium")
+T = len(barium)
+
+# monthly time series starting Feb. 1978:
+barium.index = pd.date_range(start="1978-02", periods=T, freq="ME")
+
+reg = smf.ols(
+    formula="np.log(chnimp) ~ np.log(chempi) + np.log(gas) +"
+    "np.log(rtwex) + befile6 + affile6 + afdec6",
+    data=barium,
+)
+results = reg.fit()
+
+# automatic test:
+bg_result = sm.stats.diagnostic.acorr_breusch_godfrey(results, nlags=3)
+fstat_auto = bg_result[2]
+fpval_auto = bg_result[3]
+print(f"fstat_auto: {fstat_auto}\n")
+print(f"fpval_auto: {fpval_auto}\n")
+
+# +
+# pedestrian test:
+barium["resid"] = results.resid
+barium["resid_lag1"] = barium["resid"].shift(1)
+barium["resid_lag2"] = barium["resid"].shift(2)
+barium["resid_lag3"] = barium["resid"].shift(3)
+
+reg_manual = smf.ols(
+    formula="resid ~ resid_lag1 + resid_lag2 + resid_lag3 +"
+    "np.log(chempi) + np.log(gas) + np.log(rtwex) +"
+    "befile6 + affile6 + afdec6",
+    data=barium,
+)
+results_manual = reg_manual.fit()
+
+hypotheses = ["resid_lag1 = 0", "resid_lag2 = 0", "resid_lag3 = 0"]
+ftest_manual = results_manual.f_test(hypotheses)
+fstat_manual = ftest_manual.statistic
+fpval_manual = ftest_manual.pvalue
+print(f"fstat_manual: {fstat_manual}\n")
+print(f"fpval_manual: {fpval_manual}\n")
+
+# +
+phillips = wool.data("phillips")
+T = len(phillips)
+
+# define yearly time series beginning in 1948:
+date_range = pd.date_range(start="1948", periods=T, freq="YE")
+phillips.index = date_range.year
+
+# estimation of both Phillips curve models:
+yt96 = phillips["year"] <= 1996
+phillips["inf_diff1"] = phillips["inf"].diff()
+reg_s = smf.ols(formula='Q("inf") ~ unem', data=phillips, subset=yt96)
+reg_ea = smf.ols(formula="inf_diff1 ~ unem", data=phillips, subset=yt96)
+results_s = reg_s.fit()
+results_ea = reg_ea.fit()
+
+# DW tests:
+DW_s = sm.stats.stattools.durbin_watson(results_s.resid)
+DW_ea = sm.stats.stattools.durbin_watson(results_ea.resid)
+print(f"DW_s: {DW_s}\n")
+print(f"DW_ea: {DW_ea}\n")
+# -
+
+# ## 12.2 FGLS Estimation
+#
+# ### Example 12.5: Cochrane-Orcutt Estimation
+
+# +
+barium = wool.data("barium")
+T = len(barium)
+
+# monthly time series starting Feb. 1978:
+barium.index = pd.date_range(start="1978-02", periods=T, freq="ME")
+
+# perform the Cochrane-Orcutt estimation (iterative procedure):
+y, X = pt.dmatrices(
+    "np.log(chnimp) ~ np.log(chempi) + np.log(gas) +"
+    "np.log(rtwex) + befile6 + affile6 + afdec6",
+    data=barium,
+    return_type="dataframe",
+)
+reg = sm.GLSAR(y, X)
+CORC_results = reg.iterative_fit(maxiter=100)
+table = pd.DataFrame({"b_CORC": CORC_results.params, "se_CORC": CORC_results.bse})
+print(f"reg.rho: {reg.rho}\n")
+print(f"table: \n{table}\n")
+# -
+
+# ## 12.3 Serial Correlation-Robust Inference with OLS
+#
+# ### Example 12.1: The Puerto Rican Minimum Wage
+
+# +
+prminwge = wool.data("prminwge")
+T = len(prminwge)
+prminwge["time"] = prminwge["year"] - 1949
+prminwge.index = pd.date_range(start="1950", periods=T, freq="YE").year
+
+# OLS regression:
+reg = smf.ols(
+    formula="np.log(prepop) ~ np.log(mincov) + np.log(prgnp) +np.log(usgnp) + time",
+    data=prminwge,
+)
+
+# results with regular SE:
+results_regu = reg.fit()
+
+# print regression table:
+table_regu = pd.DataFrame(
+    {
+        "b": round(results_regu.params, 4),
+        "se": round(results_regu.bse, 4),
+        "t": round(results_regu.tvalues, 4),
+        "pval": round(results_regu.pvalues, 4),
+    },
+)
+print(f"table_regu: \n{table_regu}\n")
+
+# +
+# results with HAC SE:
+results_hac = reg.fit(cov_type="HAC", cov_kwds={"maxlags": 2})
+
+# print regression table:
+table_hac = pd.DataFrame(
+    {
+        "b": round(results_hac.params, 4),
+        "se": round(results_hac.bse, 4),
+        "t": round(results_hac.tvalues, 4),
+        "pval": round(results_hac.pvalues, 4),
+    },
+)
+print(f"table_hac: \n{table_hac}\n")
+# -
+
+# ## 12.4 Autoregressive Conditional Heteroskedasticity
+#
+# ### Example 12.9: ARCH in Stock Returns
+
+# +
+nyse = wool.data("nyse")
+nyse["ret"] = nyse["return"]
+nyse["ret_lag1"] = nyse["ret"].shift(1)
+
+# linear regression of model:
+reg = smf.ols(formula="ret ~ ret_lag1", data=nyse)
+results = reg.fit()
+
+# squared residuals:
+nyse["resid_sq"] = results.resid**2
+nyse["resid_sq_lag1"] = nyse["resid_sq"].shift(1)
+
+# model for squared residuals:
+ARCHreg = smf.ols(formula="resid_sq ~ resid_sq_lag1", data=nyse)
+results_ARCH = ARCHreg.fit()
+
+# print regression table:
+table = pd.DataFrame(
+    {
+        "b": round(results_ARCH.params, 4),
+        "se": round(results_ARCH.bse, 4),
+        "t": round(results_ARCH.tvalues, 4),
+        "pval": round(results_ARCH.pvalues, 4),
+    },
+)
+print(f"table: \n{table}\n")
