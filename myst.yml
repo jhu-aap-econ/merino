@@ -3,7 +3,9 @@ version: 1
 project:
   id: ece0387a-4e0b-4c95-8b5c-b7484546c4f5
   title: merino
-  jupyter: true
+  jupyter:
+    binder:
+      repo: jhu-aap-econ/jhu-aap-econ.github.io
   # description:
   # keywords: []
   authors: Alan Lujan
