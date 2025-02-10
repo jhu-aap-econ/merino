@@ -8,7 +8,7 @@
 #       format_version: '1.5'
 #       jupytext_version: 1.16.6
 #   kernelspec:
-#     display_name: Python 3 (ipykernel)
+#     display_name: merino
 #     language: python
 #     name: python3
 # ---
@@ -433,8 +433,8 @@ print(
     f"Manually calculated SE for hsGPA coefficient: {SE_hsGPA:.4f}\n",
 )  # Format to 4 decimal places
 print(
-    f"SE for hsGPA coefficient from statsmodels summary: {results.se['hsGPA']:.4f}\n",
-)  # Extract SE from statsmodels and format
+    f"SE for hsGPA coefficient from statsmodels summary: {results.bse['hsGPA']:.4f}\n",
+)  # Extract BSE from statsmodels and format
 
 # Compare the manually calculated `SE_hsGPA` with the standard error for `hsGPA` reported in the `results.summary()` output. They should be reasonably close.
 #
