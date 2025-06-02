@@ -1,18 +1,19 @@
 # ---
 # jupyter:
 #   jupytext:
-#     formats: notebooks//ipynb,markdown//md,scripts//py
+#     formats: notebooks//ipynb,markdown//md,scripts//py:percent
 #     text_representation:
 #       extension: .py
-#       format_name: light
-#       format_version: '1.5'
-#       jupytext_version: 1.16.7
+#       format_name: percent
+#       format_version: '1.3'
+#       jupytext_version: 1.17.2
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
 #     name: python3
 # ---
 
+# %% [markdown]
 # # 2. The Simple Regression Model
 #
 # Welcome to this notebook, which delves into the fundamental concepts of the Simple Linear Regression model. This model is a cornerstone of econometrics and statistical analysis, used to understand the relationship between two variables. In this chapter, we will explore the mechanics of Ordinary Least Squares (OLS) regression, learn how to interpret its results, and understand the crucial assumptions that underpin its validity.
@@ -21,7 +22,7 @@
 #
 # Let's start by importing the necessary libraries and setting up our environment.
 
-# +
+# %%
 # Import required libraries
 import matplotlib.pyplot as plt
 import numpy as np
@@ -36,8 +37,8 @@ from scipy import stats
 # sns.set_palette("deep")  # Explore 'viridis', 'magma', 'plasma', etc.
 # plt.rcParams["figure.figsize"] = [10, 6]  # Adjust figure size as needed
 # plt.rcParams["axes.grid"] = True  # Toggle gridlines on plots
-# -
 
+# %% [markdown]
 # ## 2.1 Simple OLS Regression
 #
 # The Simple Linear Regression model aims to explain the variation in a dependent variable, $y$, using a single independent variable, $x$. It assumes a linear relationship between $x$ and the expected value of $y$. The model is mathematically represented as:
@@ -78,7 +79,7 @@ from scipy import stats
 #
 # Here, `salary` is the dependent variable (CEO's annual salary in thousands of dollars), and `roe` is the independent variable (return on equity, in percentage). We hypothesize that $\beta_1 > 0$, meaning that a higher ROE is associated with a higher CEO salary. Let's calculate the OLS coefficients manually first to understand the underlying computations.
 
-# +
+# %%
 # Load and prepare data
 ceosal1 = wool.data("ceosal1")  # Load the ceosal1 dataset from wooldridge package
 x = ceosal1["roe"]  # Extract 'roe' as the independent variable
@@ -96,13 +97,13 @@ b0 = y_bar - b1 * x_bar  # Calculate beta_0_hat using the formula
 print("Manual calculation:")
 print(f"Intercept (β₀): {b0:.2f}")  # Print the intercept, formatted to 2 decimal places
 print(f"Slope (β₁): {b1:.2f}")  # Print the slope, formatted to 2 decimal places
-# -
 
+# %% [markdown]
 # The code first loads the `ceosal1` dataset and extracts the 'roe' and 'salary' columns as our $x$ and $y$ variables, respectively. Then, it calculates the covariance between `roe` and `salary`, the variance of `roe`, and the means of both variables. Finally, it applies the formulas to compute $\hat{\beta}_1$ and $\hat{\beta}_0$ and prints them.
 #
 # Now, let's use the `statsmodels` library, which provides a more convenient and comprehensive way to perform OLS regression. This will also serve as a verification of our manual calculations.
 
-# +
+# %%
 # Fit regression model using statsmodels
 reg = smf.ols(
     formula="salary ~ roe",
@@ -120,12 +121,12 @@ print(
 )  # Print the slope from statsmodels results, using iloc for position
 
 
-# -
-
+# %% [markdown]
 # This code snippet uses `statsmodels.formula.api` to define and fit the same regression model. The `smf.ols` function takes a formula string (`"salary ~ roe"`) specifying the model and the dataframe (`ceosal1`) as input. `results.fit()` performs the OLS estimation, and `results.params` extracts the estimated coefficients. We can see that the coefficients obtained from `statsmodels` match our manual calculations, which is reassuring.
 #
 # To better visualize the regression results and the relationship between CEO salary and ROE, let's create an enhanced regression plot. We'll define a reusable function for this purpose, which includes the regression line, scatter plot of the data, confidence intervals, and annotations for the regression equation and R-squared.
 
+# %%
 def plot_regression(x, y, data, results, title, add_ci=True):
     """Create an enhanced regression plot with confidence intervals and annotations.
 
@@ -214,11 +215,14 @@ def plot_regression(x, y, data, results, title, add_ci=True):
     plt.tight_layout()  # Adjust plot layout to prevent labels from overlapping
 
 
+# %% [markdown]
 # This function, `plot_regression`, takes the variable names, data, regression results, and plot title as input. It generates a scatter plot of the data points, plots the regression line, and optionally adds 95% confidence intervals around the regression line. It also annotates the plot with the regression equation and the R-squared value. This function makes it easy to visualize and interpret simple regression results.
 
+# %%
 # Create enhanced regression plot for CEO Salary vs ROE
 plot_regression("roe", "salary", ceosal1, results, "CEO Salary vs Return on Equity")
 
+# %% [markdown]
 # Running this code will generate a scatter plot with 'roe' on the x-axis and 'salary' on the y-axis, along with the OLS regression line and its 95% confidence interval. The plot also displays the estimated regression equation and the R-squared value.
 #
 # **Interpretation of Example 2.3:**
@@ -237,7 +241,7 @@ plot_regression("roe", "salary", ceosal1, results, "CEO Salary vs Return on Equi
 #
 # Here, `wage` is the hourly wage (in dollars), and `educ` is years of education. We expect a positive relationship, i.e., $\beta_1 > 0$, as more education is generally believed to lead to higher wages.
 
-# +
+# %%
 # Load and analyze wage data
 wage1 = wool.data("wage1")  # Load the wage1 dataset
 
@@ -263,8 +267,8 @@ plot_regression(
     results,
     "Wage vs Years of Education",
 )  # Generate regression plot
-# -
 
+# %% [markdown]
 # This code loads the `wage1` dataset, fits the regression model of `wage` on `educ` using `statsmodels`, and then prints the estimated coefficients and R-squared. Finally, it generates a regression plot using our `plot_regression` function.
 #
 # **Interpretation of Example 2.4:**
@@ -279,7 +283,7 @@ plot_regression(
 #
 # Here, `voteA` is the percentage of votes received by candidate A, and `shareA` is the percentage of campaign spending by candidate A out of the total spending by both candidates. We expect that higher campaign spending share for candidate A will lead to a higher vote share, so we anticipate $\beta_1 > 0$.
 
-# +
+# %%
 # Load and analyze voting data
 vote1 = wool.data("vote1")  # Load the vote1 dataset
 
@@ -305,8 +309,8 @@ plot_regression(
     results,
     "Vote Share vs Campaign Spending Share",
 )  # Generate regression plot
-# -
 
+# %% [markdown]
 # This code follows the same pattern as the previous examples: load data, fit the regression model using `statsmodels`, print the coefficients and R-squared, and generate a regression plot.
 #
 # **Interpretation of Example 2.5:**
@@ -333,7 +337,7 @@ plot_regression(
 #
 # Let's go back to the CEO salary and ROE example and examine the fitted values and residuals. We will calculate these and present the first 15 observations in a table. We will also create a residual plot to visualize the residuals.
 
-# +
+# %%
 # Prepare regression results - Re-run the regression for ceosal1 dataset
 ceosal1 = wool.data("ceosal1")  # Load data again (if needed)
 reg = smf.ols(formula="salary ~ roe", data=ceosal1)  # Define the regression model
@@ -374,8 +378,8 @@ plt.xlabel("Fitted Values")  # Set the x-axis label
 plt.ylabel("Residuals")  # Set the y-axis label
 plt.grid(True, alpha=0.3)  # Add grid lines
 plt.tight_layout()  # Adjust layout
-# -
 
+# %% [markdown]
 # This code calculates the fitted values and residuals using the `results` object from our previous regression. It then creates a Pandas DataFrame to display ROE, actual salary, predicted salary, and residuals for each observation. We print the first 15 rows of this table. Finally, it generates a residual plot, which is a scatter plot of fitted values against residuals, with a horizontal line at zero.
 #
 # **Interpretation of Example 2.6:**
@@ -394,7 +398,7 @@ plt.tight_layout()  # Adjust layout
 #
 # Let's check these properties using the `wage1` dataset.
 
-# +
+# %%
 # Load and prepare data - Re-run the regression for wage1 dataset
 wage1 = wool.data("wage1")  # Load wage1 data
 reg = smf.ols(formula="wage ~ educ", data=wage1)  # Define regression model
@@ -431,8 +435,8 @@ wage_mean = np.mean(
 )  # Recalculate mean of wage (already calculated above, but for clarity)
 print(f"wage_mean: {wage_mean}")  # Print the mean wage
 print(f"Predicted wage at mean education: {wage_pred:.6f}")  # Print the predicted wage
-# -
 
+# %% [markdown]
 # This code calculates the mean of the residuals, the covariance between education and residuals, and verifies that the predicted wage at the mean level of education is equal to the mean wage.
 #
 # **Interpretation of Example 2.7:**
@@ -484,7 +488,7 @@ print(f"Predicted wage at mean education: {wage_pred:.6f}")  # Print the predict
 #
 # Let's calculate and compare R-squared for the CEO salary and ROE example using different formulas. We will also create visualizations to understand the concept of goodness of fit.
 
-# +
+# %%
 # Load and prepare data - Re-run regression for ceosal1
 ceosal1 = wool.data("ceosal1")  # Load data
 reg = smf.ols(formula="salary ~ roe", data=ceosal1)  # Define regression model
@@ -538,8 +542,8 @@ plt.ylabel("Residuals")  # Set y-axis label
 plt.legend()  # Show legend
 
 plt.tight_layout()  # Adjust layout
-# -
 
+# %% [markdown]
 # This code calculates R-squared in three different ways using the formulas we discussed. All three methods should yield the same R-squared value (within rounding errors). It then creates two plots side-by-side:
 # 1. **Actual vs Predicted Plot**: This plot shows actual salary on the x-axis and predicted salary on the y-axis. If the model fit were perfect (R² = 1), all points would lie on the 45-degree dashed red line. The closer the points are to this line, the better the fit.
 # 2. **Residuals vs Fitted Values Plot**: We already saw this plot in Example 2.6. In the context of goodness of fit, we can see how the residuals are distributed relative to the fitted values. Ideally, residuals should be randomly scattered around zero with no discernible pattern, indicating that the model has captured all systematic variation.
@@ -552,7 +556,7 @@ plt.tight_layout()  # Adjust layout
 #
 # Let's examine the complete regression summary for the voting outcomes and campaign expenditures example, including R-squared and other statistical measures. We will also create an enhanced visualization with a 95% confidence interval.
 
-# +
+# %%
 # Load and analyze voting data - Re-run regression for vote1 dataset
 vote1 = wool.data("vote1")  # Load data
 
@@ -591,8 +595,8 @@ plot_regression(
     results,
     "Vote Share vs Campaign Spending Share\nwith 95% Confidence Interval",  # Title with CI mention
 )
-# -
 
+# %% [markdown]
 # This code fits the regression model for voting outcomes and campaign spending share. It then creates a summary table containing coefficient estimates, standard errors, t-values, and p-values. It prints this summary, along with R-squared, adjusted R-squared, F-statistic, and the number of observations. Finally, it generates an enhanced regression plot, including a 95% confidence interval, using our `plot_regression` function.
 #
 # **Interpretation of Example 2.9:**
@@ -631,7 +635,7 @@ plot_regression(
 #
 # In this model, we are interested in the percentage increase in wage for each additional year of education.
 
-# +
+# %%
 # Load and prepare data - Re-use wage1 dataset
 wage1 = wool.data("wage1")  # Load data (if needed)
 
@@ -671,8 +675,8 @@ plt.ylabel("Log(Wage)")  # Set y-axis label
 plt.legend()  # Show legend
 plt.grid(True, alpha=0.3)  # Add grid lines
 plt.tight_layout()  # Adjust layout
-# -
 
+# %% [markdown]
 # This code estimates the log-level model using `statsmodels`. We use `np.log(wage)` as the dependent variable in the formula. It then prints the estimated coefficients and R-squared and generates a scatter plot of education against log(wage) with the regression line.
 #
 # **Interpretation of Example 2.10:**
@@ -687,7 +691,7 @@ plt.tight_layout()  # Adjust layout
 #
 # In this model, $\beta_1$ represents the elasticity of CEO salary with respect to firm sales.
 
-# +
+# %%
 # Load and prepare data - Re-use ceosal1 dataset
 ceosal1 = wool.data("ceosal1")  # Load data (if needed)
 
@@ -727,8 +731,8 @@ plt.ylabel("Log(Salary)")  # Set y-axis label
 plt.legend()  # Show legend
 plt.grid(True, alpha=0.3)  # Add grid lines
 plt.tight_layout()  # Adjust layout
-# -
 
+# %% [markdown]
 # This code estimates the log-log model using `statsmodels`. We use `np.log(salary)` as the dependent variable and `np.log(sales)` as the independent variable. It prints the estimated coefficients and R-squared and generates a scatter plot of log(sales) against log(salary) with the regression line.
 #
 # **Interpretation of Example 2.11:**
@@ -751,7 +755,7 @@ plt.tight_layout()  # Adjust layout
 #
 # Let's compare these three regression specifications using the CEO salary and ROE example.
 
-# +
+# %%
 # Load and prepare data - Re-use ceosal1 dataset
 ceosal1 = wool.data("ceosal1")  # Load data (if needed)
 
@@ -834,8 +838,8 @@ plt.ylabel("Salary")  # Set y-axis label
 plt.legend()  # Show legend
 plt.grid(True, alpha=0.3)  # Add grid lines
 plt.tight_layout()  # Adjust layout
-# -
 
+# %% [markdown]
 # This code estimates three regression models: regular OLS, regression through the origin, and regression on a constant only. It prints the estimated coefficients and R-squared for each model and then generates a scatter plot of the data with all three regression lines plotted.
 #
 # **Interpretation of Example 2.12:**
@@ -901,7 +905,7 @@ plt.tight_layout()  # Adjust layout
 #
 # where `math10` is the percentage of students passing a math test, and `lnchprg` is the percentage of students eligible for the lunch program. We expect a negative relationship, i.e., $\beta_1 < 0$, as higher lunch program participation (indicating more poverty) might be associated with lower math scores.
 
-# +
+# %%
 # Load and analyze data - Use meap93 dataset
 meap93 = wool.data("meap93")  # Load data
 
@@ -941,8 +945,8 @@ plot_regression(
     results,
     "Math Scores vs Lunch Program Participation\nwith 95% Confidence Interval",  # Title with CI mention
 )
-# -
 
+# %% [markdown]
 # This code estimates the regression model, calculates the SER and standard errors of coefficients manually using the formulas, and then prints these manual calculations. It also prints the `statsmodels` regression summary table, which includes the standard errors calculated by `statsmodels` (which should match our manual calculations). Finally, it generates a regression plot with a 95% confidence interval.
 #
 # **Interpretation of Example 2.12:**
@@ -957,7 +961,7 @@ plot_regression(
 #
 # Let's start by simulating a single sample from a population regression model. We will define a true population model, generate random data based on this model, estimate the model using OLS on this sample, and compare the estimated coefficients with the true population parameters.
 
-# +
+# %%
 # Set random seed for reproducibility - Ensure consistent random number generation
 np.random.seed(1234567)  # Set seed for random number generator
 
@@ -1040,8 +1044,8 @@ plt.ylabel("Density")  # Set y-axis label
 plt.legend()  # Show legend
 
 plt.tight_layout()  # Adjust layout
-# -
 
+# %% [markdown]
 # This code simulates a dataset from a simple linear regression model with known parameters. It then estimates the model using OLS and compares the estimated coefficients to the true parameters. It also visualizes the simulated data with both the true population regression line and the estimated regression line, as well as the distribution of the error terms compared to the true error distribution.
 #
 # **Interpretation of Example 2.13.1:**
@@ -1052,7 +1056,7 @@ plt.tight_layout()  # Adjust layout
 #
 # To better understand the sampling properties of OLS estimators, we need to repeat the simulation process many times. This will allow us to observe the distribution of the OLS estimates across different samples, which is known as the **sampling distribution**. We can then check if the estimators are unbiased by looking at the mean of these estimates and examine their variability.
 
-# +
+# %%
 # Set parameters - Simulation parameters (number of replications increased)
 np.random.seed(1234567)  # Set seed
 n = 1000  # sample size
@@ -1141,8 +1145,8 @@ plt.ylabel("Density")  # y-axis label
 plt.legend()  # Show legend
 
 plt.tight_layout()  # Adjust layout
-# -
 
+# %% [markdown]
 # This code performs a Monte Carlo simulation with a large number of replications (e.g., 10000). In each replication, it generates new error terms and $y$ values while keeping the $x$ values fixed. It estimates the OLS regression and stores the estimated coefficients. After all replications, it calculates the mean and standard deviation of the estimated coefficients and plots histograms of their sampling distributions.
 #
 # **Interpretation of Example 2.13.2:**
@@ -1153,7 +1157,7 @@ plt.tight_layout()  # Adjust layout
 #
 # Now, let's investigate what happens when one of the key assumptions is violated. Consider the violation of SLR.4, the zero conditional mean assumption, i.e., $\text{E}(u|x) \neq 0$. This means that the error term is correlated with $x$. In this case, we expect OLS estimators to be biased. Let's simulate a scenario where this assumption is violated and see the results.
 
-# +
+# %%
 # Set parameters - Simulation parameters (same as before)
 np.random.seed(1234567)  # Set seed
 n = 1000
@@ -1233,8 +1237,8 @@ plt.ylabel("Density")  # y-axis label
 plt.legend()  # Legend
 
 plt.tight_layout()  # Layout
-# -
 
+# %% [markdown]
 # In this code, we intentionally violate the zero conditional mean assumption by setting the mean of the error term to be dependent on $x$: $\text{E}(u|x) = (x - 4)/5$. We then perform the Monte Carlo simulation and examine the results.
 #
 # **Interpretation of Example 2.13.3:**
@@ -1245,7 +1249,7 @@ plt.tight_layout()  # Layout
 #
 # Finally, let's consider the violation of SLR.5, the homoscedasticity assumption, i.e., $\text{var}(u|x) \neq \sigma^2$. This means that the variance of the error term is not constant across values of $x$ (heteroscedasticity). While heteroscedasticity does not cause bias in OLS estimators, it affects their efficiency and the validity of standard errors and inference. Let's simulate a scenario with heteroscedasticity.
 
-# +
+# %%
 # Set parameters - Simulation parameters (same as before)
 np.random.seed(1234567)  # Set seed
 n = 1000
@@ -1328,8 +1332,8 @@ plt.ylabel("Error term (u)")  # y-axis label
 plt.legend()  # Legend
 
 plt.tight_layout()  # Layout
-# -
 
+# %% [markdown]
 # In this code, we introduce heteroscedasticity by making the variance of the error term dependent on $x$: $\text{var}(u|x) = 4e^{(x-4.5)}$. We then perform the Monte Carlo simulation.
 #
 # **Interpretation of Example 2.13.4:**

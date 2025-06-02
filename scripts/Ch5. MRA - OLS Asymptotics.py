@@ -1,24 +1,26 @@
 # ---
 # jupyter:
 #   jupytext:
-#     formats: notebooks//ipynb,markdown//md,scripts//py
+#     formats: notebooks//ipynb,markdown//md,scripts//py:percent
 #     text_representation:
 #       extension: .py
-#       format_name: light
-#       format_version: '1.5'
-#       jupytext_version: 1.16.7
+#       format_name: percent
+#       format_version: '1.3'
+#       jupytext_version: 1.17.2
 #   kernelspec:
 #     display_name: merino
 #     language: python
 #     name: python3
 # ---
 
+# %% [markdown]
 # # 5. Multiple Regression Analysis: OLS Asymptotics
 #
 # This notebook explores the asymptotic properties of Ordinary Least Squares (OLS) estimators in multiple regression analysis. Asymptotic theory is crucial because it describes the behavior of estimators as the sample size grows infinitely large. In practice, we often rely on these asymptotic properties to make inferences when sample sizes are reasonably large. We will use simulations to visualize these concepts and then apply the Lagrange Multiplier (LM) test to a real-world example.
 #
 #
 
+# %%
 import matplotlib.pyplot as plt
 import numpy as np
 import statsmodels.api as sm
@@ -26,6 +28,7 @@ import statsmodels.formula.api as smf
 import wooldridge as woo
 from scipy import stats
 
+# %% [markdown]
 # ## 5.1 Simulation Exercises
 #
 # In this section, we will conduct simulation exercises to illustrate the asymptotic properties of the OLS estimator, particularly focusing on its distribution as the sample size increases under different scenarios.
@@ -34,7 +37,7 @@ from scipy import stats
 #
 # This simulation demonstrates the behavior of the OLS estimator when the error terms are normally distributed.  Under the classical linear model assumptions, including normally distributed errors, the OLS estimators are not only BLUE (Best Linear Unbiased Estimator) but also have desirable properties even in small samples. Asymptotically, the OLS estimator is consistent and normally distributed. We will visualize how the distribution of the estimated coefficient $\hat{\beta}_1$ approaches a normal distribution as the sample size $n$ increases.
 
-# +
+# %%
 # set the random seed for reproducibility:
 np.random.seed(1234567)
 
@@ -116,8 +119,8 @@ for idx, j in enumerate(n):
 
 plt.tight_layout()  # Adjust subplot parameters for a tight layout
 plt.show()  # Display the plot
-# -
 
+# %% [markdown]
 # **Interpretation of 5.1.1:**
 #
 # The plots above show the simulated density of the OLS estimator $\hat{\beta}_1$ for different sample sizes ($n = 5, 10, 100, 1000$) when the error term is normally distributed.  We compare this simulated density to the theoretical normal distribution that $\hat{\beta}_1$ should asymptotically follow.
@@ -134,7 +137,7 @@ plt.show()  # Display the plot
 #
 # First, let's visualize the shape of the standardized Chi-squared distribution compared to the standard normal distribution.
 
-# +
+# %%
 # support of normal density:
 x_range = np.linspace(-4, 4, num=100)
 
@@ -164,11 +167,11 @@ plt.ylabel("Density")
 plt.legend()
 plt.title("Comparison of Standard Normal and Standardized Chi-squared(1) Distributions")
 plt.show()
-# -
 
+# %% [markdown]
 # The plot above shows that the standardized Chi-squared distribution is skewed to the right and has a different shape compared to the standard normal distribution. Now, let's perform the simulation with these non-normal errors.
 
-# +
+# %%
 # set the random seed for reproducibility:
 np.random.seed(1234567)
 
@@ -240,8 +243,8 @@ for idx, j in enumerate(n):
 
 plt.tight_layout()
 plt.show()
-# -
 
+# %% [markdown]
 # **Interpretation of 5.1.2:**
 #
 # These plots illustrate the distribution of $\hat{\beta}_1$ when the error terms are from a standardized Chi-squared distribution, which is non-normal.
@@ -256,7 +259,7 @@ plt.show()
 #
 # In previous simulations (5.1.1 and 5.1.2), we fixed the regressors $x$ across replications for each sample size $n$. This is akin to *conditioning on the regressors*. In econometric theory, we often derive properties of OLS estimators *conditional* on the observed values of the regressors. However, in reality, regressors are also random variables. This simulation explores the implications of *not conditioning* on the regressors by drawing new samples of $x$ in each replication, along with new error terms. We will see if the asymptotic normality of $\hat{\beta}_1$ still holds when both $x$ and $u$ are randomly drawn in each simulation run.
 
-# +
+# %%
 # set the random seed for reproducibility:
 np.random.seed(1234567)
 
@@ -331,8 +334,8 @@ for idx, j in enumerate(n):
 
 plt.tight_layout()
 plt.show()
-# -
 
+# %% [markdown]
 # **Interpretation of 5.1.3:**
 #
 # In this simulation, both the regressors $x$ and the error terms $u$ are randomly drawn in each replication.
@@ -380,7 +383,7 @@ plt.show()
 #
 # $$\text{narr86} = \beta_0 + \beta_1 \cdot \text{pcnv} + \beta_4 \cdot \text{ptime86} + \beta_5 \cdot \text{qemp86} + u$$
 
-# +
+# %%
 crime1 = woo.dataWoo("crime1")
 
 # 1. Estimate the restricted model under H0: beta_avgsen = 0 and beta_tottime = 0
@@ -389,7 +392,7 @@ fit_r = reg_r.fit()
 r2_r = fit_r.rsquared
 print(f"R-squared of Restricted Model (r2_r): {r2_r:.4f}\n")
 
-# +
+# %%
 # 2. Obtain residuals from the restricted model and add them to the DataFrame
 crime1["utilde"] = fit_r.resid
 
@@ -401,23 +404,26 @@ reg_LM = smf.ols(
 fit_LM = reg_LM.fit()
 r2_LM = fit_LM.rsquared
 print(f"R-squared of LM Regression (r2_LM): {r2_LM:.4f}\n")
-# -
 
+# %%
 # 4. Calculate the LM test statistic: LM = n * R^2_utilde
 LM = r2_LM * fit_LM.nobs
 print(f"LM Test Statistic: {LM:.3f}\n")
 
+# %%
 # 5. Determine the critical value from the chi-squared distribution with q=2 degrees of freedom at alpha=10% significance level
 # For a test at 10% significance level, alpha = 0.10.
 # We want to find the chi-squared value such that the area to the right is 0.10.
 cv = stats.chi2.ppf(1 - 0.10, 2)  # ppf is the percent point function (inverse of CDF)
 print(f"Critical Value (Chi-squared with 2 df, alpha=0.10): {cv:.3f}\n")
 
+# %%
 # 6. Calculate the p-value for the LM test
 # The p-value is the probability of observing a test statistic as extreme as, or more extreme than, the one calculated, under the null hypothesis.
 pval = 1 - stats.chi2.cdf(LM, 2)  # cdf is the cumulative distribution function
 print(f"P-value for LM Test: {pval:.4f}\n")
 
+# %%
 # 7. Compare the LM test to the F-test for the same hypothesis using the unrestricted model directly.
 reg = smf.ols(
     formula="narr86 ~ pcnv + avgsen + tottime + ptime86 + qemp86",
@@ -433,6 +439,7 @@ fpval = ftest.pvalue
 print(f"F-statistic: {fstat:.3f}\n")
 print(f"P-value for F-test: {fpval:.4f}\n")
 
+# %% [markdown]
 # **Interpretation of Example 5.3:**
 #
 # - **LM Test Statistic:** The calculated LM test statistic is approximately 2.583.

@@ -1,24 +1,26 @@
 # ---
 # jupyter:
 #   jupytext:
-#     formats: notebooks//ipynb,markdown//md,scripts//py
+#     formats: notebooks//ipynb,markdown//md,scripts//py:percent
 #     text_representation:
 #       extension: .py
-#       format_name: light
-#       format_version: '1.5'
-#       jupytext_version: 1.16.7
+#       format_name: percent
+#       format_version: '1.3'
+#       jupytext_version: 1.17.2
 #   kernelspec:
 #     display_name: merino
 #     language: python
 #     name: python3
 # ---
 
+# %% [markdown]
 # # 3. Multiple Regression Analysis: Estimation
 #
 # This notebook delves into the estimation of multiple regression models. Building upon the foundation of simple linear regression, we will explore how to analyze the relationship between a dependent variable and *multiple* independent variables simultaneously. This is crucial in real-world scenarios where outcomes are rarely determined by a single factor. We'll use Python libraries like `statsmodels` and `pandas` along with datasets from the `wooldridge` package to illustrate these concepts with practical examples.
 #
 #
 
+# %%
 import numpy as np
 import pandas as pd
 import patsy as pt
@@ -26,6 +28,7 @@ import statsmodels.formula.api as smf
 import statsmodels.stats.outliers_influence as smo
 import wooldridge as wool
 
+# %% [markdown]
 # ## 3.1 Multiple Regression in Practice
 #
 # In multiple regression analysis, we extend the simple regression model to incorporate more than one explanatory variable. This allows us to control for various factors that might influence the dependent variable and isolate the effect of each independent variable, holding others constant.
@@ -58,14 +61,14 @@ import wooldridge as wool
 #
 # We expect $\beta_1 > 0$ and $\beta_2 > 0$, suggesting that higher high school GPA and ACT scores are associated with higher college GPA, holding the other factor constant.
 
-# +
+# %%
 gpa1 = wool.data("gpa1")
 
 reg = smf.ols(formula="colGPA ~ hsGPA + ACT", data=gpa1)
 results = reg.fit()
 print(f"results.summary(): \n{results.summary()}\n")
-# -
 
+# %% [markdown]
 # **Interpreting the Results:**
 #
 # The `results.summary()` output from `statsmodels` provides a wealth of information. Let's focus on the estimated coefficients:
@@ -91,14 +94,14 @@ print(f"results.summary(): \n{results.summary()}\n")
 #
 # In this model, coefficients on `educ`, `exper`, and `tenure` will represent the approximate percentage change in wage for a one-unit increase in each respective variable, holding the others constant. For example, $\beta_1 \approx \% \Delta \text{wage} / \Delta \text{educ}$.
 
-# +
+# %%
 wage1 = wool.data("wage1")
 
 reg = smf.ols(formula="np.log(wage) ~ educ + exper + tenure", data=wage1)
 results = reg.fit()
 print(f"results.summary(): \n{results.summary()}\n")
-# -
 
+# %% [markdown]
 # **Interpreting the Results:**
 #
 # *   **educ ($\beta_1$):** The coefficient for `educ` is approximately 0.092. This suggests that, holding experience and tenure constant, an additional year of education is associated with an approximate 9.2% increase in hourly wage.
@@ -119,14 +122,14 @@ print(f"results.summary(): \n{results.summary()}\n")
 #
 # We expect $\beta_1 > 0$ because a higher match rate should encourage participation. The expected sign of $\beta_2$ is less clear. Older workforces might have had more time to enroll in 401(k)s, or they may be closer to retirement and thus more interested in pension plans. Conversely, younger firms might be more proactive in encouraging enrollment.
 
-# +
+# %%
 k401k = wool.data("401k")
 
 reg = smf.ols(formula="prate ~ mrate + age", data=k401k)
 results = reg.fit()
 print(f"results.summary(): \n{results.summary()}\n")
-# -
 
+# %% [markdown]
 # **Interpreting the Results:**
 #
 # *   **mrate ($\beta_1$):** The coefficient for `mrate` is approximately 5.861. This indicates that for a one-unit increase in the match rate (e.g., increasing the match from 0.0 to 1.0, meaning the firm matches dollar for dollar), the participation rate is estimated to increase by about 5.86 percentage points, holding average employee age constant.
@@ -147,15 +150,15 @@ print(f"results.summary(): \n{results.summary()}\n")
 #
 # We expect $\beta_1 > 0$ because a higher conviction rate might deter future crime. We also expect $\beta_2 > 0$ as spending more time in prison in 1986 means more opportunity to be arrested in 1986 (although this might be complex).  We expect $\beta_3 < 0$ because employment should reduce the likelihood of arrests.
 
-# +
+# %%
 crime1 = wool.data("crime1")
 
 # model without avgsen:
 reg = smf.ols(formula="narr86 ~ pcnv + ptime86 + qemp86", data=crime1)
 results = reg.fit()
 print(f"results.summary(): \n{results.summary()}\n")
-# -
 
+# %% [markdown]
 # **Interpreting the Results (Model 3.5a):**
 #
 # *   **pcnv ($\beta_1$):** The coefficient for `pcnv` is approximately 0.148. A higher proportion of prior convictions is associated with a higher number of arrests in 1986, holding prison time and employment constant.
@@ -170,15 +173,15 @@ print(f"results.summary(): \n{results.summary()}\n")
 #
 # *   `avgsen`: Average sentence served from prior convictions (in months) (independent variable). We expect $\beta_2 < 0$ if longer average sentences deter crime.
 
-# +
+# %%
 crime1 = wool.data("crime1")
 
 # model with avgsen:
 reg = smf.ols(formula="narr86 ~ pcnv + avgsen + ptime86 + qemp86", data=crime1)
 results = reg.fit()
 print(f"results.summary(): \n{results.summary()}\n")
-# -
 
+# %% [markdown]
 # **Interpreting the Results (Model 3.5b):**
 #
 # Comparing this to Model 3.5a, we see:
@@ -196,14 +199,14 @@ print(f"results.summary(): \n{results.summary()}\n")
 #
 # $$ \log(\text{wage}) = \beta_0 + \beta_1 \text{educ} + u$$
 
-# +
+# %%
 wage1 = wool.data("wage1")
 
 reg = smf.ols(formula="np.log(wage) ~ educ", data=wage1)
 results = reg.fit()
 print(f"results.summary(): \n{results.summary()}\n")
-# -
 
+# %% [markdown]
 # **Interpreting the Results and Comparing to Example 3.3:**
 #
 # *   **educ ($\beta_1$):** In this simple regression model, the coefficient for `educ` is approximately 0.108. This is slightly larger than the coefficient for `educ` (0.092) in the multiple regression model (Example 3.3) that included `exper` and `tenure`.
@@ -236,7 +239,7 @@ print(f"results.summary(): \n{results.summary()}\n")
 #
 # Let's demonstrate this matrix calculation using the `gpa1` dataset from Example 3.1.
 
-# +
+# %%
 gpa1 = wool.data("gpa1")
 
 # determine sample size & no. of regressors:
@@ -254,16 +257,18 @@ y2, X2 = pt.dmatrices("colGPA ~ hsGPA + ACT", data=gpa1, return_type="dataframe"
 
 # display first few rows of X:
 print(f"X.head(): \n{X.head()}\n")
-# -
 
+# %% [markdown]
 # The code above constructs the $X$ matrix and $y$ vector from the `gpa1` data.  The `patsy` library provides a convenient way to create design matrices directly from formulas, which is often more efficient for complex models.
 
+# %%
 # parameter estimates using matrix formula:
 X = np.array(X)  # Convert pandas DataFrame to numpy array for matrix operations
 y = np.array(y).reshape(n, 1)  # Reshape y to be a column vector (n x 1)
 b = np.linalg.inv(X.T @ X) @ X.T @ y  # Matrix formula for OLS estimator
 print(f"b (estimated coefficients):\n{b}\n")
 
+# %% [markdown]
 # This code performs the matrix operations to calculate $\hat{\beta}$. The result `b` should match the coefficients we obtained from `statsmodels` earlier.
 #
 # After estimating $\hat{\beta}$, we can calculate the residuals $\hat{u}$:
@@ -276,23 +281,27 @@ print(f"b (estimated coefficients):\n{b}\n")
 #
 # The denominator $(n-k-1)$ represents the degrees of freedom in multiple regression, where $n$ is the sample size and $(k+1)$ is the number of parameters estimated (including the intercept).  The square root of $\hat{\sigma}^2$ is the Standard Error of the Regression (SER).
 
+# %%
 # residuals, estimated variance of u and SER:
 u_hat = y - X @ b  # Calculate residuals
 sigsq_hat = (u_hat.T @ u_hat) / (n - k - 1)  # Estimated error variance
 SER = np.sqrt(sigsq_hat)  # Standard Error of Regression
 print(f"SER: {SER}\n")
 
+# %% [markdown]
 # Finally, the estimated variance-covariance matrix of the OLS estimator $\hat{\beta}$ is given by:
 #
 # $$\widehat{\text{var}(\hat{\beta})} = \hat{\sigma}^2 (X'X)^{-1}$$
 #
 # The standard errors for each coefficient are the square roots of the diagonal elements of this variance-covariance matrix.
 
+# %%
 # estimated variance-covariance matrix of beta_hat and standard errors:
 Vbeta_hat = sigsq_hat * np.linalg.inv(X.T @ X)  # Variance-covariance matrix
 se = np.sqrt(np.diagonal(Vbeta_hat))  # Standard errors (diagonal elements' square root)
 print(f"se (standard errors):\n{se}\n")
 
+# %% [markdown]
 # The manually calculated coefficients (`b`), SER, and standard errors (`se`) should be very close (or identical, considering potential rounding differences) to the values reported in the `results.summary()` output from `statsmodels` for Example 3.1. This demonstrates that `statsmodels` is using the matrix-based OLS formulas under the hood.
 #
 # ## 3.3 Ceteris Paribus Interpretation and Omitted Variable Bias
@@ -313,7 +322,7 @@ print(f"se (standard errors):\n{se}\n")
 #
 # Let's see this empirically. First, we estimate the "full" model (including both `hsGPA` and `ACT`):
 
-# +
+# %%
 gpa1 = wool.data("gpa1")
 
 # parameter estimates for full model:
@@ -324,16 +333,18 @@ reg = smf.ols(
 results = reg.fit()
 b = results.params  # Extract estimated coefficients
 print(f"Coefficients from full model (b):\n{b}\n")
-# -
 
+# %% [markdown]
 # Now, let's consider the relationship between the included variable (`ACT`) and the omitted variable (`hsGPA`). We can regress the omitted variable (`hsGPA`) on the included variable (`ACT`):
 
+# %%
 # relation between regressors (hsGPA on ACT):
 reg_delta = smf.ols(formula="hsGPA ~ ACT", data=gpa1)
 results_delta = reg_delta.fit()
 delta_tilde = results_delta.params  # Extract coefficient of ACT in this regression
 print(f"Coefficients from regression of hsGPA on ACT (delta_tilde):\n{delta_tilde}\n")
 
+# %% [markdown]
 # $\delta_{\text{ACT}}$ from this regression represents how much `hsGPA` changes on average for a one-unit change in `ACT`.  It captures the correlation between `hsGPA` and `ACT`.
 #
 # The **omitted variable bias formula** provides an approximation for the bias in the simple regression coefficient $\hat{\gamma}_1$ when we omit `hsGPA`.  In this case, the bias in the coefficient of `ACT` (when `hsGPA` is omitted) is approximately:
@@ -347,18 +358,22 @@ print(f"Coefficients from regression of hsGPA on ACT (delta_tilde):\n{delta_tild
 #
 # Let's calculate this approximate bias and see how it relates to the difference between the coefficient of `ACT` in the full model ($\beta_2$) and the coefficient of `ACT` in the simple model ($\gamma_1$).
 
+# %%
 # omitted variables formula for b1_tilde (approximate bias in ACT coefficient when hsGPA is omitted):
 b1_tilde = b["ACT"] + b["hsGPA"] * delta_tilde["ACT"]  # Applying the bias formula
 print(f"Approximate biased coefficient of ACT (b1_tilde):\n{b1_tilde}\n")
 
+# %% [markdown]
 # Finally, let's estimate the simple regression model (omitting `hsGPA`) and see the actual coefficient of `ACT`:
 
+# %%
 # actual regression with hsGPA omitted (simple regression):
 reg_om = smf.ols(formula="colGPA ~ ACT", data=gpa1)
 results_om = reg_om.fit()
 b_om = results_om.params  # Extract coefficient of ACT from simple regression
 print(f"Coefficient of ACT in simple regression (b_om):\n{b_om}\n")
 
+# %% [markdown]
 # Comparing `b_om["ACT"]` (the coefficient of ACT in the simple regression) with `b["ACT"]` (the coefficient of ACT in the full regression), we can see that they are different.  Furthermore, `b1_tilde` (the approximate biased coefficient calculated using the formula) is close to `b_om["ACT"]`.
 #
 # **Conclusion on Omitted Variable Bias:** Omitting a relevant variable like `hsGPA` that is correlated with an included variable like `ACT` can lead to biased estimates. In this case, the coefficient on `ACT` in the simple regression is larger than in the multiple regression, likely because it is picking up some of the positive effect of `hsGPA` on `colGPA`.  This highlights the importance of including all relevant variables in a regression model to obtain unbiased and consistent estimates and to achieve correct ceteris paribus interpretations.
@@ -388,7 +403,7 @@ print(f"Coefficient of ACT in simple regression (b_om):\n{b_om}\n")
 #
 # Let's illustrate the calculation of standard errors and VIF using the `gpa1` example again.
 
-# +
+# %%
 gpa1 = wool.data("gpa1")
 
 # full estimation results including automatic SE from statsmodels:
@@ -406,8 +421,8 @@ results_hsGPA = reg_hsGPA.fit()
 R2_hsGPA = results_hsGPA.rsquared  # R-squared from this auxiliary regression
 VIF_hsGPA = 1 / (1 - R2_hsGPA)  # Calculate VIF for hsGPA
 print(f"VIF for hsGPA: {VIF_hsGPA:.3f}\n")  # Format to 3 decimal places
-# -
 
+# %% [markdown]
 # The VIF for `hsGPA` (and similarly for `ACT`) will quantify the extent to which the variance of its estimated coefficient is inflated due to its correlation with the other independent variable (`ACT`).
 #
 # Now, let's manually calculate the standard error of the coefficient for `hsGPA` using a formula that incorporates the VIF.  A simplified formula for the standard error of $\hat{\beta}_j$ (coefficient of $x_j$) in multiple regression, highlighting the role of VIF, can be expressed as (under certain simplifying assumptions about variable scaling):
@@ -423,6 +438,7 @@ print(f"VIF for hsGPA: {VIF_hsGPA:.3f}\n")  # Format to 3 decimal places
 #
 # This formula illustrates how the standard error is directly proportional to $\sqrt{VIF_j}$. Higher VIFs lead to larger standard errors.
 
+# %%
 # Manual calculation of SE of hsGPA coefficient using VIF:
 n = results.nobs  # Sample size
 sdx = np.std(gpa1["hsGPA"], ddof=1) * np.sqrt(
@@ -436,11 +452,12 @@ print(
     f"SE for hsGPA coefficient from statsmodels summary: {results.bse['hsGPA']:.4f}\n",
 )  # Extract BSE from statsmodels and format
 
+# %% [markdown]
 # Compare the manually calculated `SE_hsGPA` with the standard error for `hsGPA` reported in the `results.summary()` output. They should be reasonably close.
 #
 # For models with more than two independent variables, we can use the `variance_inflation_factor` function from `statsmodels.stats.outliers_influence` to easily calculate VIFs for all regressors.
 
-# +
+# %%
 wage1 = wool.data("wage1")
 
 # extract matrices using patsy for wage equation with educ, exper, tenure:
@@ -469,8 +486,8 @@ vif_df = pd.DataFrame(
 
 print("\nVIFs for independent variables (excluding intercept):\n")
 print(vif_df)
-# -
 
+# %% [markdown]
 # **Interpreting VIFs in Wage Equation:** Examine the VIF values for `educ`, `exper`, and `tenure` in the wage equation.  Relatively low VIF values (typically well below 10) would suggest that multicollinearity is not a severe problem in this model. If VIFs were high, it would indicate that some of these variables are highly correlated, potentially making it difficult to precisely estimate their individual effects on wage.
 #
 # **In summary,** standard errors quantify the uncertainty in our coefficient estimates. Multicollinearity, a condition of high correlation among independent variables, can inflate standard errors, reducing the precision of our estimates. VIF is a useful tool for detecting and assessing the severity of multicollinearity in multiple regression models.

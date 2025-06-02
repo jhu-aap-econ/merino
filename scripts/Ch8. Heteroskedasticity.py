@@ -1,18 +1,19 @@
 # ---
 # jupyter:
 #   jupytext:
-#     formats: notebooks//ipynb,markdown//md,scripts//py
+#     formats: notebooks//ipynb,markdown//md,scripts//py:percent
 #     text_representation:
 #       extension: .py
-#       format_name: light
-#       format_version: '1.5'
-#       jupytext_version: 1.16.7
+#       format_name: percent
+#       format_version: '1.3'
+#       jupytext_version: 1.17.2
 #   kernelspec:
 #     display_name: merino
 #     language: python
 #     name: python3
 # ---
 
+# %% [markdown]
 # # 8. Heteroskedasticity
 #
 # This notebook explores the issue of **heteroskedasticity** in the context of linear regression models estimated using Ordinary Least Squares (OLS). Heteroskedasticity occurs when the variance of the error term, conditional on the explanatory variables, is not constant across observations. This violates one of the Gauss-Markov assumptions required for OLS to be the Best Linear Unbiased Estimator (BLUE).
@@ -29,10 +30,10 @@
 #
 # First, let's install and import the necessary libraries.
 
-# +
+# %%
 # # %pip install numpy pandas patsy statsmodels wooldridge -q
-# -
 
+# %%
 import numpy as np
 import pandas as pd
 import patsy as pt  # Used for creating design matrices easily from formulas
@@ -40,6 +41,7 @@ import statsmodels.api as sm  # Provides statistical models and tests
 import statsmodels.formula.api as smf  # Convenient formula interface for statsmodels
 import wooldridge as wool  # Access to Wooldridge textbook datasets
 
+# %% [markdown]
 # ## 8.1 Heteroskedasticity-Robust Inference
 #
 # Even if heteroskedasticity is present, we can still use OLS coefficient estimates but compute different standard errors that are robust to the presence of heteroskedasticity (of unknown form). These are often called **White standard errors** or **heteroskedasticity-consistent (HC)** standard errors.
@@ -50,7 +52,7 @@ import wooldridge as wool  # Access to Wooldridge textbook datasets
 #
 # We estimate a model for college cumulative GPA (`cumgpa`) using data for students observed in the spring semester (`spring == 1`). We compare the standard OLS results with results using robust standard errors.
 
-# +
+# %%
 # Load the GPA data
 gpa3 = wool.data("gpa3")
 
@@ -83,7 +85,7 @@ print(f"Default OLS Estimates:\n{table_default}\n")
 # tothrs, female, and black appear statistically significant (p < 0.05).
 # However, if heteroskedasticity is present, these SEs and p-values are unreliable.
 
-# +
+# %%
 # --- Estimate with White's Original Robust Standard Errors (HC0) ---
 # We fit the same model, but specify cov_type='HC0' to get robust SEs.
 results_white = reg.fit(cov_type="HC0")
@@ -106,7 +108,7 @@ print(f"HC0 Robust Estimates:\n{table_white}\n")
 # and increasing its p-value (though still significant). The SE for 'black' decreased slightly.
 # The conclusions about significance might change depending on the variable and significance level.
 
-# +
+# %%
 # --- Estimate with Refined Robust Standard Errors (HC3) ---
 # HC3 applies a different small-sample correction, often preferred over HC0.
 results_refined = reg.fit(cov_type="HC3")
@@ -129,11 +131,11 @@ print(f"Refined HC3 Robust Estimates:\n{table_refined}\n")
 # statistical significance compared to HC0. Using robust standard errors confirms that
 # sat, hsperc, tothrs, female, and black have statistically significant effects on cumgpa
 # in this sample, even if heteroskedasticity is present.
-# -
 
+# %% [markdown]
 # Robust standard errors can also be used for hypothesis tests involving multiple restrictions, such as F-tests. We test the joint significance of the race dummies (`black` and `white`), comparing the standard F-test (assuming homoskedasticity) with robust F-tests.
 
-# +
+# %%
 # Reload data if needed
 gpa3 = wool.data("gpa3")
 
@@ -158,7 +160,7 @@ print(f"Default F p-value:   {fpval_default:.4f}\n")
 # Interpretation (Default F-Test): The default F-test strongly rejects the null hypothesis
 # (p-value < 0.0001), suggesting race is jointly significant, assuming homoskedasticity.
 
-# +
+# %%
 # --- F-Test using Robust (HC3) VCOV ---
 results_hc3 = reg.fit(cov_type="HC3")  # Fit with HC3 robust SEs
 ftest_hc3 = results_hc3.f_test(
@@ -174,7 +176,7 @@ print(f"Robust (HC3) F p-value:   {fpval_hc3:.4f}\n")
 # The conclusion remains the same: we reject the null hypothesis and conclude that race
 # is jointly statistically significant, even after accounting for potential heteroskedasticity.
 
-# +
+# %%
 # --- F-Test using Robust (HC0) VCOV ---
 results_hc0 = reg.fit(cov_type="HC0")  # Fit with HC0 robust SEs
 ftest_hc0 = results_hc0.f_test(hypotheses)
@@ -186,8 +188,8 @@ print(f"Robust (HC0) F p-value:   {fpval_hc0:.4f}\n")
 # Interpretation (HC0 F-Test): The HC0 robust F-test gives very similar results to the HC3 test
 # in this case. In general, if the default and robust test statistics lead to different
 # conclusions, the robust result is preferred.
-# -
 
+# %% [markdown]
 # ## 8.2 Heteroskedasticity Tests
 #
 # While robust inference provides a way to proceed despite heteroskedasticity, it's often useful to formally test for its presence. Tests can help understand the data better and decide whether alternative estimation methods like WLS might be beneficial (for efficiency).
@@ -207,7 +209,7 @@ print(f"Robust (HC0) F p-value:   {fpval_hc0:.4f}\n")
 #
 # We test for heteroskedasticity in a model explaining house prices (`price`) using lot size (`lotsize`), square footage (`sqrft`), and number of bedrooms (`bdrms`).
 
-# +
+# %%
 # Load housing price data
 hprice1 = wool.data("hprice1")
 
@@ -227,7 +229,7 @@ table_results = pd.DataFrame(
 )
 print(f"OLS Estimates:\n{table_results}\n")
 
-# +
+# %%
 # --- Breusch-Pagan Test (LM version) using statsmodels function ---
 # We need the residuals from the original model and the design matrix (X).
 # patsy.dmatrices helps create the X matrix easily from the formula.
@@ -249,7 +251,7 @@ print(f"BP LM p-value:   {bp_lm_pval:.4f}\n")
 # Since p < 0.05, we reject the null hypothesis of homoskedasticity at the 5% level.
 # There is significant evidence that the error variance depends on the explanatory variables.
 
-# +
+# %%
 # --- Breusch-Pagan Test (F version) calculated manually ---
 # This demonstrates the underlying steps.
 
@@ -270,8 +272,8 @@ print(f"BP F p-value:   {bp_F_pval:.4f}\n")
 # This also leads to rejecting the null hypothesis of homoskedasticity at the 5% level.
 # The conclusion matches the LM version. Using robust standard errors for the original
 # price model is recommended.
-# -
 
+# %% [markdown]
 # ### White Test
 #
 # The **White test** is a more general test for heteroskedasticity that doesn't assume a specific linear relationship between the variance and the predictors. It tests whether the variance depends on any combination of the levels, squares, and cross-products of the original regressors.
@@ -284,7 +286,7 @@ print(f"BP F p-value:   {bp_F_pval:.4f}\n")
 #
 # Often, taking the logarithm of the dependent variable can mitigate heteroskedasticity. We now test the log-log housing price model.
 
-# +
+# %%
 # Load housing price data again if needed
 hprice1 = wool.data("hprice1")
 
@@ -313,7 +315,7 @@ print(f"BP LM p-value:   {bp_pval_log:.4f}\n")
 # This suggests that the BP test does not find evidence of heteroskedasticity related linearly
 # to the log predictors in this log-transformed model.
 
-# +
+# %%
 # --- White Test (Simplified Version using Fitted Values, Log Model) ---
 # Create the design matrix for the White test auxiliary regression
 X_wh_log = pd.DataFrame(
@@ -338,8 +340,8 @@ print(f"White LM p-value:   {white_pval_log:.4f}\n")
 # level of predicted log(price) in a non-linear way captured by the fitted values.
 # This suggests that even after logging the dependent variable, some heteroskedasticity
 # might remain, and using robust standard errors is still advisable.
-# -
 
+# %% [markdown]
 # ## 8.3 Weighted Least Squares (WLS)
 #
 # If heteroskedasticity is detected and we have an idea about its form, we can use **Weighted Least Squares (WLS)**. WLS is a transformation of the original model that yields estimators that are BLUE (efficient) under heteroskedasticity, provided the variance structure is correctly specified.
@@ -352,7 +354,7 @@ print(f"White LM p-value:   {white_pval_log:.4f}\n")
 #
 # We model net total financial assets (`nettfa`) for single-person households (`fsize == 1`) as a function of income (`inc`), age (`age`), gender (`male`), and 401k eligibility (`e401k`). It's plausible that the variance of `nettfa` increases with income. We assume $Var(u|inc, age, ...) = \sigma^2 inc$. Thus, the standard deviation is $\sigma \sqrt{inc}$, and the appropriate weight for WLS is $w = 1/inc$.
 
-# +
+# %%
 # Load 401k subsample data
 k401ksubs = wool.data("401ksubs")
 
@@ -381,7 +383,7 @@ table_ols = pd.DataFrame(
 )
 print(f"OLS Robust Estimates:\n{table_ols}\n")
 
-# +
+# %%
 # --- WLS Estimation (Assuming Var = sigma^2 * inc) ---
 # Define the weights as 1/inc. statsmodels expects a list or array of weights.
 wls_weight = list(1 / k401ksubs_sub["inc"])
@@ -414,11 +416,11 @@ print(f"WLS Estimates:\n{table_wls}\n")
 # This suggests WLS is more efficient *if* the assumption Var=sigma^2*inc is correct.
 # The coefficient on e401k (eligibility) is positive and significant in both models,
 # but the point estimate is larger in WLS (11.8 vs 9.6).
-# -
 
+# %% [markdown]
 # What if our assumed variance function ($Var = \sigma^2 inc$) is wrong? The WLS estimator will still be consistent (under standard assumptions) but its standard errors might be incorrect, and it might not be efficient. We can compute robust standard errors *for the WLS estimator* to get valid inference even if the weights are misspecified.
 
-# +
+# %%
 # Reload data and prepare WLS if needed
 k401ksubs = wool.data("401ksubs")
 k401ksubs_sub = k401ksubs[k401ksubs["fsize"] == 1].copy()
@@ -442,7 +444,7 @@ table_default_wls = pd.DataFrame(
 )
 print(f"Default WLS SEs:\n{table_default_wls}\n")
 
-# +
+# %%
 # --- WLS Results with Robust (HC3) Standard Errors ---
 # Fit the WLS model but request robust standard errors.
 results_wls_robust = reg_wls.fit(cov_type="HC3")
@@ -469,8 +471,8 @@ print(f"Robust WLS SEs:\n{table_robust_wls}\n")
 # the true heteroskedasticity. However, the conclusions about significance remain largely
 # unchanged in this case. Using robust standard errors with WLS provides insurance against
 # misspecification of the variance function used for weights.
-# -
 
+# %% [markdown]
 # ### Example 8.7: Demand for Cigarettes (FGLS with Estimated Weights)
 #
 # Here, we don't assume the form of heteroskedasticity beforehand. Instead, we estimate it using **Feasible GLS (FGLS)**.
@@ -480,7 +482,7 @@ print(f"Robust WLS SEs:\n{table_robust_wls}\n")
 # 4.  Obtain the fitted values from this regression, $\widehat{\log(u^2)}$. Exponentiate to get estimates of the variance: $\hat{h} = \exp(\widehat{\log(u^2)})$.
 # 5.  Use weights $w = 1/\hat{h}$ in a WLS estimation of the original model.
 
-# +
+# %%
 # Load smoking data
 smoke = wool.data("smoke")
 
@@ -502,7 +504,7 @@ table_ols_smoke = pd.DataFrame(
 )
 print(f"OLS Estimates:\n{table_ols_smoke}\n")
 
-# +
+# %%
 # --- Test for Heteroskedasticity (BP Test) ---
 y_smoke, X_smoke = pt.dmatrices(
     "cigs ~ np.log(income) + np.log(cigpric) + educ +age + I(age**2) + restaurn",
@@ -519,7 +521,7 @@ print(f"BP LM p-value:   {bp_pval_smoke:.4f}\n")
 # Interpretation (BP Test): The p-value is very small (< 0.0001), strongly rejecting
 # the null of homoskedasticity. FGLS is likely warranted for efficiency.
 
-# +
+# %%
 # --- Step 2 & 3: Model the Variance Function ---
 # Get residuals, square them, take the log (add small constant if any residuals are zero)
 smoke["resid_ols"] = results_ols_smoke.resid
@@ -551,7 +553,7 @@ print(f"Variance Function Estimates:\n{table_varfunc}\n")
 # significantly related to the log error variance. For instance, log(income) and age
 # appear significant predictors of the variance.
 
-# +
+# %%
 # --- Step 4 & 5: FGLS Estimation using Estimated Weights ---
 # Get fitted values from the variance function regression
 smoke["logh_hat"] = results_varfunc.fittedvalues
@@ -587,6 +589,6 @@ print(f"FGLS Estimates:\n{table_fgls_wls}\n")
 # - Standard errors have generally changed. For instance, the SE for log(income) decreased from 0.72 (OLS) to 0.44 (FGLS).
 # - FGLS estimates are preferred for efficiency if the variance model is reasonably well-specified.
 # One could also compute robust standard errors for the FGLS estimates as a further check.
-# -
 
+# %% [markdown]
 # This notebook covered the detection of heteroskedasticity (Breusch-Pagan, White tests), inference robust to heteroskedasticity (White/HC standard errors), and estimation via Weighted Least Squares (WLS/FGLS) to potentially gain efficiency when heteroskedasticity is present. Choosing between OLS with robust SEs and WLS/FGLS often depends on whether efficiency gains are a primary concern and how confident one is in specifying the variance function for WLS/FGLS.

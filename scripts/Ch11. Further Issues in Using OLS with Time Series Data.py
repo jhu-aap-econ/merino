@@ -1,28 +1,29 @@
 # ---
 # jupyter:
 #   jupytext:
-#     formats: notebooks//ipynb,markdown//md,scripts//py
+#     formats: notebooks//ipynb,markdown//md,scripts//py:percent
 #     text_representation:
 #       extension: .py
-#       format_name: light
-#       format_version: '1.5'
-#       jupytext_version: 1.16.7
+#       format_name: percent
+#       format_version: '1.3'
+#       jupytext_version: 1.17.2
 #   kernelspec:
 #     display_name: merino
 #     language: python
 #     name: python3
 # ---
 
+# %% [markdown]
 # # 11. Further Issues in Using OLS with Time Series Data
 #
 # This notebook delves into more advanced topics concerning Ordinary Least Squares (OLS) regression with time series data. We will explore the asymptotic properties of OLS estimators under different assumptions about the time series processes, the challenges posed by highly persistent data (like random walks), and the common technique of using first differences to handle such persistence.
 #
 # First, let's install and import the necessary libraries.
 
-# +
+# %%
 # # %pip install matplotlib numpy pandas statsmodels wooldridge scipy -q
-# -
 
+# %%
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -32,6 +33,7 @@ from scipy import (
     stats,  # Used here for generating random numbers from specific distributions
 )
 
+# %% [markdown]
 # ## 11.1 Asymptotics with Time Series
 #
 # The properties of OLS estimators (like consistency and asymptotic normality) rely on certain assumptions about the underlying time series processes. In time series, the assumption of random sampling is replaced by assumptions about the **stationarity** and **weak dependence** of the series.
@@ -47,7 +49,7 @@ from scipy import (
 #
 # We use the `nyse` dataset containing daily returns for the New York Stock Exchange index.
 
-# +
+# %%
 # Load the NYSE daily returns data
 nyse = wool.data("nyse")
 # Rename the 'return' column to 'ret' for convenience in formulas
@@ -93,7 +95,7 @@ print(f"table1: \n{table1}\n")
 # significant (p-value = 0.038). This provides some evidence against the strict form of the EMH,
 # suggesting that knowing yesterday's return provides some predictive power for today's return.
 
-# +
+# %%
 # Display regression results for Model 2
 table2 = pd.DataFrame(
     {
@@ -111,7 +113,7 @@ print(f"table2: \n{table2}\n")
 # significant (p=0.168). The coefficient on the first lag remains similar (0.0601) and significant (p=0.034).
 # An F-test for the joint significance of both lags would be appropriate here.
 
-# +
+# %%
 # Display regression results for Model 3
 table3 = pd.DataFrame(
     {
@@ -132,8 +134,8 @@ print(f"table3: \n{table3}\n")
 # Overall, while the first lag showed some significance initially, the evidence for
 # predictability based on multiple lags appears weak, somewhat consistent with the EMH,
 # although transaction costs might negate any small predictable patterns.
-# -
 
+# %% [markdown]
 # ## 11.2 The Nature of Highly Persistent Time Series
 #
 # Many economic time series, particularly levels of variables like GDP, price indices, or asset prices, exhibit **high persistence**. This means that shocks (unexpected changes) have lasting effects, and the series tends to wander far from its mean over time. Such series are often non-stationary.
@@ -144,7 +146,7 @@ print(f"table3: \n{table3}\n")
 #
 # The following simulation generates and plots multiple realizations of a simple random walk ($y_0 = 0$).
 
-# +
+# %%
 # Set a seed for reproducibility of the random numbers
 np.random.seed(1234567)
 
@@ -179,15 +181,15 @@ plt.show()
 
 # Observation: The paths wander widely and do not revert to a mean value (here, 0).
 # The variance increases over time. This illustrates the non-stationary nature of a random walk.
-# -
 
+# %% [markdown]
 # A **Random Walk with Drift** includes a constant term ($\alpha$), causing the series to trend upwards or downwards over time:
 # $$ y_t = \alpha + y_{t-1} + e_t $$
 # Taking the cumulative sum, $y_t = y_0 + \alpha t + \sum_{i=1}^t e_i$. The series now has a linear time trend ($\alpha t$) plus the random walk component.
 #
 # The next simulation shows random walks with a positive drift ($\alpha = 2$).
 
-# +
+# %%
 # Reset the seed for reproducibility
 np.random.seed(1234567)
 
@@ -230,8 +232,8 @@ plt.show()
 # Observation: The paths now exhibit a clear upward trend, determined by the drift term (alpha=2).
 # They still wander randomly around this trend line due to the cumulative shocks.
 # This type of process is also non-stationary (I(1)).
-# -
 
+# %% [markdown]
 # ## 11.3 Differences of Highly Persistent Time Series
 #
 # A key property of I(1) processes (like random walks with or without drift) is that their **first difference** is stationary (I(0)). The first difference, denoted $\Delta y_t$, is simply the change in the series from one period to the next:
@@ -243,7 +245,7 @@ plt.show()
 #
 # The following simulation shows the first differences of the random walks with drift generated previously.
 
-# +
+# %%
 # Reset the seed
 np.random.seed(1234567)
 
@@ -292,8 +294,8 @@ plt.show()
 # around a constant mean (alpha = 2) and do not exhibit the wandering behavior or trend seen
 # in the levels (y). The variance seems constant over time. This illustrates how differencing
 # can transform a non-stationary I(1) process into a stationary I(0) process.
-# -
 
+# %% [markdown]
 # ## 11.4 Regression with First Differences
 #
 # Regressing one I(1) variable on another can lead to **spurious regression**: finding a statistically significant relationship (high R-squared, significant t-stats) even when the variables are truly unrelated, simply because both are trending over time due to their I(1) nature.
@@ -310,7 +312,7 @@ plt.show()
 #
 # Let's revisit the relationship between the general fertility rate (`gfr`) and the real value of the personal exemption (`pe`) from the `fertil3` dataset. Both `gfr` and `pe` might be I(1) processes. We estimate the relationship using first differences.
 
-# +
+# %%
 # Load the fertil3 data
 fertil3 = wool.data("fertil3")
 T = len(fertil3)
@@ -327,11 +329,11 @@ fertil3["pe_diff1"] = fertil3["pe"].diff()
 # Note that the first row of the differenced variables will be NaN (Not a Number).
 print("First few rows with differenced variables:")
 print(f"{fertil3[['gfr', 'pe', 'gfr_diff1', 'pe_diff1']].head()}\n")
-# -
 
+# %% [markdown]
 # Now, we regress the first difference of `gfr` on the first difference of `pe`. `statsmodels` automatically drops rows with NaN values, so the first observation is excluded.
 
-# +
+# %%
 # Estimate the linear regression using first differences
 # Delta(gfr_t) = beta_0 + beta_1 * Delta(pe_t) + error_t
 # Note: The intercept here (beta_0) represents the average annual change in gfr
@@ -358,11 +360,11 @@ print(f"table1: \n{table1}\n")
 # fertility rate in the same year. This differs from the results obtained using levels in Chapter 10,
 # highlighting how accounting for persistence can change conclusions.
 # The intercept (-0.6734) suggests a slight downward trend in gfr after accounting for changes in pe.
-# -
 
+# %% [markdown]
 # We can also include lags of the differenced explanatory variable, similar to an FDL model but applied to differences.
 
-# +
+# %%
 # Create lagged first differences of pe
 fertil3["pe_diff1_lag1"] = fertil3["pe_diff1"].shift(1)
 fertil3["pe_diff1_lag2"] = fertil3["pe_diff1"].shift(2)
@@ -396,6 +398,6 @@ print(f"table2: \n{table2}\n")
 # in the fertility rate, with the strongest impact appearing two years later.
 # This aligns somewhat with the FDL model in levels (Example 10.4), which also found the second lag significant.
 # The Long-Run Propensity (LRP) in this differenced model would be estimated by summing the delta coefficients.
-# -
 
+# %% [markdown]
 # This notebook covered essential issues when applying OLS to time series: the importance of stationarity and weak dependence for asymptotics, the characteristics of highly persistent I(1) processes like random walks, and the use of first differencing as a technique to handle non-stationarity and avoid spurious regressions.

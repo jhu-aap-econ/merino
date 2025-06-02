@@ -1,28 +1,29 @@
 # ---
 # jupyter:
 #   jupytext:
-#     formats: notebooks//ipynb,markdown//md,scripts//py
+#     formats: notebooks//ipynb,markdown//md,scripts//py:percent
 #     text_representation:
 #       extension: .py
-#       format_name: light
-#       format_version: '1.5'
-#       jupytext_version: 1.16.7
+#       format_name: percent
+#       format_version: '1.3'
+#       jupytext_version: 1.17.2
 #   kernelspec:
 #     display_name: merino
 #     language: python
 #     name: python3
 # ---
 
+# %% [markdown]
 # # 9. Specification and Data Issues
 #
 # This notebook covers several important issues that can arise in regression analysis beyond the basic OLS assumptions. These include choosing the correct functional form, dealing with measurement errors in variables, handling missing data, identifying influential outliers, and using alternative estimation methods like Least Absolute Deviations (LAD). Properly addressing these issues is crucial for obtaining reliable and meaningful results.
 #
 # First, let's install and import the necessary libraries.
 
-# +
+# %%
 # # %pip install matplotlib numpy pandas statsmodels wooldridge scipy -q
-# -
 
+# %%
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -32,6 +33,7 @@ import statsmodels.stats.outliers_influence as smo  # For RESET test and outlier
 import wooldridge as wool
 from scipy import stats  # For generating random numbers
 
+# %% [markdown]
 # ## 9.1 Functional Form Misspecification
 #
 # One of the critical OLS assumptions is that the model is correctly specified, meaning the relationship between the dependent and independent variables is accurately represented (e.g., linear relationship assumed when it's truly non-linear). Using an incorrect functional form can lead to biased and inconsistent coefficient estimates.
@@ -48,7 +50,7 @@ from scipy import stats  # For generating random numbers
 #
 # We apply the RESET test to the housing price model from Example 8.4 (`price ~ lotsize + sqrft + bdrms`).
 
-# +
+# %%
 # Load housing price data
 hprice1 = wool.data("hprice1")
 
@@ -82,7 +84,7 @@ print(f"Auxiliary Regression Estimates:\n{table_reset}\n")
 # Note: The coefficients on the original variables are difficult to interpret here.
 # We are primarily interested in the significance of fitted_sq and fitted_cub.
 
-# +
+# %%
 # 4. Perform an F-test for the joint significance of the added terms
 # H0: Coefficients on fitted_sq and fitted_cub are both zero.
 hypotheses = ["fitted_sq = 0", "fitted_cub = 0"]
@@ -98,11 +100,11 @@ print(f"RESET p-value (manual):     {fpval_man:.4f}\n")
 # Since the p-value is less than 0.05, we reject the null hypothesis.
 # This suggests that the original linear model suffers from functional form misspecification.
 # Non-linear terms (perhaps logs, squares, or interactions) might be needed.
-# -
 
+# %% [markdown]
 # `statsmodels` also provides a convenient function for the RESET test.
 
-# +
+# %%
 # Reload data if needed
 hprice1 = wool.data("hprice1")
 
@@ -123,8 +125,8 @@ print(f"RESET p-value (auto):     {fpval_auto:.4f}\n")
 # Interpretation (Automated RESET): The automated test yields the same F-statistic (4.67)
 # and p-value (0.0117), confirming the rejection of the null hypothesis and indicating
 # functional form misspecification in the linear model.
-# -
 
+# %% [markdown]
 # ### Non-nested Tests (Davidson-MacKinnon)
 #
 # When we have two competing, **non-nested** models (meaning neither model is a special case of the other), we can use tests like the Davidson-MacKinnon test to see if one model provides significant explanatory power beyond the other.
@@ -135,7 +137,7 @@ print(f"RESET p-value (auto):     {fpval_auto:.4f}\n")
 #
 # Here, we compare the linear housing price model (Model 1) with a log-log model (Model 2).
 
-# +
+# %%
 # Reload data if needed
 hprice1 = wool.data("hprice1")
 
@@ -177,7 +179,7 @@ print(f"F-test (Model 1 vs Comprehensive):\n{anovaResults1}\n")
 # add significant explanatory power to the linear model (Model 1).
 # Model 1 appears misspecified relative to the comprehensive model.
 
-# +
+# %%
 # Test Model 2 vs Comprehensive Model:
 # H0: Coefficients on lotsize and sqrft are zero (i.e., Model 2 is adequate)
 # This tests if Model 1's unique terms add significant explanatory power to Model 2.
@@ -197,8 +199,8 @@ print(f"F-test (Model 2 vs Comprehensive):\n{anovaResults2}\n")
 # or other non-linear terms, although the comprehensive model itself might be hard to interpret.
 # Often, the log model is preferred based on goodness-of-fit or interpretability (elasticities),
 # even if the formal test rejects it.
-# -
 
+# %% [markdown]
 # ## 9.2 Measurement Error
 #
 # Measurement error occurs when the variables used in our regression analysis are measured with error, meaning the observed variable differs from the true, underlying variable of interest.
@@ -215,7 +217,7 @@ print(f"F-test (Model 2 vs Comprehensive):\n{anovaResults2}\n")
 #
 # We simulate data where the true model is $y^* = \beta_0 + \beta_1 x + u$, but we observe $y = y^* + e_0$. We compare the OLS estimate of $\beta_1$ from regressing $y^*$ on $x$ (no ME) with the estimate from regressing $y$ on $x$ (ME in $y$). The true $\beta_1 = 0.5$.
 
-# +
+# %%
 # Set the random seed for reproducibility
 np.random.seed(1234567)
 
@@ -271,7 +273,7 @@ print(f"Average beta1 estimate (ME in y): {b1_me_mean:.4f}\n")
 # This confirms that classical measurement error in the dependent variable does not
 # cause bias in the OLS coefficient estimates.
 
-# +
+# %%
 # Analyze the simulation results: Variance of the estimated beta1 across repetitions
 b1_var = np.var(b1, ddof=1)  # Use ddof=1 for sample variance
 b1_me_var = np.var(b1_me, ddof=1)
@@ -281,13 +283,13 @@ print(f"Variance of beta1 estimate (ME in y): {b1_me_var:.6f}\n")
 # Interpretation (Variance): The variance of the beta1 estimate is larger when there is
 # measurement error in y (0.002026) compared to when there is no measurement error (0.001015).
 # This confirms that ME in y reduces the precision of the OLS estimates (increases standard errors).
-# -
 
+# %% [markdown]
 # ### Simulation: Measurement Error in $x$
 #
 # Now, we simulate data where the true model is $y = \beta_0 + \beta_1 x^* + u$, but we observe $x = x^* + e_1$. We compare the OLS estimate of $\beta_1$ from regressing $y$ on $x^*$ (no ME) with the estimate from regressing $y$ on $x$ (ME in $x$). The true $\beta_1 = 0.5$.
 
-# +
+# %%
 # Set the random seed
 np.random.seed(1234567)
 
@@ -344,7 +346,7 @@ print(f"Average beta1 estimate (ME in x): {b1_me_mean:.4f}\n")
 # Theoretical bias factor: Var(x*)/(Var(x*) + Var(e1)). Here Var(x*)=1, Var(e1)=1.
 # Expected estimate = beta1 * (1 / (1+1)) = 0.5 * 0.5 = 0.25. The simulation matches this.
 
-# +
+# %%
 # Analyze the simulation results: Variance of the estimated beta1
 b1_var = np.var(b1, ddof=1)
 b1_me_var = np.var(b1_me, ddof=1)
@@ -356,8 +358,8 @@ print(f"Variance of beta1 estimate (ME in x): {b1_me_var:.6f}\n")
 # the presence of ME in x (which adds noise) can sometimes reduce the variance of the
 # *biased* estimator compared to the variance of the *unbiased* estimator using the true x*.
 # However, this smaller variance is around the wrong (biased) value.
-# -
 
+# %% [markdown]
 # ## 9.3 Missing Data and Nonrandom Samples
 #
 # Missing data is a common problem in empirical research. Values for certain variables might be missing for some observations. How missing data is handled can significantly impact the results.
@@ -366,7 +368,7 @@ print(f"Variance of beta1 estimate (ME in x): {b1_me_var:.6f}\n")
 # *   **Listwise Deletion:** Most statistical software, including `statsmodels` by default, handles missing data by **listwise deletion**. This means if an observation is missing a value for *any* variable included in the regression (dependent or independent), the entire observation is dropped from the analysis.
 # *   **Potential Bias:** Listwise deletion is acceptable if data are **Missing Completely At Random (MCAR)**. However, if the missingness is related to the values of other variables in the model (Missing At Random, MAR) or related to the missing value itself (Missing Not At Random, MNAR), listwise deletion can lead to **biased and inconsistent estimates** due to sample selection issues. More advanced techniques (like imputation) might be needed in such cases, but are beyond the scope here.
 
-# +
+# %%
 # Demonstrate how NumPy handles NaN and Inf in calculations
 x = np.array([-1, 0, 1, np.nan, np.inf, -np.inf])
 logx = np.log(x)  # log(-1)=NaN, log(0)=-Inf
@@ -380,11 +382,11 @@ results_np_handling = pd.DataFrame(
 )
 print("--- NumPy Handling of NaN/Inf ---")
 print(f"Results:\n{results_np_handling}\n")
-# -
 
+# %% [markdown]
 # Now, let's examine missing data in a real dataset (`lawsch85`).
 
-# +
+# %%
 # Load law school data
 lawsch85 = wool.data("lawsch85")
 lsat_pd = lawsch85["LSAT"]  # Extract LSAT scores as a pandas Series
@@ -401,13 +403,14 @@ preview = pd.DataFrame(
 print("--- Missing Data Example (LSAT) ---")
 print(f"Preview (Schools 120-129):\n{preview}\n")
 # We can see some schools have NaN for LSAT score.
-# -
 
+# %%
 # Calculate frequencies of missing vs. non-missing LSAT scores
 freq_missLSAT = pd.crosstab(missLSAT, columns="count")
 print(f"Frequency of Missing LSAT:\n{freq_missLSAT}\n")
 # Shows 7 schools have missing LSAT scores.
 
+# %%
 # Check for missings across all variables in the DataFrame
 miss_all = lawsch85.isna()  # Creates a boolean DataFrame of the same shape
 colsums = miss_all.sum(
@@ -417,6 +420,7 @@ print("--- Missing Counts per Variable ---")
 print(f"Missing values per column:\n{colsums}\n")
 # Shows several variables have missing values.
 
+# %%
 # Calculate the number of complete cases (no missing values in any column for that row)
 # Sum missings across rows (axis=1). If sum is 0, the case is complete.
 complete_cases = miss_all.sum(axis=1) == 0
@@ -426,9 +430,10 @@ print(f"Complete cases (row sum of missings == 0):\n{freq_complete_cases}\n")
 # Shows 131 out of 156 observations are complete cases (have no missing values).
 # The remaining 25 observations have at least one missing value.
 
+# %% [markdown]
 # How do standard functions handle missing data?
 
-# +
+# %%
 # Load data again if needed
 lawsch85 = wool.data("lawsch85")
 
@@ -441,8 +446,8 @@ x_np_bar2 = np.nanmean(x_np)
 print("--- NumPy Mean Calculation with NaNs ---")
 print(f"np.mean(LSAT): {x_np_bar1:.4f}")
 print(f"np.nanmean(LSAT): {x_np_bar2:.4f}\n")
-# -
 
+# %%
 # --- Missing value handling in pandas ---
 x_pd = lawsch85["LSAT"]  # Keep as pandas Series
 # By default, pandas methods often skip NaNs
@@ -453,12 +458,14 @@ print("--- pandas Mean Calculation with NaNs ---")
 print(f"pandas .mean() LSAT: {x_pd_bar1:.4f}")
 print(f"np.nanmean() LSAT:  {x_pd_bar2:.4f}\n")
 
+# %% [markdown]
 # How does `statsmodels` handle missing data during regression?
 
+# %%
 # Get the dimensions of the full dataset
 print(f"Original shape of lawsch85 data: {lawsch85.shape} (rows, columns)\n")
 
-# +
+# %%
 # --- Regression with statsmodels and Missing Data ---
 # Estimate a model for log(salary) using LSAT, cost, and age.
 # Some of these variables have missing values.
@@ -472,8 +479,8 @@ print(f"Number of observations used in regression (results.nobs): {results.nobs}
 # Interpretation: The original dataset had 156 observations. The regression only used 131.
 # This confirms that statsmodels performed listwise deletion, dropping the 25 observations
 # that had missing values in salary, LSAT, cost, or age. This is the default behavior.
-# -
 
+# %% [markdown]
 # ## 9.4 Outlying Observations
 #
 # **Outliers** are observations that are far away from the bulk of the data. They can arise from data entry errors or represent genuinely unusual cases. Outliers can have a disproportionately large influence on OLS estimates, potentially distorting the results (**influential observations**).
@@ -481,7 +488,7 @@ print(f"Number of observations used in regression (results.nobs): {results.nobs}
 # **Studentized residuals** (or externally studentized residuals) are a useful diagnostic tool. They are calculated for each observation by fitting the model without that observation and then standardizing the difference between the actual and predicted value using the estimated standard error from the model excluding that observation.
 # *   Observations with large studentized residuals (e.g., absolute value > 2 or 3) are potential outliers that warrant investigation.
 
-# +
+# %%
 # Load R&D intensity data
 rdchem = wool.data("rdchem")
 
@@ -504,11 +511,11 @@ print(f"Minimum studentized residual: {studres_min:.4f}\n")
 # large in absolute terms (roughly 3 standard deviations from zero). This suggests these
 # observations might be outliers and potentially influential. Further investigation
 # (e.g., examining the data for these specific firms) might be needed.
-# -
 
+# %% [markdown]
 # Visualizing the distribution of studentized residuals can also be helpful.
 
-# +
+# %%
 # Plot a histogram of the studentized residuals with an overlaid kernel density estimate
 
 # Fit kernel density estimator
@@ -543,8 +550,8 @@ plt.show()
 # Interpretation: The histogram shows most residuals cluster around zero, but the density plot
 # highlights the presence of observations in the tails (around +3 and -3), consistent
 # with the min/max values found earlier.
-# -
 
+# %% [markdown]
 # ## 9.5 Least Absolute Deviations (LAD) Estimation
 #
 # OLS minimizes the sum of *squared* residuals, which makes it sensitive to large outliers (since squaring magnifies large deviations). **Least Absolute Deviations (LAD)** estimation offers a robust alternative. LAD minimizes the sum of the *absolute values* of the residuals.
@@ -555,7 +562,7 @@ plt.show()
 #
 # We compare OLS and LAD estimates for the R&D intensity model.
 
-# +
+# %%
 # Load data if needed
 rdchem = wool.data("rdchem")
 
@@ -575,7 +582,7 @@ table_ols = pd.DataFrame(
 )
 print(f"OLS Estimates:\n{table_ols}\n")
 
-# +
+# %%
 # --- LAD Regression (Quantile Regression at the Median) ---
 # Use smf.quantreg and specify the quantile q=0.5 for LAD.
 reg_lad = smf.quantreg(formula="rdintens ~ I(sales/1000) + profmarg", data=rdchem)
@@ -602,6 +609,6 @@ print(f"LAD Estimates:\n{table_lad}\n")
 # distribution of rdintens. The profit margin effect seems fairly robust across methods,
 # while the sales effect estimate changes more noticeably. Since we identified potential
 # outliers earlier, the LAD estimates might be considered more robust in this case.
-# -
 
+# %% [markdown]
 # This notebook covered several advanced but common issues in regression analysis: ensuring correct functional form, understanding the impact of measurement error, handling missing data appropriately, identifying outliers, and using robust estimation techniques like LAD. Careful consideration of these points is vital for building reliable econometric models.

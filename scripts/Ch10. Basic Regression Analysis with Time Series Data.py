@@ -1,36 +1,39 @@
 # ---
 # jupyter:
 #   jupytext:
-#     formats: notebooks//ipynb,markdown//md,scripts//py
+#     formats: notebooks//ipynb,markdown//md,scripts//py:percent
 #     text_representation:
 #       extension: .py
-#       format_name: light
-#       format_version: '1.5'
-#       jupytext_version: 1.16.7
+#       format_name: percent
+#       format_version: '1.3'
+#       jupytext_version: 1.17.2
 #   kernelspec:
 #     display_name: merino
 #     language: python
 #     name: python3
 # ---
 
+# %% [markdown]
 # # 10. Basic Regression Analysis with Time Series Data
 #
 # This notebook introduces fundamental concepts and techniques for applying regression analysis to time series data. We will cover static models, how to handle time series data in Python, finite distributed lag models, trends, and seasonality. We'll use Python libraries like `pandas` for data manipulation, `statsmodels` for regression modeling, and `matplotlib` for plotting. The examples primarily use datasets from the `wooldridge` package.
 #
 # First, let's ensure the necessary libraries are installed. The `%pip install` command installs packages directly within the Jupyter environment. The `-q` flag suppresses installation output for a cleaner notebook.
 
-# +
+# %%
 # # %pip install matplotlib numpy pandas statsmodels wooldridge -q
-# -
 
+# %% [markdown]
 # Now, we import the libraries we'll be using throughout the notebook.
 
+# %%
 import matplotlib.pyplot as plt  # For creating plots
 import numpy as np  # For numerical operations (though not heavily used directly here, often needed alongside pandas) # noqa
 import pandas as pd  # For data manipulation and handling time series
 import statsmodels.formula.api as smf  # For statistical modeling, particularly OLS regression
 import wooldridge as wool  # For accessing Wooldridge textbook datasets
 
+# %% [markdown]
 # ## 10.1 Static Time Series Models
 #
 # A **static time series model** is one where the dependent variable $y_t$ at time $t$ is modeled as a contemporaneous function of explanatory variables $z_{1t}, ..., z_{kt}$ from the *same* time period $t$. The relationship is assumed to be constant across time, aside from the error term $u_t$.
@@ -44,7 +47,7 @@ import wooldridge as wool  # For accessing Wooldridge textbook datasets
 #
 # We'll investigate how the 3-month T-bill interest rate (`i3`) is related to the inflation rate (`inf`) and the federal budget deficit (`def`) using annual data. This is a static model because we assume the interest rate in a given year depends only on inflation and the deficit in that *same* year.
 
-# +
+# %%
 # Load the 'intdef' dataset from the wooldridge package
 intdef = wool.dataWoo("intdef")
 
@@ -81,8 +84,8 @@ print(f"Regression Results (Dependent Variable: i3): \n{table}\n")
 #   in the deficit (relative to GDP) is associated with about a 0.57 percentage point increase in the
 #   T-bill rate, holding inflation constant. This effect is also statistically significant (p-value = 0.0031).
 # - The intercept (1.2580) represents the predicted T-bill rate when both inflation and deficit are zero.
-# -
 
+# %% [markdown]
 # ## 10.2 Time Series Data Types in Python
 #
 # Working with time series data often requires specific tools to handle dates and the temporal ordering of observations. `pandas` is the primary library in Python for this. It provides data structures like `DateTimeIndex` which allow for easy manipulation, plotting, and analysis of time series data.
@@ -93,7 +96,7 @@ print(f"Regression Results (Dependent Variable: i3): \n{table}\n")
 #
 # Let's load the `barium` dataset, which contains monthly data. We will assign a proper time series index to it.
 
-# +
+# %%
 # Load the 'barium' dataset
 barium = wool.dataWoo("barium")
 T = len(barium)  # Get the total number of observations (time periods)
@@ -108,11 +111,11 @@ barium.index = pd.date_range(start="1978-02", periods=T, freq="ME")
 # Display the first few observations of the 'chnimp' variable (Chinese imports)
 # Notice the index now shows the dates.
 print(f'barium["chnimp"].head(): \n{barium["chnimp"].head()}\n')
-# -
 
+# %% [markdown]
 # Having a `DateTimeIndex` makes plotting straightforward. `pandas` and `matplotlib` recognize the index and use it for the x-axis automatically.
 
-# +
+# %%
 # Plot the 'chnimp' variable over time.
 # By default, pandas plotting uses the DataFrame's index for the x-axis.
 plt.plot("chnimp", data=barium, color="black", linestyle="-")
@@ -126,8 +129,8 @@ plt.show()
 # The plot shows the evolution of Chinese imports over the observed period.
 # We can visually inspect the series for trends (e.g., upward trend here),
 # seasonality (cyclical patterns within years), or structural breaks.
-# -
 
+# %% [markdown]
 # ## 10.3 Other Time Series Models
 #
 # Static models are often too restrictive. Economic variables frequently exhibit inertia or delayed responses. We need models that incorporate dynamics, trends, and seasonality.
@@ -147,7 +150,7 @@ plt.show()
 #
 # We examine the effect of the real dollar value of the personal tax exemption (`pe`) on the general fertility rate (`gfr`), using annual data from `fertil3`. It's plausible that changes in `pe` might affect fertility decisions with a delay, making an FDL model appropriate. We'll include lags up to two years ($k=2$). We also control for the effects of World War II (`ww2`) and the availability of the birth control pill (`pill`).
 
-# +
+# %%
 # Load the 'fertil3' dataset
 fertil3 = wool.dataWoo("fertil3")
 T = len(fertil3)
@@ -186,8 +189,8 @@ print(f"FDL Model Results (Dependent Variable: gfr): \n{table}\n")
 # - The coefficient on 'pe_lag2' (delta_2) is -0.1161 and statistically significant (p=0.04). This suggests that an increase
 #   in the personal exemption two years prior is associated with a decrease in the current fertility rate.
 # - The dummy variables 'ww2' and 'pill' have large, negative, and highly significant coefficients, as expected.
-# -
 
+# %% [markdown]
 # ### Example 10.4 (continued) - Hypothesis Testing in FDL Models
 #
 # Often, we want to test hypotheses involving multiple lag coefficients.
@@ -195,7 +198,7 @@ print(f"FDL Model Results (Dependent Variable: gfr): \n{table}\n")
 # **1. Joint Significance of Lags:**
 # We can test if the explanatory variable `pe` has *any* effect, short-run or long-run, by testing the null hypothesis that all its lag coefficients are zero: $H_0: \delta_0 = 0, \delta_1 = 0, \delta_2 = 0$. We use an F-test for this.
 
-# +
+# %%
 # F-test for the joint significance of pe, pe_lag1, and pe_lag2.
 # H0: pe = 0, pe_lag1 = 0, pe_lag2 = 0
 hypotheses1 = ["pe = 0", "pe_lag1 = 0", "pe_lag2 = 0"]
@@ -210,12 +213,12 @@ print(f"P-value for joint significance test: {fpval1:.4f}\n")
 # The F-statistic is 3.31 and the p-value is 0.025. Since the p-value is less than 0.05,
 # we reject the null hypothesis at the 5% significance level. This suggests that the personal
 # exemption (considering its current and past two values) jointly has a statistically significant effect on the fertility rate.
-# -
 
+# %% [markdown]
 # **2. Calculating and Testing the Long-Run Propensity (LRP):**
 # The LRP measures the total long-term effect of a sustained change in `pe`. It's calculated as the sum of the coefficients on the current and lagged `pe` variables: $LRP = \delta_0 + \delta_1 + \delta_2$.
 
-# +
+# %%
 # Calculate the Long-Run Propensity (LRP)
 b = results.params
 b_pe_tot = b["pe"] + b["pe_lag1"] + b["pe_lag2"]
@@ -224,11 +227,11 @@ print(f"Estimated Long-Run Propensity (LRP) for pe: {b_pe_tot:.4f}\n")
 # Interpretation:
 # The estimated LRP is -0.0415. This suggests that a permanent $1 increase in the real personal exemption
 # is predicted to lead to a decrease of about 0.0415 births per 1000 women of childbearing age in the long run.
-# -
 
+# %% [markdown]
 # We can also test whether the LRP is statistically different from zero using an F-test (or a t-test, as it's a single linear restriction). $H_0: \delta_0 + \delta_1 + \delta_2 = 0$.
 
-# +
+# %%
 # F-test for the null hypothesis that the LRP is zero.
 # H0: pe + pe_lag1 + pe_lag2 = 0
 hypotheses2 = ["pe + pe_lag1 + pe_lag2 = 0"]
@@ -243,8 +246,8 @@ print(f"P-value for LRP test: {fpval2:.4f}\n")
 # The F-statistic is 0.15 and the p-value is 0.70. We fail to reject the null hypothesis
 # that the LRP is zero. Although some individual lags (specifically lag 2) were significant,
 # the estimated overall long-run effect is not statistically different from zero at conventional levels.
-# -
 
+# %% [markdown]
 # ### 10.3.2 Trends
 #
 # Many economic time series exhibit **trends**, meaning they tend to grow or decline systematically over time. This can be due to factors like technological progress, population growth, or changing tastes. If the dependent variable and one or more independent variables are trending, failing to account for the trend can lead to **spurious regression**, where a relationship appears significant even if none truly exists beyond the common trend.
@@ -257,7 +260,7 @@ print(f"P-value for LRP test: {fpval2:.4f}\n")
 #
 # We examine the relationship between housing investment per capita (`invpc`) and a housing price index (`price`), using annual data. Both variables might be trending over time. We first estimate a model *without* a trend, and then *with* a trend.
 
-# +
+# %%
 # Load the 'hseinv' dataset
 hseinv = wool.dataWoo("hseinv")
 
@@ -284,11 +287,11 @@ print(f"table_wot: \n{table_wot}\n")
 # The estimated elasticity of investment with respect to price is 1.2466.
 # This seems very high and is statistically significant (p=0.032).
 # However, this might be misleading if both variables are driven by a common time trend.
-# -
 
+# %% [markdown]
 # Now, let's add a linear time trend (`t`) to the model. The `hseinv` dataset already includes a variable `t` representing the time period.
 
-# +
+# %%
 # --- Regression WITH time trend ---
 # The dataset includes a variable 't' which serves as the time trend (t=1, 2, ...).
 reg_wt = smf.ols(formula="np.log(invpc) ~ np.log(price) + t", data=hseinv)
@@ -316,8 +319,8 @@ print(f"table_wt: \n{table_wt}\n")
 #   This indicates that, holding housing prices constant, housing investment per capita tended
 #   to decrease by about 0.95% per year over this period. This process of including a trend
 #   to isolate the relationship between other variables is sometimes called 'detrending'.
-# -
 
+# %% [markdown]
 # ### 10.3.3 Seasonality
 #
 # **Seasonality** refers to patterns in time series data that repeat over a fixed period, such as a year, quarter, or month. For example, retail sales often peak in the fourth quarter, and ice cream sales peak in the summer.
@@ -328,7 +331,7 @@ print(f"table_wt: \n{table_wt}\n")
 #
 # We model the log of Chinese imports (`chnimp`) using monthly data from the `barium` dataset. Explanatory variables include log chemical price index (`chempi`), log price of gas (`gas`), log real trade weighted exchange rate (`rtwex`), and dummy variables related to antidumping filings (`befile6`, `affile6`, `afdec6`). We also include monthly dummy variables (`feb` through `dec`) to control for seasonality. January is the omitted base month.
 
-# +
+# %%
 # Load the 'barium' dataset again (if not already loaded with time index)
 barium = wool.dataWoo("barium")
 T = len(barium)
@@ -399,6 +402,6 @@ print(f"P-value for seasonality test: {fpval_seas:.4f}\n")
 # We strongly reject the null hypothesis that all monthly dummy coefficients are zero.
 # This confirms that there is significant seasonality in Chinese imports, and including the
 # monthly dummies was necessary for a correctly specified model.
-# -
 
+# %% [markdown]
 # This concludes the introduction to basic regression analysis with time series data, covering static models, FDL models, trends, and seasonality using Python. More advanced topics include dealing with serial correlation and non-stationarity.

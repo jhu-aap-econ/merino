@@ -1,30 +1,33 @@
 # ---
 # jupyter:
 #   jupytext:
-#     formats: notebooks//ipynb,markdown//md,scripts//py
+#     formats: notebooks//ipynb,markdown//md,scripts//py:percent
 #     text_representation:
 #       extension: .py
-#       format_name: light
-#       format_version: '1.5'
-#       jupytext_version: 1.16.7
+#       format_name: percent
+#       format_version: '1.3'
+#       jupytext_version: 1.17.2
 #   kernelspec:
 #     display_name: merino
 #     language: python
 #     name: python3
 # ---
 
+# %% [markdown]
 # # 7. Multiple Regression Analysis with Qualitative Regressors
 #
 # This notebook explores the use of qualitative regressors, also known as categorical variables, in multiple regression analysis. Qualitative regressors allow us to incorporate non-numeric factors like gender, marital status, occupation, or region into our regression models. We will use dummy variables (also called indicator variables) to represent these qualitative factors numerically, enabling us to analyze their impact on a dependent variable alongside quantitative regressors.
 #
 # We will use the `statsmodels` library in Python to perform Ordinary Least Squares (OLS) regressions and the `wooldridge` library to access datasets from the textbook "Introductory Econometrics" by Jeffrey M. Wooldridge.
 
+# %%
 import numpy as np  # noqa: F401
 import pandas as pd
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
 import wooldridge as wool
 
+# %% [markdown]
 # ## 7.1 Linear Regression with Dummy Variables as Regressors
 #
 # Dummy variables are binary variables that take on the value 1 or 0 to indicate the presence or absence of a specific attribute or category. In regression analysis, they are used to include qualitative information in a quantitative framework.
@@ -33,7 +36,7 @@ import wooldridge as wool
 #
 # In this example, we will investigate how gender affects hourly wages, controlling for education, experience, and tenure. We will use the `wage1` dataset from the `wooldridge` package. The dataset includes information on wages, education, experience, tenure, and gender (female=1 if female, 0 if male).
 
-# +
+# %%
 wage1 = wool.data("wage1")
 
 reg = smf.ols(formula="wage ~ female + educ + exper + tenure", data=wage1)
@@ -49,8 +52,8 @@ table = pd.DataFrame(
     },
 )
 print(f"table: \n{table}\n")
-# -
 
+# %% [markdown]
 # **Explanation:**
 #
 # - `wage ~ female + educ + exper + tenure`: This formula specifies the regression model. We are regressing `wage` (hourly wage) on `female` (dummy variable for gender), `educ` (years of education), `exper` (years of experience), and `tenure` (years with current employer).
@@ -76,7 +79,7 @@ print(f"table: \n{table}\n")
 #
 # In this example, we will use the natural logarithm of hourly wage as the dependent variable and explore the interaction effect between marital status and gender, along with education, experience, and tenure (including quadratic terms for experience and tenure to capture potential non-linear relationships).
 
-# +
+# %%
 wage1 = wool.data("wage1")
 
 reg = smf.ols(
@@ -96,8 +99,8 @@ table = pd.DataFrame(
     },
 )
 print(f"table: \n{table}\n")
-# -
 
+# %% [markdown]
 # **Explanation:**
 #
 # - `np.log(wage) ~ married*female + educ + exper + I(exper**2) + tenure + I(tenure**2)`:
@@ -121,7 +124,7 @@ print(f"table: \n{table}\n")
 #
 # In the `wage1` dataset, the `female` variable is already coded as 1 for female and 0 for male. We can explicitly create a boolean variable, although it is not strictly necessary in this case as `statsmodels` and regression formulas in general can interpret 1/0 variables as dummy variables.
 
-# +
+# %%
 wage1 = wool.data("wage1")
 
 # regression with boolean variable:
@@ -139,8 +142,8 @@ table = pd.DataFrame(
     },
 )
 print(f"table: \n{table}\n")
-# -
 
+# %% [markdown]
 # **Explanation:**
 #
 # - `wage1["isfemale"] = wage1["female"] == 1`: This line creates a new column named `isfemale` in the `wage1` DataFrame. It assigns `True` to `isfemale` if the value in the `female` column is 1 (meaning female), and `False` otherwise. In essence, `isfemale` is a boolean representation of the `female` dummy variable.
@@ -160,7 +163,7 @@ print(f"table: \n{table}\n")
 #
 # In this section, we will use the `CPS1985.csv` dataset, which contains data from the Current Population Survey in 1985. We will investigate how gender and occupation affect wages, controlling for education and experience.
 
-# +
+# %%
 CPS1985 = pd.read_csv("../data/CPS1985.csv")
 # rename variable to make outputs more compact:
 CPS1985["oc"] = CPS1985["occupation"]
@@ -171,8 +174,8 @@ print(f"freq_gender: \n{freq_gender}\n")
 
 freq_occupation = pd.crosstab(CPS1985["oc"], columns="count")
 print(f"freq_occupation: \n{freq_occupation}\n")
-# -
 
+# %% [markdown]
 # **Explanation:**
 #
 # - `CPS1985 = pd.read_csv("../data/CPS1985.csv")`: Loads the dataset from a CSV file. You might need to adjust the path `../data/CPS1985.csv` depending on where you have saved the data file relative to your notebook.
@@ -185,7 +188,7 @@ print(f"freq_occupation: \n{freq_occupation}\n")
 #
 # The `freq_gender` output shows the counts for 'female' and 'male' in the dataset. The `freq_occupation` output shows the counts for each occupation category present in the dataset (e.g., 'admin', 'clerical', 'management', etc.). This gives us an overview of the distribution of these categorical variables.
 
-# +
+# %%
 # directly using categorical variables in regression formula:
 reg = smf.ols(
     formula="np.log(wage) ~ education +experience + C(gender) + C(oc)",
@@ -203,8 +206,8 @@ table = pd.DataFrame(
     },
 )
 print(f"table: \n{table}\n")
-# -
 
+# %% [markdown]
 # **Explanation:**
 #
 # - `formula="np.log(wage) ~ education +experience + C(gender) + C(oc)"`:
@@ -220,7 +223,7 @@ print(f"table: \n{table}\n")
 #
 # - **P-values:** P-values help assess the statistical significance of each coefficient. Small p-values indicate that the corresponding variable is a statistically significant predictor of log wage.
 
-# +
+# %%
 # rerun regression with different reference category:
 reg_newref = smf.ols(
     formula="np.log(wage) ~ education + experience + "
@@ -240,8 +243,8 @@ table_newref = pd.DataFrame(
     },
 )
 print(f"table_newref: \n{table_newref}\n")
-# -
 
+# %% [markdown]
 # **Explanation:**
 #
 # - `C(gender, Treatment("male"))`: Here, we explicitly specify "male" as the reference category for the `gender` variable using `Treatment("male")` within the `C()` function. Now, the coefficient for `C(gender)[T.female]` will represent the log wage difference between females and males (with males as the baseline).
@@ -261,7 +264,7 @@ print(f"table_newref: \n{table_newref}\n")
 #
 # ANOVA (Analysis of Variance) tables in regression context help to assess the overall significance of groups of regressors. They decompose the total variance in the dependent variable into components attributable to different sets of regressors. In the context of categorical variables, ANOVA tables can be used to test the joint significance of all dummy variables representing a categorical variable.
 
-# +
+# %%
 CPS1985 = pd.read_csv("../data/CPS1985.csv")
 
 # run regression:
@@ -281,16 +284,18 @@ table_reg = pd.DataFrame(
     },
 )
 print(f"table_reg: \n{table_reg}\n")
-# -
 
+# %% [markdown]
 # **Explanation:**
 #
 # - `formula="np.log(wage) ~ education + experience + gender + occupation"`: In this formula, we are directly using `gender` and `occupation` as categorical variables without explicitly using `C()`. `statsmodels` can often automatically detect categorical variables (especially string or object type columns) and treat them as such in the regression formula, creating dummy variables behind the scenes. However, it is generally better to be explicit and use `C()` for clarity and control, especially when you want to specify reference categories.
 
+# %%
 # ANOVA table:
 table_anova = sm.stats.anova_lm(results, typ=2)
 print(f"table_anova: \n{table_anova}\n")
 
+# %% [markdown]
 # **Explanation:**
 #
 # - `table_anova = sm.stats.anova_lm(results, typ=2)`: This function from `statsmodels.stats` calculates the ANOVA table for the fitted regression model (`results`). `typ=2` specifies Type II ANOVA, which is generally recommended for regression models, especially when there might be some imbalance in the design (which is common in observational data).
@@ -328,7 +333,7 @@ print(f"table_anova: \n{table_anova}\n")
 #
 # In this example, we will examine the effect of law school rankings on starting salaries of graduates. The `lawsch85` dataset from `wooldridge` contains information on law school rankings (`rank`), starting salaries (`salary`), LSAT scores (`LSAT`), GPA, library volumes (`libvol`), and cost (`cost`).
 
-# +
+# %%
 lawsch85 = wool.data("lawsch85")
 
 # define cut points for the rank:
@@ -344,8 +349,8 @@ lawsch85["rc"] = pd.cut(
 # display frequencies:
 freq = pd.crosstab(lawsch85["rc"], columns="count")
 print(f"freq: \n{freq}\n")
-# -
 
+# %% [markdown]
 # **Explanation:**
 #
 # - `lawsch85 = wool.data("lawsch85")`: Loads the `lawsch85` dataset.
@@ -360,7 +365,7 @@ print(f"freq: \n{freq}\n")
 #
 # The `freq` output shows the number of law schools falling into each defined rank category (e.g., how many schools are ranked between 0 and 10, between 10 and 25, etc.).
 
-# +
+# %%
 # run regression:
 reg = smf.ols(
     formula='np.log(salary) ~ C(rc, Treatment("(100,175]")) +'
@@ -379,8 +384,8 @@ table_reg = pd.DataFrame(
     },
 )
 print(f"table_reg: \n{table_reg}\n")
-# -
 
+# %% [markdown]
 # **Explanation:**
 #
 # - `formula='np.log(salary) ~ C(rc, Treatment("(100,175]")) + LSAT + GPA + np.log(libvol) + np.log(cost)'`:
@@ -393,10 +398,12 @@ print(f"table_reg: \n{table_reg}\n")
 # - **C(rc)[T.(0,10)] to C(rc)[T.(60,100)]:** The coefficients for `C(rc)[T.(0,10)]`, `C(rc)[T.(10,25)]`, `C(rc)[T.(25,40)]`, `C(rc)[T.(40,60)]`, and `C(rc)[T.(60,100)]` represent the log salary difference between law schools in each of these rank categories and law schools in the reference category "(100,175]", holding LSAT, GPA, library volumes, and cost constant. For example, `C(rc)[T.(0,10)]` coefficient would represent the approximate percentage salary premium for graduates of law schools ranked (0, 10] compared to those from schools ranked (100, 175]. We expect these coefficients to be positive and decreasing as the rank category range increases (i.e., better ranked schools should have higher starting salaries).
 # - **LSAT, GPA, np.log(libvol), np.log(cost):** These coefficients represent the effects of LSAT score, GPA, log of library volumes, and log of cost on log salary, controlling for law school rank category.
 
+# %%
 # ANOVA table:
 table_anova = sm.stats.anova_lm(results, typ=2)
 print(f"table_anova: \n{table_anova}\n")
 
+# %% [markdown]
 # **Explanation & Interpretation:**
 #
 # As before, `sm.stats.anova_lm(results, typ=2)` calculates the ANOVA table for this regression model. The row for `C(rc)` in the ANOVA table will provide an F-test and p-value for the joint significance of all the dummy variables representing the rank categories. This tests the null hypothesis that _law school rank (categorized as `rc`) has no effect on starting salary, once LSAT, GPA, library volumes, and cost are controlled for_. A small p-value would indicate that law school rank category is a statistically significant factor in predicting starting salaries.
@@ -405,7 +412,7 @@ print(f"table_anova: \n{table_anova}\n")
 #
 # We can allow for regression functions to differ across groups by including interaction terms between group indicators (dummy variables for qualitative variables) and quantitative regressors. This allows the slope coefficients of the quantitative regressors to vary across different groups defined by the qualitative variable.
 
-# +
+# %%
 gpa3 = wool.data("gpa3")
 
 # model with full interactions with female dummy (only for spring data):
@@ -426,8 +433,8 @@ table = pd.DataFrame(
     },
 )
 print(f"table: \n{table}\n")
-# -
 
+# %% [markdown]
 # **Explanation:**
 #
 # - `gpa3 = wool.data("gpa3")`: Loads the `gpa3` dataset, which contains data on college GPA, SAT scores, high school percentile (`hsperc`), total hours studied (`tothrs`), and gender (`female`), among other variables.
@@ -454,7 +461,7 @@ print(f"table: \n{table}\n")
 #   `cumgpa = (b_const + b_female) + (b_sat + b_female:sat) * sat + (b_hsperc + b_female:hsperc) * hsperc + (b_tothrs + b_female:tothrs) * tothrs`
 #   (where `b_female`, `b_female:sat`, `b_female:hsperc`, `b_female:tothrs` are the coefficients for `female`, `female:sat`, `female:hsperc`, `female:tothrs` respectively).
 
-# +
+# %%
 # F-Test for H0 (the interaction coefficients of 'female' are zero):
 hypotheses = ["female:sat = 0", "female:hsperc = 0", "female:tothrs = 0"]
 ftest = results.f_test(hypotheses)
@@ -463,8 +470,8 @@ fpval = ftest.pvalue
 
 print(f"fstat: {fstat}\n")
 print(f"fpval: {fpval}\n")
-# -
 
+# %% [markdown]
 # **Explanation:**
 #
 # - `hypotheses = ["female:sat = 0", "female:hsperc = 0", "female:tothrs = 0"]`: We define the null hypotheses we want to test. Here, we are testing if the coefficients of all interaction terms involving `female` are jointly zero. If these coefficients are zero, it means there is no difference in the slopes of `sat`, `hsperc`, and `tothrs` between females and males.
@@ -475,7 +482,7 @@ print(f"fpval: {fpval}\n")
 #
 # - **p-value (fpval):** If the p-value is small (e.g., < 0.05), we reject the null hypothesis. This would mean that at least one of the interaction coefficients is significantly different from zero, indicating that the effect of at least one of the quantitative regressors (`sat`, `hsperc`, `tothrs`) on `cumgpa` differs between females and males. If the p-value is large, we fail to reject the null hypothesis, suggesting that there is not enough evidence to conclude that the slopes are different across genders.
 
-# +
+# %%
 gpa3 = wool.data("gpa3")
 
 # estimate model for males (& spring data):
@@ -496,8 +503,8 @@ table_m = pd.DataFrame(
     },
 )
 print(f"table_m: \n{table_m}\n")
-# -
 
+# %% [markdown]
 # **Explanation:**
 #
 # - `subset=(gpa3["spring"] == 1) & (gpa3["female"] == 0)`: We are now subsetting the data to include only spring semester data (`spring == 1`) and only male students (`female == 0`).
@@ -507,7 +514,7 @@ print(f"table_m: \n{table_m}\n")
 #
 # The regression table `table_m` shows the estimated regression equation specifically for male students. The coefficients are the intercept and slopes of `sat`, `hsperc`, and `tothrs` for males only. These coefficients should be very similar to the coefficients for `const`, `sat`, `hsperc`, and `tothrs` in the full interaction model (from the first regression in this section), as those were also interpreted as the coefficients for the male group (reference group).
 
-# +
+# %%
 # estimate model for females (& spring data):
 reg_f = smf.ols(
     formula="cumgpa ~ sat + hsperc + tothrs",
@@ -526,8 +533,8 @@ table_f = pd.DataFrame(
     },
 )
 print(f"table_f: \n{table_f}\n")
-# -
 
+# %% [markdown]
 # **Explanation:**
 #
 # - `subset=(gpa3["spring"] == 1) & (gpa3["female"] == 1)`: This time, we subset the data for spring semester data and only female students (`female == 1`).

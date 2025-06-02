@@ -1,18 +1,19 @@
 # ---
 # jupyter:
 #   jupytext:
-#     formats: notebooks//ipynb,markdown//md,scripts//py
+#     formats: notebooks//ipynb,markdown//md,scripts//py:percent
 #     text_representation:
 #       extension: .py
-#       format_name: light
-#       format_version: '1.5'
-#       jupytext_version: 1.16.7
+#       format_name: percent
+#       format_version: '1.3'
+#       jupytext_version: 1.17.2
 #   kernelspec:
 #     display_name: merino
 #     language: python
 #     name: python3
 # ---
 
+# %% [markdown]
 # # 12. Serial Correlation and Heteroskedasticity in Time Series Regressions
 #
 # This notebook explores two important complications that can arise when applying OLS to time series data: **serial correlation** (also known as autocorrelation) and **heteroskedasticity** in the error terms.
@@ -24,10 +25,10 @@
 #
 # First, let's install and import the necessary libraries.
 
-# +
+# %%
 # # %pip install numpy pandas pandas_datareader patsy statsmodels wooldridge -q
-# -
 
+# %%
 import numpy as np  # noqa
 import pandas as pd
 import patsy as pt  # Used for creating design matrices easily from formulas
@@ -35,6 +36,7 @@ import statsmodels.api as sm  # Provides statistical models and tests
 import statsmodels.formula.api as smf  # Convenient formula interface for statsmodels
 import wooldridge as wool  # Access to Wooldridge textbook datasets
 
+# %% [markdown]
 # ## 12.1 Testing for Serial Correlation of the Error Term
 #
 # Serial correlation means that the error in one time period provides information about the error in subsequent periods. The simplest and most common form is **Autoregressive order 1 (AR(1))** serial correlation, where the error $u_t$ is related to the previous period's error $u_{t-1}$:
@@ -52,7 +54,7 @@ import wooldridge as wool  # Access to Wooldridge textbook datasets
 # 1.  **Static Phillips Curve:** Inflation (`inf`) regressed on unemployment (`unem`).
 # 2.  **Expectations-Augmented Phillips Curve:** Change in inflation (`inf_diff1`) regressed on unemployment (`unem`).
 
-# +
+# %%
 # Load the Phillips curve data
 phillips = wool.data("phillips")
 T = len(phillips)
@@ -98,7 +100,7 @@ print(f"Regression: resid_s ~ resid_s_lag1 \n{table_s}\n")
 # AR(1) serial correlation in the errors of the static Phillips curve model.
 # OLS standard errors for the original regression are likely invalid.
 
-# +
+# %%
 # --- Test for Expectations-Augmented Phillips Curve ---
 # Reload data or ensure previous modifications don't interfere if running cells independently
 phillips = wool.data("phillips")
@@ -140,8 +142,8 @@ print(f"Regression: resid_ea ~ resid_ea_lag1 \n{table_ea}\n")
 # than in the static model and is not statistically significant at conventional levels (p-value = 0.6665).
 # This suggests that the expectations-augmented model (using the change in inflation)
 # has largely eliminated the AR(1) serial correlation found in the static model.
-# -
 
+# %% [markdown]
 # ### Testing for Higher-Order Serial Correlation: Breusch-Godfrey Test
 #
 # Serial correlation might extend beyond just one lag (e.g., AR(q) process). The **Breusch-Godfrey (BG) test** is a general test for AR(q) serial correlation.
@@ -157,7 +159,7 @@ print(f"Regression: resid_ea ~ resid_ea_lag1 \n{table_ea}\n")
 #
 # We test for serial correlation up to order 3 (AR(3)) in the errors of the Barium imports model from Chapter 10.
 
-# +
+# %%
 # Load Barium data
 barium = wool.data("barium")
 T = len(barium)
@@ -189,7 +191,7 @@ print(f"BG Test F p-value: {fpval_auto:.4f}\n")
 # We strongly reject the null hypothesis of no serial correlation up to order 3.
 # There is significant evidence of serial correlation in the model's errors.
 
-# +
+# %%
 # --- Breusch-Godfrey Test (Manual / "Pedestrian" Calculation) ---
 # This demonstrates the steps involved.
 
@@ -221,8 +223,8 @@ print(f"Manual BG F p-value: {fpval_manual:.4f}\n")
 # Interpretation (Manual BG Test):
 # The manually calculated F-statistic and p-value match the automated results,
 # confirming significant serial correlation up to order 3.
-# -
 
+# %% [markdown]
 # ### Durbin-Watson Test
 #
 # The Durbin-Watson (DW) statistic is an older test primarily designed for AR(1) serial correlation ($u_t = \rho u_{t-1} + e_t$).
@@ -239,7 +241,7 @@ print(f"Manual BG F p-value: {fpval_manual:.4f}\n")
 #
 # It's generally recommended to use the Breusch-Godfrey test, but `statsmodels` provides the DW statistic easily.
 
-# +
+# %%
 # --- Durbin-Watson Test for Phillips Curve Models ---
 # Reload data or ensure models are estimated if running cells independently
 phillips = wool.data("phillips")
@@ -266,8 +268,8 @@ print(f"DW statistic (Expectations-Augmented Phillips Curve): {DW_ea:.4f}\n")
 # - Static model: DW = 0.8047. This is far below 2, indicating strong positive serial correlation, consistent with our earlier AR(1) test.
 # - Expectations-Augmented model: DW = 1.7699. This is much closer to 2, suggesting little evidence of AR(1) serial correlation, also consistent with our earlier test.
 # (Formal conclusion requires comparing these to critical values from DW tables, considering sample size and number of regressors).
-# -
 
+# %% [markdown]
 # ## 12.2 FGLS Estimation
 #
 # When serial correlation is present, OLS is inefficient (i.e., not the Best Linear Unbiased Estimator), and its standard errors are invalid. **Feasible Generalized Least Squares (FGLS)** is a method to obtain estimators that are asymptotically more efficient than OLS by transforming the model to eliminate the serial correlation.
@@ -285,7 +287,7 @@ print(f"DW statistic (Expectations-Augmented Phillips Curve): {DW_ea:.4f}\n")
 #
 # We apply Cochrane-Orcutt FGLS estimation to the Barium imports model, where we previously found significant serial correlation.
 
-# +
+# %%
 # Load Barium data
 barium = wool.data("barium")
 T = len(barium)
@@ -334,8 +336,8 @@ print(f"Cochrane-Orcutt FGLS Estimates:\n{table_corc}\n")
 #   These standard errors are asymptotically valid, unlike the original OLS standard errors.
 # - Comparing FGLS results to the original OLS results (not shown here) would reveal potentially different standard errors and significance levels for the coefficients.
 #   The coefficient estimates themselves might also change slightly.
-# -
 
+# %% [markdown]
 # ## 12.3 Serial Correlation-Robust Inference with OLS
 #
 # An alternative to FGLS is to stick with the OLS coefficient estimates (which are consistent under weaker assumptions than needed for FGLS efficiency) but compute **robust standard errors** that account for serial correlation (and potentially heteroskedasticity).
@@ -348,7 +350,7 @@ print(f"Cochrane-Orcutt FGLS Estimates:\n{table_corc}\n")
 #
 # We estimate the effect of the minimum wage coverage (`mincov`) on the employment rate (`prepop`) in Puerto Rico, controlling for GNP variables and a time trend. We compare standard OLS inference with HAC inference.
 
-# +
+# %%
 # Load Puerto Rican minimum wage data
 prminwge = wool.data("prminwge")
 T = len(prminwge)
@@ -381,7 +383,7 @@ print(f"Standard OLS Estimates:\n{table_regu}\n")
 # suggesting a negative impact of minimum wage coverage on employment.
 # However, if serial correlation is present, these standard errors and p-values might be unreliable.
 
-# +
+# %%
 # --- OLS Results with HAC (Newey-West) Standard Errors ---
 # Use the same fitted OLS model object but specify the covariance type.
 # cov_type='HAC' requests Heteroskedasticity and Autocorrelation Consistent SEs.
@@ -407,8 +409,8 @@ print(f"OLS Estimates with HAC SEs:\n{table_hac}\n")
 # - Consequently, the robust t-statistic (-2.21) is smaller in magnitude, and the robust p-value (0.0342) is larger.
 # - While still significant at the 5% level, the evidence for the minimum wage effect is weaker after accounting
 #   for potential serial correlation and heteroskedasticity. This highlights the importance of robust inference.
-# -
 
+# %% [markdown]
 # ## 12.4 Autoregressive Conditional Heteroskedasticity (ARCH)
 #
 # **Autoregressive Conditional Heteroskedasticity (ARCH)** is a specific model for time-varying volatility often observed in financial time series. It assumes the variance of the error term at time $t$, *conditional* on past information, depends on the magnitude of past error terms.
@@ -429,7 +431,7 @@ print(f"OLS Estimates with HAC SEs:\n{table_hac}\n")
 #
 # We test for ARCH(1) effects in the daily NYSE stock returns data, using a simple AR(1) model for the mean return.
 
-# +
+# %%
 # Load NYSE daily returns data
 nyse = wool.data("nyse")
 nyse["ret"] = nyse["return"]  # Rename for convenience
@@ -470,6 +472,6 @@ print(f"Regression: resid_sq ~ resid_sq_lag1\n{table_arch}\n")
 #   The volatility (variance of the error) in one day is positively correlated with the squared error from the previous day.
 # - Standard OLS inference for the mean equation (ret ~ ret_lag1) would be invalid due to this conditional heteroskedasticity.
 #   HAC standard errors or estimation of a GARCH model would be more appropriate.
-# -
 
+# %% [markdown]
 # This notebook demonstrated how to test for serial correlation (AR(1), AR(q) using BG test, DW test) and ARCH effects in time series regressions. It also covered two approaches to handle serial correlation: FGLS (Cochrane-Orcutt) for efficiency and OLS with HAC (Newey-West) standard errors for robust inference. Understanding and addressing these issues is crucial for reliable time series analysis.

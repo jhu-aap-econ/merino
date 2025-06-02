@@ -1,30 +1,33 @@
 # ---
 # jupyter:
 #   jupytext:
-#     formats: notebooks//ipynb,markdown//md,scripts//py
+#     formats: notebooks//ipynb,markdown//md,scripts//py:percent
 #     text_representation:
 #       extension: .py
-#       format_name: light
-#       format_version: '1.5'
-#       jupytext_version: 1.16.7
+#       format_name: percent
+#       format_version: '1.3'
+#       jupytext_version: 1.17.2
 #   kernelspec:
 #     display_name: merino
 #     language: python
 #     name: python3
 # ---
 
+# %% [markdown]
 # # 6. Multiple Regression Analysis: Further Issues
 #
 # This notebook delves into further issues in multiple regression analysis, expanding on the foundational concepts. We will explore various aspects of model specification, including the use of different functional forms and interaction terms, as well as prediction and its associated uncertainties.  We will use the `statsmodels` library in Python to implement these techniques and the `wooldridge` package for example datasets from Wooldridge's "Introductory Econometrics."
 #
 #
 
+# %%
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import statsmodels.formula.api as smf
 import wooldridge as wool
 
+# %% [markdown]
 # ## 6.1 Model Formulae
 #
 # This section explores how to use model formulae effectively to specify different types of regression models beyond the basic linear form. We will cover data scaling, standardization, the use of logarithms, quadratic and polynomial terms, and interaction effects. These techniques allow us to capture more complex relationships between variables and improve the fit and interpretability of our regression models.
@@ -44,7 +47,7 @@ import wooldridge as wool
 #
 # We might want to express birth weight in pounds instead of ounces or cigarettes in packs per day instead of individual cigarettes. Let's see how this can be done and how it affects the coefficients.
 
-# +
+# %%
 bwght = wool.data("bwght")
 
 # regress and report coefficients:
@@ -82,8 +85,7 @@ table = pd.DataFrame(
 print(f"table: \n{table}\n")
 
 
-# -
-
+# %% [markdown]
 # **Interpretation of Results:**
 #
 # - **`b` (bwght):** This column shows the coefficients when birth weight is in ounces and cigarettes are in individual units.  For example, the coefficient for `cigs` is approximately -0.4638, meaning that, holding family income constant, each additional cigarette smoked per day is associated with a decrease in birth weight of about 0.46 ounces.
@@ -112,7 +114,7 @@ print(f"table: \n{table}\n")
 #
 # where the `_sc` suffix denotes the standardized version of each variable.
 
-# +
+# %%
 # define a function for the standardization:
 def scale(x):
     x_mean = np.mean(x)
@@ -146,8 +148,8 @@ table = pd.DataFrame(
     },
 )
 print(f"table: \n{table}\n")
-# -
 
+# %% [markdown]
 # **Interpretation of Beta Coefficients:**
 #
 # - **`nox_sc` coefficient (-0.2673):**  A one standard deviation increase in nitrogen oxide concentration (`nox`) is associated with a decrease of 0.2673 standard deviations in housing price, holding other standardized variables constant.
@@ -177,7 +179,7 @@ print(f"table: \n{table}\n")
 #
 # $$\log(\text{price}) = \beta_0 + \beta_1 \log(\text{nox}) + \beta_2 \text{rooms} + u$$
 
-# +
+# %%
 hprice2 = wool.data("hprice2")
 
 reg = smf.ols(formula="np.log(price) ~ np.log(nox) + rooms", data=hprice2)
@@ -193,8 +195,8 @@ table = pd.DataFrame(
     },
 )
 print(f"table: \n{table}\n")
-# -
 
+# %% [markdown]
 # **Interpretation of Log-Log Model Coefficients:**
 #
 # - **`np.log(nox)` coefficient (-0.9525):**  A 1% increase in nitrogen oxide concentration (`nox`) is associated with approximately a 0.9525% decrease in housing price, holding the number of rooms constant.  This is interpreted as an elasticity: the elasticity of housing price with respect to `nox` is approximately -0.95.
@@ -227,7 +229,7 @@ print(f"table: \n{table}\n")
 #
 # $$\log(\text{price}) = \beta_0 + \beta_1 \log(\text{nox}) + \beta_2 \log(\text{dist}) + \beta_3 \text{rooms} + \beta_4 \text{rooms}^2 + \beta_5 \text{stratio} + u$$
 
-# +
+# %%
 hprice2 = wool.data("hprice2")
 
 reg = smf.ols(
@@ -246,8 +248,8 @@ table = pd.DataFrame(
     },
 )
 print(f"table: \n{table}\n")
-# -
 
+# %% [markdown]
 # **Interpretation of Quadratic Term:**
 #
 # - **`rooms` coefficient (1.1211) and `I(rooms**2)` coefficient (-0.1281):** The positive coefficient on `rooms` and the negative coefficient on `rooms**2` suggest an inverted U-shaped relationship between `rooms` and $\log(\text{price})$.  Initially, as the number of rooms increases, housing price increases at an increasing rate. However, beyond a certain point, the rate of increase slows down, and eventually, further increases in rooms might even lead to decreases in price (although this might be outside the realistic range of rooms in houses).
@@ -268,7 +270,7 @@ print(f"table: \n{table}\n")
 #
 # Let's test the joint hypothesis that both the coefficient on `rooms` and the coefficient on `rooms**2` are simultaneously zero in Example 6.2.
 
-# +
+# %%
 hprice2 = wool.data("hprice2")
 n = hprice2.shape[0]
 
@@ -289,8 +291,8 @@ fpval = ftest.pvalue
 
 print(f"F-statistic: {fstat}\n")
 print(f"P-value: {fpval}\n")
-# -
 
+# %% [markdown]
 # **Interpretation of F-test:**
 #
 # The F-statistic is approximately 55.14, and the p-value is very close to zero.  Since the p-value is much smaller than conventional significance levels (e.g., 0.05 or 0.01), we reject the null hypothesis that both coefficients on `rooms` and `rooms**2` are jointly zero.  We conclude that the number of rooms, considering both its linear and quadratic terms, is jointly statistically significant in explaining housing prices in this model.
@@ -320,7 +322,7 @@ print(f"P-value: {fpval}\n")
 #
 # $$\text{stndfnl} = \beta_0 + \beta_1 \text{atndrte} + \beta_2 \text{priGPA} + \beta_3 \text{ACT} + \beta_4 \text{priGPA}^2 + \beta_5 \text{ACT}^2 + \beta_6 \text{atndrte} \cdot \text{priGPA} + u$$
 
-# +
+# %%
 attend = wool.data("attend")
 n = attend.shape[0]
 
@@ -340,8 +342,8 @@ table = pd.DataFrame(
     },
 )
 print(f"table: \n{table}\n")
-# -
 
+# %% [markdown]
 # **Interpretation of Interaction Term:**
 #
 # - **`atndrte:priGPA` coefficient (0.0101):** This positive coefficient suggests that the effect of attendance rate on final exam score increases as prior GPA increases.  In other words, attendance seems to be more beneficial for students with higher prior GPAs.
@@ -350,11 +352,13 @@ print(f"table: \n{table}\n")
 #
 # Let's calculate the estimated partial effect of attendance rate on `stndfnl` for a student with a prior GPA of 2.59 (the sample average of `priGPA`):
 
+# %%
 # estimate for partial effect at priGPA=2.59:
 b = results.params
 partial_effect = b["atndrte"] + 2.59 * b["atndrte:priGPA"]
 print(f"partial_effect: {partial_effect}\n")
 
+# %% [markdown]
 # The estimated partial effect of attendance at `priGPA = 2.59` is approximately 0.466. This means that for a student with an average prior GPA, a one percentage point increase in attendance rate is associated with an increase of about 0.466 points in the standardized final exam score.
 #
 # **Testing Significance of Partial Effect at a Specific `priGPA`:**
@@ -365,7 +369,7 @@ print(f"partial_effect: {partial_effect}\n")
 #
 # We can use the `f_test` method in `statsmodels` to perform this test:
 
-# +
+# %%
 # F test for partial effect at priGPA=2.59:
 hypotheses = "atndrte + 2.59 * atndrte:priGPA = 0"
 ftest = results.f_test(hypotheses)
@@ -374,8 +378,8 @@ fpval = ftest.pvalue
 
 print(f"F-statistic: {fstat}\n")
 print(f"P-value: {fpval}\n")
-# -
 
+# %% [markdown]
 # **Interpretation of Test:**
 #
 # The p-value for this test is approximately 0.0496, which is less than 0.05.  Therefore, at the 5% significance level, we reject the null hypothesis. We conclude that the partial effect of attendance rate on standardized final exam score is statistically significantly different from zero for students with a prior GPA of 2.59.
@@ -395,7 +399,7 @@ print(f"P-value: {fpval}\n")
 #
 # Let's use the college GPA example to illustrate prediction and interval estimation.
 
-# +
+# %%
 gpa2 = wool.data("gpa2")
 
 reg = smf.ols(formula="colgpa ~ sat + hsperc + hsize + I(hsize**2)", data=gpa2)
@@ -411,10 +415,11 @@ table = pd.DataFrame(
     },
 )
 print(f"table: \n{table}\n")
-# -
 
+# %% [markdown]
 # Suppose we want to predict the college GPA (`colgpa`) for a new student with the following characteristics: SAT score (`sat`) = 1200, high school percentile (`hsperc`) = 30, and high school size (`hsize`) = 5 (in hundreds). First, we create a Pandas DataFrame with these values:
 
+# %%
 # generate data set containing the regressor values for predictions:
 cvalues1 = pd.DataFrame(
     {"sat": [1200], "hsperc": [30], "hsize": [5]},
@@ -422,16 +427,20 @@ cvalues1 = pd.DataFrame(
 )
 print(f"cvalues1: \n{cvalues1}\n")
 
+# %% [markdown]
 # To get the point prediction, we use the `predict()` method of the regression results object:
 
+# %%
 # point estimate of prediction (cvalues1):
 colgpa_pred1 = results.predict(cvalues1)
 print(f"colgpa_pred1: \n{colgpa_pred1}\n")
 
+# %% [markdown]
 # The point prediction for college GPA for this student is approximately 2.70.
 #
 # We can predict for multiple new individuals at once by providing a DataFrame with multiple rows:
 
+# %%
 # define three sets of regressor variables:
 cvalues2 = pd.DataFrame(
     {"sat": [1200, 900, 1400], "hsperc": [30, 20, 5], "hsize": [5, 3, 1]},
@@ -439,15 +448,17 @@ cvalues2 = pd.DataFrame(
 )
 print(f"cvalues2: \n{cvalues2}\n")
 
+# %%
 # point estimate of prediction (cvalues2):
 colgpa_pred2 = results.predict(cvalues2)
 print(f"colgpa_pred2: \n{colgpa_pred2}\n")
 
+# %% [markdown]
 # ### Example 6.5: Confidence Interval for Predicted College GPA
 #
 # To obtain confidence and prediction intervals, we use the `get_prediction()` method followed by `summary_frame()`.
 
-# +
+# %%
 gpa2 = wool.data("gpa2")
 
 reg = smf.ols(formula="colgpa ~ sat + hsperc + hsize + I(hsize**2)", data=gpa2)
@@ -464,8 +475,8 @@ colgpa_PICI_95 = results.get_prediction(cvalues2).summary_frame(
     alpha=0.05,
 )  # alpha=0.05 for 95% intervals
 print(f"colgpa_PICI_95: \n{colgpa_PICI_95}\n")
-# -
 
+# %% [markdown]
 # **Interpretation of 95% Intervals:**
 #
 # For "newPerson1" (sat=1200, hsperc=30, hsize=5):
@@ -475,12 +486,14 @@ print(f"colgpa_PICI_95: \n{colgpa_PICI_95}\n")
 #
 # Let's also calculate 99% confidence and prediction intervals (by setting `alpha=0.01`):
 
+# %%
 # point estimates and 99% confidence and prediction intervals:
 colgpa_PICI_99 = results.get_prediction(cvalues2).summary_frame(
     alpha=0.01,
 )  # alpha=0.01 for 99% intervals
 print(f"colgpa_PICI_99: \n{colgpa_PICI_99}\n")
 
+# %% [markdown]
 # As expected, the 99% confidence and prediction intervals are wider than the 95% intervals, reflecting the higher level of confidence.
 #
 # ### 6.2.2 Effect Plots for Nonlinear Specifications
@@ -489,7 +502,7 @@ print(f"colgpa_PICI_99: \n{colgpa_PICI_99}\n")
 #
 # Let's create an effect plot for the relationship between `rooms` and `lprice` from Example 6.2, holding other variables at their sample means.
 
-# +
+# %%
 hprice2 = wool.data("hprice2")
 
 # repeating the regression from Example 6.2:
@@ -512,10 +525,11 @@ X = pd.DataFrame(
     },
 )
 print(f"X: \n{X}\n")
-# -
 
+# %% [markdown]
 # We create a DataFrame `X` where `rooms` varies from 4 to 8 (a reasonable range for house rooms), and `nox`, `dist`, and `stratio` are held at their sample means.  Then, we calculate the predicted values and confidence intervals for these values of `rooms`.
 
+# %%
 # calculate 95% confidence interval:
 lpr_PICI = results.get_prediction(X).summary_frame(alpha=0.05)
 lpr_CI = lpr_PICI[
@@ -523,8 +537,10 @@ lpr_CI = lpr_PICI[
 ]  # Extract mean and CI bounds
 print(f"lpr_CI: \n{lpr_CI}\n")
 
+# %% [markdown]
 # Finally, we plot the predicted log price and its confidence interval against the number of rooms.
 
+# %%
 # plot:
 plt.plot(
     X["rooms"],
@@ -554,6 +570,7 @@ plt.legend()
 plt.grid(True)  # Add grid for better readability
 plt.show()
 
+# %% [markdown]
 # **Interpretation of Effect Plot:**
 #
 # The plot visually represents the inverted U-shaped relationship between the number of rooms and the log of housing price, as suggested by the regression coefficients.  The shaded area between the dashed lines represents the 95% confidence interval for the mean prediction.  This plot helps to understand the nonlinear effect of `rooms` on `lprice` and the uncertainty associated with these predictions. Effect plots are valuable tools for interpreting and presenting results from regression models with nonlinear specifications.

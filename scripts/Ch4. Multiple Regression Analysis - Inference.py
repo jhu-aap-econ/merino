@@ -1,27 +1,30 @@
 # ---
 # jupyter:
 #   jupytext:
-#     formats: notebooks//ipynb,markdown//md,scripts//py
+#     formats: notebooks//ipynb,markdown//md,scripts//py:percent
 #     text_representation:
 #       extension: .py
-#       format_name: light
-#       format_version: '1.5'
-#       jupytext_version: 1.16.7
+#       format_name: percent
+#       format_version: '1.3'
+#       jupytext_version: 1.17.2
 #   kernelspec:
 #     display_name: merino
 #     language: python
 #     name: python3
 # ---
 
+# %% [markdown]
 # # 4. Multiple Regression Analysis: Inference
 #
 # This notebook delves into the crucial aspect of **inference** in the context of multiple regression analysis. Building upon the concepts of estimation from previous chapters, we will now focus on drawing conclusions about the population parameters based on our sample data. This involves hypothesis testing and constructing confidence intervals, allowing us to assess the statistical significance and practical importance of our regression results.
 
+# %%
 import numpy as np
 import statsmodels.formula.api as smf
 import wooldridge as wool
 from scipy import stats
 
+# %% [markdown]
 # ## 4.1 The $t$ Test
 #
 # The $t$ test is a fundamental tool for hypothesis testing about individual regression coefficients in multiple regression models. It allows us to formally examine whether a specific independent variable has a statistically significant effect on the dependent variable, holding other factors constant.
@@ -88,6 +91,7 @@ from scipy import stats
 #
 # We will perform hypothesis tests on the coefficients $\beta_1$, $\beta_2$, and $\beta_3$ to see which of these variables are statistically significant predictors of college GPA. We will use the standard null hypothesis $H_0: \beta_j = 0$ for each variable.
 
+# %%
 # CV for alpha=5% and 1% using the t distribution with 137 d.f.:
 alpha = np.array([0.05, 0.01])
 cv_t = stats.t.ppf(1 - alpha / 2, 137)  # Two-sided critical values
@@ -95,28 +99,31 @@ print(
     f"Critical values from t-distribution (df=137):\nFor alpha={alpha[0] * 100}%: +/-{cv_t[0]:.3f}\nFor alpha={alpha[1] * 100}%: +/-{cv_t[1]:.3f}\n",
 )
 
+# %% [markdown]
 # This code calculates the critical values from the $t$ distribution for significance levels of 5% and 1% with 137 degrees of freedom (which we will see is approximately the degrees of freedom in our regression). These are the thresholds against which we'll compare our calculated $t$-statistics.
 
+# %%
 # CV for alpha=5% and 1% using the normal approximation:
 cv_n = stats.norm.ppf(1 - alpha / 2)  # Two-sided critical values
 print(
     f"Critical values from standard normal distribution:\nFor alpha={alpha[0] * 100}%: +/-{cv_n[0]:.3f}\nFor alpha={alpha[1] * 100}%: +/-{cv_n[1]:.3f}\n",
 )
 
+# %% [markdown]
 # For large degrees of freedom, the $t$ distribution approaches the standard normal distribution. This code shows the critical values from the standard normal distribution for comparison. Notice that for these common significance levels, the critical values are quite similar for the $t$ and normal distributions when the degrees of freedom are reasonably large (like 137).
 
-# +
+# %%
 gpa1 = wool.data("gpa1")
 
 # store and display results:
 reg = smf.ols(formula="colGPA ~ hsGPA + ACT + skipped", data=gpa1)
 results = reg.fit()
 print(f"Regression summary:\n{results.summary()}\n")
-# -
 
+# %% [markdown]
 # This code runs the OLS regression of `colGPA` on `hsGPA`, `ACT`, and `skipped` using the `gpa1` dataset from the `wooldridge` package. The `results.summary()` provides a comprehensive output of the regression results, including estimated coefficients, standard errors, t-statistics, p-values, and other relevant statistics.
 
-# +
+# %%
 # manually confirm the formulas, i.e. extract coefficients and SE:
 b = results.params
 se = results.bse
@@ -131,8 +138,8 @@ pval = 2 * stats.t.cdf(
     results.df_resid,
 )  # df_resid is the degrees of freedom
 print(f"Calculated p-values:\n{pval}\n")
-# -
 
+# %% [markdown]
 # This section manually calculates the $t$ statistics and p-values using the formulas we discussed. It extracts the estimated coefficients (`b`) and standard errors (`se`) from the regression results. Then, it calculates the $t$ statistic by dividing each coefficient by its standard error. Finally, it computes the two-sided p-value using the CDF of the $t$ distribution with the correct degrees of freedom (`results.df_resid`).  The calculated values should match those reported in the `results.summary()`, confirming our understanding of how these values are derived.
 #
 # **Interpreting the results from `results.summary()` and manual calculations for Example 4.3:**
@@ -157,6 +164,7 @@ print(f"Calculated p-values:\n{pval}\n")
 #
 # We will focus on testing hypotheses about the returns to education ($\beta_1$). We might want to test if the return to education is greater than some specific value, or simply if it is different from zero.
 
+# %%
 # CV for alpha=5% and 1% using the t distribution with 522 d.f.:
 alpha = np.array([0.05, 0.01])
 cv_t = stats.t.ppf(1 - alpha / 2, 522)  # Two-sided critical values
@@ -164,24 +172,27 @@ print(
     f"Critical values from t-distribution (df=522):\nFor alpha={alpha[0] * 100}%: +/-{cv_t[0]:.3f}\nFor alpha={alpha[1] * 100}%: +/-{cv_t[1]:.3f}\n",
 )
 
+# %% [markdown]
 # Similar to the previous example, we calculate the critical values from the $t$ distribution for significance levels of 5% and 1%, but now with 522 degrees of freedom (approximately the degrees of freedom in this regression).
 
+# %%
 # CV for alpha=5% and 1% using the normal approximation:
 cv_n = stats.norm.ppf(1 - alpha / 2)  # Two-sided critical values
 print(
     f"Critical values from standard normal distribution:\nFor alpha={alpha[0] * 100}%: +/-{cv_n[0]:.3f}\nFor alpha={alpha[1] * 100}%: +/-{cv_n[1]:.3f}\n",
 )
 
+# %% [markdown]
 # Again, we compare these to the critical values from the standard normal distribution.  With 522 degrees of freedom, the $t$ and normal critical values are almost identical.
 
-# +
+# %%
 wage1 = wool.data("wage1")
 
 reg = smf.ols(formula="np.log(wage) ~ educ + exper + tenure", data=wage1)
 results = reg.fit()
 print(f"Regression summary:\n{results.summary()}\n")
-# -
 
+# %% [markdown]
 # This code runs the regression of $\log(\text{wage})$ on `educ`, `exper`, and `tenure` using the `wage1` dataset.
 #
 # **Interpreting the results from `results.summary()` for Example 4.1:**
@@ -214,27 +225,31 @@ print(f"Regression summary:\n{results.summary()}\n")
 #
 # We will construct 95% and 99% confidence intervals for the coefficients $\beta_1$ and $\beta_2$.
 
-# +
+# %%
 rdchem = wool.data("rdchem")
 
 # OLS regression:
 reg = smf.ols(formula="np.log(rd) ~ np.log(sales) + profmarg", data=rdchem)
 results = reg.fit()
 print(f"Regression summary:\n{results.summary()}\n")
-# -
 
+# %% [markdown]
 # This code runs the OLS regression of $\log(\text{rd})$ on $\log(\text{sales})$ and `profmarg` using the `rdchem` dataset.
 
+# %%
 # 95% CI:
 CI95 = results.conf_int(0.05)  # alpha = 0.05 for 95% CI
 print(f"95% Confidence Intervals:\n{CI95}\n")
 
+# %% [markdown]
 # This code uses the `conf_int()` method of the regression results object to calculate the 95% confidence intervals for all coefficients.
 
+# %%
 # 99% CI:
 CI99 = results.conf_int(0.01)  # alpha = 0.01 for 99% CI
 print(f"99% Confidence Intervals:\n{CI99}\n")
 
+# %% [markdown]
 # Similarly, this calculates the 99% confidence intervals.
 #
 # **Interpreting the Confidence Intervals from Example 4.8:**
@@ -292,7 +307,7 @@ print(f"99% Confidence Intervals:\n{CI99}\n")
 # *   Reject $H_0$ if $F > c$, where $c$ is the critical value from the $F_{q, n-k-1}$ distribution at the chosen significance level.
 # *   Reject $H_0$ if $p \text{-value} < \alpha$, where $p \text{-value} = 1 - F_{F_{q, n-k-1}}(F)$ and $\alpha$ is the significance level.
 
-# +
+# %%
 mlb1 = wool.data("mlb1")
 n = mlb1.shape[0]
 
@@ -304,38 +319,46 @@ reg_ur = smf.ols(
 fit_ur = reg_ur.fit()
 r2_ur = fit_ur.rsquared
 print(f"R-squared of unrestricted model (r2_ur): {r2_ur:.4f}\n")
-# -
 
+# %% [markdown]
 # This code estimates the unrestricted model and extracts the R-squared value.
 
+# %%
 # restricted OLS regression:
 reg_r = smf.ols(formula="np.log(salary) ~ years + gamesyr", data=mlb1)
 fit_r = reg_r.fit()
 r2_r = fit_r.rsquared
 print(f"R-squared of restricted model (r2_r): {r2_r:.4f}\n")
 
+# %% [markdown]
 # This code estimates the restricted model (by omitting `bavg`, `hrunsyr`, and `rbisyr`) and extracts its R-squared. As expected, the R-squared of the restricted model is lower than that of the unrestricted model because we have removed variables.
 
+# %%
 # F statistic:
 k = 5  # Number of independent variables in unrestricted model
 q = 3  # Number of restrictions
 fstat = (r2_ur - r2_r) / (1 - r2_ur) * (n - k - 1) / q
 print(f"Calculated F statistic: {fstat:.3f}\n")
 
+# %% [markdown]
 # This code calculates the $F$ statistic using the formula based on R-squared values.
 
+# %%
 # CV for alpha=1% using the F distribution with 3 and 347 d.f.:
 cv = stats.f.ppf(1 - 0.01, q, n - k - 1)  # Degrees of freedom (q, n-k-1)
 print(
     f"Critical value from F-distribution (df=({q}, {n - k - 1})) for alpha=1%: {cv:.3f}\n",
 )
 
+# %% [markdown]
 # This calculates the critical value from the $F$ distribution with 3 and $n-k-1$ degrees of freedom for a 1% significance level.
 
+# %%
 # p value = 1-cdf of the appropriate F distribution:
 fpval = 1 - stats.f.cdf(fstat, q, n - k - 1)
 print(f"Calculated p-value: {fpval:.4f}\n")
 
+# %% [markdown]
 # This calculates the p-value for the $F$ test using the CDF of the $F$ distribution.
 #
 # **Interpreting the results of the F-test for joint significance of batting stats:**
@@ -344,7 +367,7 @@ print(f"Calculated p-value: {fpval:.4f}\n")
 #
 # **Conclusion:** We conclude that batting average, home runs per year, and runs batted in per year are jointly statistically significant determinants of baseball player salaries, even after controlling for years in the league and games played per year.  In other words, at least one of these batting statistics has a significant impact on salary.
 
-# +
+# %%
 mlb1 = wool.data("mlb1")
 
 # OLS regression:
@@ -362,11 +385,11 @@ fpval = ftest.pvalue
 
 print(f"F statistic from automated test: {fstat:.3f}\n")
 print(f"P-value from automated test: {fpval:.4f}\n")
-# -
 
+# %% [markdown]
 # This code demonstrates how to perform the same $F$ test using the `f_test()` method in `statsmodels`, which provides a more convenient way to conduct $F$ tests for linear restrictions. The results should be identical to our manual calculation, which they are (within rounding).
 
-# +
+# %%
 mlb1 = wool.data("mlb1")
 
 # OLS regression:
@@ -387,8 +410,8 @@ fpval = ftest.pvalue
 
 print(f"F statistic for complex hypotheses: {fstat:.3f}\n")
 print(f"P-value for complex hypotheses: {fpval:.4f}\n")
-# -
 
+# %% [markdown]
 # This final example shows the flexibility of the `f_test()` method. Here, we test a different joint hypothesis: $H_0: \beta_{bavg} = 0 \text{ and } \beta_{hrunsyr} = 2\beta_{rbisyr}$. This is a more complex linear restriction involving a relationship between two coefficients. The `f_test()` method easily handles such hypotheses, demonstrating its power and convenience for testing various linear restrictions in multiple regression models.
 #
 # **Interpreting the results of the second F-test:**
