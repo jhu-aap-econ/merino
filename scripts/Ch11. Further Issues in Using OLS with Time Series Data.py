@@ -91,9 +91,9 @@ print("--- Regression 1: ret ~ ret_lag1 ---")
 print(f"table1: \n{table1}\n")
 
 # Interpretation (Model 1):
-# The coefficient on the first lag (ret_lag1) is 0.0588. While small, it is statistically
-# significant (p-value = 0.038). This provides some evidence against the strict form of the EMH,
-# suggesting that knowing yesterday's return provides some predictive power for today's return.
+# The coefficient on the first lag (ret_lag1) is 0.0589. While small, it is not statistically
+# significant (p-value = 0.122). This provides little evidence against the strict form of the EMH,
+# suggesting that knowing yesterday's return provides limited predictive power for today's return.
 
 # %%
 # Display regression results for Model 2
@@ -109,8 +109,8 @@ print("--- Regression 2: ret ~ ret_lag1 + ret_lag2 ---")
 print(f"table2: \n{table2}\n")
 
 # Interpretation (Model 2):
-# Adding the second lag (ret_lag2), we see its coefficient (-0.0395) is statistically
-# significant (p=0.168). The coefficient on the first lag remains similar (0.0601) and significant (p=0.034).
+# Adding the second lag (ret_lag2), we see its coefficient (-0.0381) is not statistically
+# significant (p=0.319). The coefficient on the first lag remains similar (0.0603) and not significant (p=0.115).
 # An F-test for the joint significance of both lags would be appropriate here.
 
 # %%
@@ -128,12 +128,11 @@ print(f"table3: \n{table3}\n")
 
 # Interpretation (Model 3):
 # With three lags, none of the individual lag coefficients are statistically significant
-# at the 5% level (p-values are 0.063, 0.205, 0.667).
+# at the 5% level (p-values are 0.109, 0.293, 0.422).
 # An F-test for joint significance (H0: coefficients on all three lags are zero) would
 # provide a more definitive test of predictability based on the first three lags.
-# Overall, while the first lag showed some significance initially, the evidence for
-# predictability based on multiple lags appears weak, somewhat consistent with the EMH,
-# although transaction costs might negate any small predictable patterns.
+# Overall, the evidence for predictability based on multiple lags appears weak,
+# consistent with the EMH, although transaction costs might negate any small predictable patterns.
 
 # %% [markdown]
 # ## 11.2 The Nature of Highly Persistent Time Series
@@ -354,12 +353,12 @@ print("--- Regression in First Differences: Delta(gfr) ~ Delta(pe) ---")
 print(f"table1: \n{table1}\n")
 
 # Interpretation (Differenced Model):
-# The coefficient on Delta(pe) (pe_diff1) is -0.0418 and is statistically significant (p=0.029).
+# The coefficient on Delta(pe) (pe_diff1) is -0.0427 and is not statistically significant (p=0.137).
 # This suggests that a $1 increase in the change of the personal exemption from one year
 # to the next is associated with a decrease of about 0.04 points in the change of the
 # fertility rate in the same year. This differs from the results obtained using levels in Chapter 10,
 # highlighting how accounting for persistence can change conclusions.
-# The intercept (-0.6734) suggests a slight downward trend in gfr after accounting for changes in pe.
+# The intercept (-0.7848) suggests a slight downward trend in gfr after accounting for changes in pe.
 
 # %% [markdown]
 # We can also include lags of the differenced explanatory variable, similar to an FDL model but applied to differences.
@@ -391,12 +390,12 @@ print("Dependent Variable: Delta(gfr)")
 print(f"table2: \n{table2}\n")
 
 # Interpretation (Lagged Differences):
-# - The contemporaneous effect (pe_diff1) is -0.0341 (p=0.072), marginally significant.
-# - The first lag (pe_diff1_lag1) has a coefficient of -0.0112 (p=0.648), insignificant.
-# - The second lag (pe_diff1_lag2) has a coefficient of -0.1143 (p=0.001), highly significant.
+# - The contemporaneous effect (pe_diff1) is -0.0362 (p=0.181), not significant.
+# - The first lag (pe_diff1_lag1) has a coefficient of -0.0140 (p=0.614), insignificant.
+# - The second lag (pe_diff1_lag2) has a coefficient of 0.1100 (p<0.001), highly significant.
 # These results suggest that changes in the personal exemption have a delayed effect on changes
 # in the fertility rate, with the strongest impact appearing two years later.
-# This aligns somewhat with the FDL model in levels (Example 10.4), which also found the second lag significant.
+# This differs from the FDL model in levels (Example 10.4), showing a positive effect at lag 2.
 # The Long-Run Propensity (LRP) in this differenced model would be estimated by summing the delta coefficients.
 
 # %% [markdown]

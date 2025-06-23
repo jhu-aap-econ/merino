@@ -1,0 +1,74 @@
+Regression Results (Dependent Variable: i3): 
+                b      se       t    pval
+Intercept  1.7333  0.4320  4.0125  0.0002
+Q("inf")   0.6059  0.0821  7.3765  0.0000
+Q("def")   0.5131  0.1184  4.3338  0.0001
+
+barium["chnimp"].head(): 
+1978-02-28    220.462006
+1978-03-31     94.797997
+1978-04-30    219.357498
+1978-05-31    317.421509
+1978-06-30    114.639000
+Freq: ME, Name: chnimp, dtype: float64
+
+FDL Model Results (Dependent Variable: gfr): 
+                 b       se        t    pval
+Intercept  95.8705   3.2820  29.2114  0.0000
+pe          0.0727   0.1255   0.5789  0.5647
+pe_lag1    -0.0058   0.1557  -0.0371  0.9705
+pe_lag2     0.0338   0.1263   0.2679  0.7896
+ww2       -22.1265  10.7320  -2.0617  0.0433
+pill      -31.3050   3.9816  -7.8625  0.0000
+
+F-statistic for joint significance of pe lags: 3.9730
+P-value for joint significance test: 0.0117
+
+Estimated Long-Run Propensity (LRP) for pe: 0.1007
+
+F-statistic for H0: LRP = 0: 11.4212
+P-value for LRP test: 0.0012
+
+--- Regression Results WITHOUT Trend ---
+Dependent Variable: np.log(invpc)
+table_wot: 
+                    b      se        t    pval
+Intercept     -0.5502  0.0430 -12.7882  0.0000
+np.log(price)  1.2409  0.3824   3.2450  0.0024
+
+--- Regression Results WITH Trend ---
+Dependent Variable: np.log(invpc)
+table_wt: 
+                    b      se       t    pval
+Intercept     -0.9131  0.1356 -6.7328  0.0000
+np.log(price) -0.3810  0.6788 -0.5612  0.5779
+t              0.0098  0.0035  2.7984  0.0079
+
+Regression Results with Monthly Dummies (Dependent Variable: np.log(chnimp)):
+(Base month: January)
+table: 
+                      b       se       t    pval
+Intercept       16.7792  32.4286  0.5174  0.6059
+np.log(chempi)   3.2651   0.4929  6.6238  0.0000
+np.log(gas)     -1.2781   1.3890 -0.9202  0.3594
+np.log(rtwex)    0.6630   0.4713  1.4068  0.1622
+befile6          0.1397   0.2668  0.5236  0.6016
+affile6          0.0126   0.2787  0.0453  0.9639
+afdec6          -0.5213   0.3019 -1.7264  0.0870
+feb             -0.4177   0.3044 -1.3720  0.1728
+mar              0.0591   0.2647  0.2231  0.8239
+apr             -0.4515   0.2684 -1.6822  0.0953
+may              0.0333   0.2692  0.1237  0.9018
+jun             -0.2063   0.2693 -0.7663  0.4451
+jul              0.0038   0.2788  0.0138  0.9890
+aug             -0.1571   0.2780 -0.5650  0.5732
+sep             -0.1342   0.2677 -0.5012  0.6172
+oct              0.0517   0.2669  0.1937  0.8467
+nov             -0.2463   0.2628 -0.9370  0.3508
+dec              0.1328   0.2714  0.4894  0.6255
+
+--- Joint Test for Seasonality ---
+H0: All monthly dummy coefficients are zero
+F-statistic for joint significance of seasonal dummies: 0.8559
+P-value for seasonality test: 0.5852
+

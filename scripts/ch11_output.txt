@@ -1,0 +1,44 @@
+--- Regression 1: ret ~ ret_lag1 ---
+table1: 
+                b      se       t    pval
+Intercept  0.1796  0.0807  2.2248  0.0264
+ret_lag1   0.0589  0.0380  1.5490  0.1218
+
+--- Regression 2: ret ~ ret_lag1 + ret_lag2 ---
+table2: 
+                b      se       t    pval
+Intercept  0.1857  0.0812  2.2889  0.0224
+ret_lag1   0.0603  0.0382  1.5799  0.1146
+ret_lag2  -0.0381  0.0381 -0.9982  0.3185
+
+--- Regression 3: ret ~ ret_lag1 + ret_lag2 + ret_lag3 ---
+table3: 
+                b      se       t    pval
+Intercept  0.1794  0.0816  2.1990  0.0282
+ret_lag1   0.0614  0.0382  1.6056  0.1088
+ret_lag2  -0.0403  0.0383 -1.0519  0.2932
+ret_lag3   0.0307  0.0382  0.8038  0.4218
+
+First few rows with differenced variables:
+             gfr     pe  gfr_diff1  pe_diff1
+1913  124.699997   0.00        NaN       NaN
+1914  126.599998   0.00   1.900002      0.00
+1915  125.000000   0.00  -1.599998      0.00
+1916  123.400002   0.00  -1.599998      0.00
+1917  121.000000  19.27  -2.400002     19.27
+
+--- Regression in First Differences: Delta(gfr) ~ Delta(pe) ---
+table1: 
+                b      se       t    pval
+Intercept -0.7848  0.5020 -1.5632  0.1226
+pe_diff1  -0.0427  0.0284 -1.5045  0.1370
+
+--- Regression with Lagged First Differences ---
+Dependent Variable: Delta(gfr)
+table2: 
+                    b      se       t    pval
+Intercept     -0.9637  0.4678 -2.0602  0.0434
+pe_diff1      -0.0362  0.0268 -1.3522  0.1810
+pe_diff1_lag1 -0.0140  0.0276 -0.5070  0.6139
+pe_diff1_lag2  0.1100  0.0269  4.0919  0.0001
+

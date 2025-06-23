@@ -1,0 +1,143 @@
+/Users/alan/Documents/GitHub/alanlujan91/merino/scripts/Ch9. Specification and Data Issues.py:374: RuntimeWarning: divide by zero encountered in log
+  logx = np.log(x)  # log(-1)=NaN, log(0)=-Inf
+/Users/alan/Documents/GitHub/alanlujan91/merino/scripts/Ch9. Specification and Data Issues.py:374: RuntimeWarning: invalid value encountered in log
+  logx = np.log(x)  # log(-1)=NaN, log(0)=-Inf
+/Users/alan/Documents/GitHub/alanlujan91/merino/scripts/Ch9. Specification and Data Issues.py:375: RuntimeWarning: divide by zero encountered in divide
+  invx = 1 / x  # 1/0=Inf, 1/NaN=NaN, 1/Inf=0
+--- RESET Auxiliary Regression Results ---
+Auxiliary Regression Estimates:
+                   b        se       t    pval
+Intercept   166.0973  317.4325  0.5233  0.6022
+lotsize       0.0002    0.0052  0.0295  0.9765
+sqrft         0.0176    0.2993  0.0588  0.9532
+bdrms         2.1749   33.8881  0.0642  0.9490
+fitted_sq     0.0004    0.0071  0.0498  0.9604
+fitted_cub    0.0000    0.0000  0.2358  0.8142
+
+--- RESET Test (Manual F-Test) ---
+RESET F-statistic (manual): 4.6682
+RESET p-value (manual):     0.0120
+
+--- RESET Test (Automated) ---
+RESET F-statistic (auto): 4.6682
+RESET p-value (auto):     0.0120
+
+--- Testing Model 1 (Levels) vs Comprehensive Model ---
+F-test (Model 1 vs Comprehensive):
+   df_resid            ssr  df_diff       ss_diff         F    Pr(>F)
+0      84.0  300723.805123      0.0           NaN       NaN       NaN
+1      82.0  252340.364481      2.0  48383.440642  7.861291  0.000753
+
+--- Testing Model 2 (Logs) vs Comprehensive Model ---
+F-test (Model 2 vs Comprehensive):
+   df_resid            ssr  df_diff       ss_diff        F    Pr(>F)
+0      84.0  295735.273607      0.0           NaN      NaN       NaN
+1      82.0  252340.364481      2.0  43394.909126  7.05076  0.001494
+
+--- Simulation Results: Measurement Error in y ---
+Average beta1 estimate (No ME):   0.5002
+Average beta1 estimate (ME in y): 0.5000
+
+Variance of beta1 estimate (No ME):   0.001034
+Variance of beta1 estimate (ME in y): 0.002044
+
+--- Simulation Results: Measurement Error in x ---
+Average beta1 estimate (No ME):  0.5002
+Average beta1 estimate (ME in x): 0.2445
+
+Variance of beta1 estimate (No ME):  0.001034
+Variance of beta1 estimate (ME in x): 0.000544
+
+--- NumPy Handling of NaN/Inf ---
+Results:
+     x  log(x)  1/x  Normal CDF  Is NaN?
+0 -1.0     NaN -1.0    0.158655    False
+1  0.0    -inf  inf    0.500000    False
+2  1.0     0.0  1.0    0.841345    False
+3  NaN     NaN  NaN         NaN     True
+4  inf     inf  0.0    1.000000    False
+5 -inf     NaN -0.0    0.000000    False
+
+--- Missing Data Example (LSAT) ---
+Preview (Schools 120-129):
+     LSAT Score  Is Missing?
+119       156.0        False
+120       159.0        False
+121       157.0        False
+122       167.0        False
+123         NaN         True
+124       158.0        False
+125       155.0        False
+126       157.0        False
+127         NaN         True
+128       163.0        False
+
+Frequency of Missing LSAT:
+col_0  count
+LSAT        
+False    150
+True       6
+
+--- Missing Counts per Variable ---
+Missing values per column:
+rank        0
+salary      8
+cost        6
+LSAT        6
+GPA         7
+libvol      1
+faculty     4
+age        45
+clsize      3
+north       0
+south       0
+east        0
+west        0
+lsalary     8
+studfac     6
+top10       0
+r11_25      0
+r26_40      0
+r41_60      0
+llibvol     1
+lcost       6
+dtype: int64
+
+--- Frequency of Complete Cases ---
+Complete cases (row sum of missings == 0):
+col_0  count
+row_0       
+False     66
+True      90
+
+--- NumPy Mean Calculation with NaNs ---
+np.mean(LSAT): nan
+np.nanmean(LSAT): 158.2933
+
+--- pandas Mean Calculation with NaNs ---
+pandas .mean() LSAT: 158.2933
+np.nanmean() LSAT:  158.2933
+
+Original shape of lawsch85 data: (156, 21) (rows, columns)
+
+--- Statsmodels Regression with Missing Data ---
+Number of observations used in regression (results.nobs): 95.0
+
+--- Outlier Detection using Studentized Residuals ---
+Maximum studentized residual: 4.5550
+Minimum studentized residual: -1.8180
+
+--- OLS Estimation Results ---
+OLS Estimates:
+                      b      se       t    pval
+Intercept        2.6253  0.5855  4.4835  0.0001
+I(sales / 1000)  0.0534  0.0441  1.2111  0.2356
+profmarg         0.0446  0.0462  0.9661  0.3420
+
+--- LAD (Median Regression) Estimation Results ---
+LAD Estimates:
+                      b      se       t    pval
+Intercept        1.6231  0.7012  2.3148  0.0279
+I(sales / 1000)  0.0186  0.0528  0.3529  0.7267
+profmarg         0.1179  0.0553  2.1320  0.0416
+

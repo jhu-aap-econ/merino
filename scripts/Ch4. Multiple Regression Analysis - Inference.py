@@ -144,11 +144,11 @@ print(f"Calculated p-values:\n{pval}\n")
 #
 # **Interpreting the results from `results.summary()` and manual calculations for Example 4.3:**
 #
-# *   **`hsGPA` (High School GPA):** The estimated coefficient is positive and statistically significant (p-value < 0.01). The t-statistic is large (around 8.2). We reject the null hypothesis that $\beta_{hsGPA} = 0$. This suggests that higher high school GPA is associated with a significantly higher college GPA, holding ACT score and skipped classes constant.
+# *   **`hsGPA` (High School GPA):** The estimated coefficient is 0.4118 and statistically significant (p-value < 0.01). The t-statistic is 4.396. We reject the null hypothesis that $\beta_{hsGPA} = 0$. This suggests that higher high school GPA is associated with a significantly higher college GPA, holding ACT score and skipped classes constant.
 #
-# *   **`ACT` (ACT Score):** The estimated coefficient is positive but not statistically significant at the 5% level (p-value is around 0.07, which is > 0.05). The t-statistic is around 1.8. We fail to reject the null hypothesis that $\beta_{ACT} = 0$ at the 5% significance level, but we would reject it at the 10% level. This indicates that ACT score has a positive but weaker relationship with college GPA in this model compared to high school GPA.  More data might be needed to confidently conclude ACT score is a significant predictor, or perhaps its effect is less linear or captured by other variables.
+# *   **`ACT` (ACT Score):** The estimated coefficient is 0.0147 but not statistically significant at the 5% level (p-value is 0.166, which is > 0.05). The t-statistic is 1.393. We fail to reject the null hypothesis that $\beta_{ACT} = 0$ at the 5% significance level. This indicates that ACT score has a positive but weaker relationship with college GPA in this model compared to high school GPA.  More data might be needed to confidently conclude ACT score is a significant predictor, or perhaps its effect is less linear or captured by other variables.
 #
-# *   **`skipped` (Skipped Classes):** The estimated coefficient is negative and statistically significant (p-value < 0.01). The t-statistic is large in absolute value (around -3.6). We reject the null hypothesis that $\beta_{skipped} = 0$. This indicates that skipping more classes is associated with a significantly lower college GPA, holding high school GPA and ACT score constant.
+# *   **`skipped` (Skipped Classes):** The estimated coefficient is -0.0831 and statistically significant (p-value = 0.002). The t-statistic is -3.197. We reject the null hypothesis that $\beta_{skipped} = 0$. This indicates that skipping more classes is associated with a significantly lower college GPA, holding high school GPA and ACT score constant.
 #
 # ### 4.1.3 Other Hypotheses
 #
@@ -197,11 +197,11 @@ print(f"Regression summary:\n{results.summary()}\n")
 #
 # **Interpreting the results from `results.summary()` for Example 4.1:**
 #
-# *   **`educ` (Education):** The estimated coefficient for `educ` is approximately 0.092. This means that, holding experience and tenure constant, an additional year of education is associated with an estimated 9.2% increase in hourly wage (since we are using the log of wage as the dependent variable, and for small changes, the coefficient multiplied by 100 gives the percentage change). The t-statistic for `educ` is very large (around 12.8) and the p-value is extremely small (< 0.001). We strongly reject the null hypothesis $H_0: \beta_{educ} = 0$. We conclude that education has a statistically significant positive effect on wages.
+# *   **`educ` (Education):** The estimated coefficient for `educ` is 0.0920. This means that, holding experience and tenure constant, an additional year of education is associated with an estimated 9.20% increase in hourly wage (since we are using the log of wage as the dependent variable, and for small changes, the coefficient multiplied by 100 gives the percentage change). The t-statistic for `educ` is 12.555 and the p-value is extremely small (< 0.001). We strongly reject the null hypothesis $H_0: \beta_{educ} = 0$. We conclude that education has a statistically significant positive effect on wages.
 #
-# *   **`exper` (Experience):** The coefficient for `exper` is also positive and statistically significant (p-value < 0.001), indicating that more experience is associated with higher wages, holding education and tenure constant.
+# *   **`exper` (Experience):** The coefficient for `exper` is 0.0041 and statistically significant (p-value = 0.017), indicating that more experience is associated with higher wages, holding education and tenure constant.
 #
-# *   **`tenure` (Tenure):** Similarly, the coefficient for `tenure` is positive and statistically significant (p-value < 0.001), suggesting that longer tenure with the current employer is associated with higher wages, controlling for education and overall experience.
+# *   **`tenure` (Tenure):** Similarly, the coefficient for `tenure` is 0.0221 and statistically significant (p-value < 0.001), suggesting that longer tenure with the current employer is associated with higher wages, controlling for education and overall experience.
 #
 # ## 4.2 Confidence Intervals
 #
@@ -255,12 +255,12 @@ print(f"99% Confidence Intervals:\n{CI99}\n")
 # **Interpreting the Confidence Intervals from Example 4.8:**
 #
 # *   **`np.log(sales)` (Log of Sales):**
-#     *   95% CI: Approximately [0.92, 1.05]. We are 95% confident that the true elasticity of R&D with respect to sales (percentage change in R&D for a 1% change in sales) lies between 0.92 and 1.05. Since 1 is within this interval, we cannot reject the hypothesis that the elasticity is exactly 1 at the 5% significance level.
-#     *   99% CI: Approximately [0.90, 1.07]. The 99% confidence interval is wider than the 95% interval, reflecting the higher level of confidence.
+#     *   95% CI: [0.961, 1.207]. We are 95% confident that the true elasticity of R&D with respect to sales (percentage change in R&D for a 1% change in sales) lies between 0.961 and 1.207. Since 1 is within this interval, we cannot reject the hypothesis that the elasticity is exactly 1 at the 5% significance level.
+#     *   99% CI: [0.918, 1.250]. The 99% confidence interval is wider than the 95% interval, reflecting the higher level of confidence.
 #
 # *   **`profmarg` (Profit Margin):**
-#     *   95% CI: Approximately [0.003, 0.027]. We are 95% confident that the true coefficient for profit margin is between 0.003 and 0.027. Since 0 is *not* in this interval, we reject the null hypothesis that $\beta_{profmarg} = 0$ at the 5% significance level.
-#     *   99% CI: Approximately [0.000, 0.030].  The 99% CI just barely includes 0 at the lower bound (it's very close to 0.000). If we were to consider more decimal places, it might exclude 0. Even so, the fact that 0 is so close to the boundary suggests that the statistical significance of profit margin is less strong at the 1% level compared to the 5% level.
+#     *   95% CI: [-0.004, 0.048]. We are 95% confident that the true coefficient for profit margin is between -0.004 and 0.048. Since 0 is in this interval, we cannot reject the null hypothesis that $\beta_{profmarg} = 0$ at the 5% significance level.
+#     *   99% CI: [-0.014, 0.057].  The 99% CI includes 0, confirming that profit margin is not statistically significant at the 1% level.
 #
 # As expected, the 99% confidence intervals are wider than the 95% confidence intervals. This is because to be more confident that we capture the true parameter, we need to consider a wider range of values.
 #

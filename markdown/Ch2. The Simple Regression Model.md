@@ -164,7 +164,7 @@ def plot_regression(x, y, data, results, title, add_ci=True):
         100,
     )  # Generate 100 evenly spaced x values
     y_pred = (
-        results.params[0] + results.params[1] * x_range
+        results.params.iloc[0] + results.params.iloc[1] * x_range
     )  # Calculate predicted y values using the regression equation
 
     plt.plot(
@@ -190,7 +190,7 @@ def plot_regression(x, y, data, results, title, add_ci=True):
         )
 
     # Add equation and R-squared as text annotations on the plot
-    eq = f"y = {results.params[0]:.2f} + {results.params[1]:.2f}x"  # Format the regression equation
+    eq = f"y = {results.params.iloc[0]:.2f} + {results.params.iloc[1]:.2f}x"  # Format the regression equation
     r2 = f"R² = {results.rsquared:.3f}"  # Format the R-squared value
     plt.text(  # Add text to the plot
         0.05,
@@ -228,7 +228,7 @@ Looking at the output and the plot, we can interpret the results. The estimated 
 
 $$ \widehat{\text{salary}} = \hat{\beta}_0 + \hat{\beta}_1 \text{roe} $$
 
-Suppose we find $\hat{\beta}_1 \approx 18.50$. This means that, on average, for every one percentage point increase in ROE, CEO salary is predicted to increase by approximately \$18,500 (since salary is in thousands of dollars). The intercept, $\hat{\beta}_0$, represents the predicted salary when ROE is zero.  The R-squared value (also on the plot), let's say it is around 0.013, indicates that only about 1.3% of the variation in CEO salaries is explained by ROE in this simple linear model. This suggests that ROE alone is not a strong predictor of CEO salary, and other factors are likely more important.
+We find $\hat{\beta}_1 = 18.50$. This means that, on average, for every one percentage point increase in ROE, CEO salary is predicted to increase by approximately \$18,500 (since salary is in thousands of dollars). The intercept, $\hat{\beta}_0 = 963.19$, represents the predicted salary when ROE is zero.  The R-squared value (also on the plot) is 0.013, indicating that only about 1.3% of the variation in CEO salaries is explained by ROE in this simple linear model. This suggests that ROE alone is not a strong predictor of CEO salary, and other factors are likely more important.
 
 ### Example 2.4: Wage and Education
 
@@ -270,7 +270,7 @@ This code loads the `wage1` dataset, fits the regression model of `wage` on `edu
 
 **Interpretation of Example 2.4:**
 
-Suppose we find $\hat{\beta}_1 \approx 0.54$. This implies that, on average, each additional year of education is associated with an increase in hourly wage of approximately \$0.54. The intercept, $\hat{\beta}_0$, represents the predicted wage for someone with zero years of education. If the R-squared is around 0.165, it means that about 16.5% of the variation in hourly wages is explained by years of education in this simple model. Education appears to be a somewhat more important factor in explaining wages than ROE was for CEO salaries, but still, a large portion of wage variation remains unexplained by education alone.
+We find $\hat{\beta}_1 = 0.54$. This implies that, on average, each additional year of education is associated with an increase in hourly wage of approximately \$0.54. The intercept, $\hat{\beta}_0 = -0.90$, represents the predicted wage for someone with zero years of education. The R-squared is 0.165, meaning that about 16.5% of the variation in hourly wages is explained by years of education in this simple model. Education appears to be a somewhat more important factor in explaining wages than ROE was for CEO salaries, but still, a large portion of wage variation remains unexplained by education alone.
 
 ### Example 2.5: Voting Outcomes and Campaign Expenditures
 
@@ -312,7 +312,7 @@ This code follows the same pattern as the previous examples: load data, fit the 
 
 **Interpretation of Example 2.5:**
 
-Let's say we find $\hat{\beta}_1 \approx 0.30$. This suggests that for every one percentage point increase in candidate A's share of campaign spending, candidate A's vote share is predicted to increase by approximately 0.30 percentage points. The intercept, $\hat{\beta}_0$, represents the predicted vote share for candidate A if their campaign spending share is zero. If the R-squared is around 0.856, this is quite high! It indicates that about 85.6% of the variation in candidate A's vote share is explained by their share of campaign spending in this simple model. This suggests that campaign spending share is a very strong predictor of voting outcomes, at least in this dataset.
+We find $\hat{\beta}_1 = 0.46$. This suggests that for every one percentage point increase in candidate A's share of campaign spending, candidate A's vote share is predicted to increase by approximately 0.46 percentage points. The intercept, $\hat{\beta}_0 = 26.81$, represents the predicted vote share for candidate A if their campaign spending share is zero. The R-squared is 0.856, which is quite high! It indicates that about 85.6% of the variation in candidate A's vote share is explained by their share of campaign spending in this simple model. This suggests that campaign spending share is a very strong predictor of voting outcomes, at least in this dataset.
 
 ## 2.2. Coefficients, Fitted Values, and Residuals
 
@@ -678,7 +678,7 @@ This code estimates the log-level model using `statsmodels`. We use `np.log(wage
 
 **Interpretation of Example 2.10:**
 
-Suppose we find $\hat{\beta}_1 \approx 0.092$. In the log-level model, this coefficient can be interpreted as the approximate percentage change in wage for a one-unit increase in education. So, approximately, each additional year of education is associated with a 9.2% increase in hourly wage. The intercept $\hat{\beta}_0$ represents the predicted log(wage) when education is zero. The R-squared value indicates the proportion of variation in $\log(\text{wage})$ explained by education.
+We find $\hat{\beta}_1 = 0.0827$. In the log-level model, this coefficient can be interpreted as the approximate percentage change in wage for a one-unit increase in education. So, approximately, each additional year of education is associated with an 8.27% increase in hourly wage. The intercept $\hat{\beta}_0 = 0.5838$ represents the predicted log(wage) when education is zero. The R-squared value is 0.1858, indicating the proportion of variation in $\log(\text{wage})$ explained by education.
 
 ### Example 2.11: CEO Salary and Firm Sales (Log-Log Model)
 
@@ -734,7 +734,7 @@ This code estimates the log-log model using `statsmodels`. We use `np.log(salary
 
 **Interpretation of Example 2.11:**
 
-Suppose we find $\hat{\beta}_1 \approx 0.257$. In the log-log model, this coefficient is the elasticity of salary with respect to sales. It means that a 1% increase in firm sales is associated with approximately a 0.257% increase in CEO salary. The intercept $\hat{\beta}_0$ does not have a direct practical interpretation in terms of original variables in this model, but it is needed for the regression equation. The R-squared value indicates the proportion of variation in $\log(\text{salary})$ explained by $\log(\text{sales})$.
+We find $\hat{\beta}_1 = 0.2567$. In the log-log model, this coefficient is the elasticity of salary with respect to sales. It means that a 1% increase in firm sales is associated with approximately a 0.2567% increase in CEO salary. The intercept $\hat{\beta}_0 = 4.8220$ does not have a direct practical interpretation in terms of original variables in this model, but it is needed for the regression equation. The R-squared value is 0.2108, indicating the proportion of variation in $\log(\text{salary})$ explained by $\log(\text{sales})$.
 
 ## 2.5. Regression through the Origin and Regression on a Constant
 
@@ -812,19 +812,19 @@ x_range = np.linspace(
 # Plot all regression lines - Plot regression lines for each model
 plt.plot(
     x_range,
-    results1.params[0] + results1.params[1] * x_range,
+    results1.params.iloc[0] + results1.params.iloc[1] * x_range,
     "r-",
     label="Regular regression",  # Regular OLS regression line
 )
 plt.plot(
     x_range,
-    results2.params[0] * x_range,
+    results2.params.iloc[0] * x_range,
     "g--",
     label="Through origin",
 )  # Regression through origin line
 plt.plot(
     [x_range.min(), x_range.max()],
-    [results3.params[0], results3.params[0]],
+    [results3.params.iloc[0], results3.params.iloc[0]],
     "b-.",
     label="Constant only",  # Regression on constant (horizontal line at mean)
 )
@@ -1011,7 +1011,7 @@ plt.plot(
 )
 plt.plot(
     x_range,
-    results.params[0] + results.params[1] * x_range,
+    results.params.iloc[0] + results.params.iloc[1] * x_range,
     "g--",
     label="Estimated regression line",  # Estimated OLS regression line (green dashed)
 )
@@ -1057,7 +1057,7 @@ To better understand the sampling properties of OLS estimators, we need to repea
 # Set parameters - Simulation parameters (number of replications increased)
 np.random.seed(1234567)  # Set seed
 n = 1000  # sample size
-r = 10000  # number of replications (increased to 10000 for better results)
+r = 100  # number of replications (reduced from 10000 for faster execution)
 beta0 = 1  # true intercept
 beta1 = 0.5  # true slope
 sigma_u = 2  # standard deviation of error term
@@ -1158,7 +1158,7 @@ Now, let's investigate what happens when one of the key assumptions is violated.
 # Set parameters - Simulation parameters (same as before)
 np.random.seed(1234567)  # Set seed
 n = 1000
-r = 10000
+r = 100  # reduced from 10000 for faster execution
 beta0 = 1
 beta1 = 0.5
 sigma_u = 2
@@ -1250,7 +1250,7 @@ Finally, let's consider the violation of SLR.5, the homoscedasticity assumption,
 # Set parameters - Simulation parameters (same as before)
 np.random.seed(1234567)  # Set seed
 n = 1000
-r = 10000
+r = 100  # reduced from 10000 for faster execution
 beta0 = 1
 beta1 = 0.5
 

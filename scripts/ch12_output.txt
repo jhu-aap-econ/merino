@@ -1,0 +1,61 @@
+--- Test for AR(1) Serial Correlation (Static Phillips Curve) ---
+Regression: resid_s ~ resid_s_lag1 
+                   b      se       t    pval
+Intercept    -0.1134  0.3594 -0.3155  0.7538
+resid_s_lag1  0.5730  0.1161  4.9337  0.0000
+
+--- Test for AR(1) Serial Correlation (Expectations-Augmented Phillips Curve) ---
+Regression: resid_ea ~ resid_ea_lag1 
+                    b      se       t    pval
+Intercept      0.1942  0.3004  0.6464  0.5213
+resid_ea_lag1 -0.0356  0.1239 -0.2873  0.7752
+
+--- Breusch-Godfrey Test (Automated) ---
+BG Test F-statistic (lags=3): 5.1247
+BG Test F p-value: 0.0023
+
+--- Breusch-Godfrey Test (Manual) ---
+Manual BG F-statistic (lags=3): 5.1229
+Manual BG F p-value: 0.0023
+
+--- Durbin-Watson Statistics ---
+DW statistic (Static Phillips Curve): 0.8027
+DW statistic (Expectations-Augmented Phillips Curve): 1.7696
+
+--- Cochrane-Orcutt Estimation Results ---
+Estimated AR(1) coefficient (rho): 0.2959
+
+Cochrane-Orcutt FGLS Estimates:
+                 b_CORC  se_CORC  t_CORC  pval_CORC
+Intercept      -37.5130  23.2390 -1.6142     0.1090
+np.log(chempi)   2.9454   0.6477  4.5476     0.0000
+np.log(gas)      1.0633   0.9916  1.0724     0.2857
+np.log(rtwex)    1.1384   0.5149  2.2109     0.0289
+befile6         -0.0173   0.3214 -0.0539     0.9571
+affile6         -0.0331   0.3238 -0.1022     0.9187
+afdec6          -0.5773   0.3441 -1.6779     0.0959
+
+--- OLS Results with Standard Standard Errors ---
+Standard OLS Estimates:
+                     b      se       t    pval
+Intercept      -6.6634  1.2578 -5.2976  0.0000
+np.log(mincov) -0.2123  0.0402 -5.2864  0.0000
+np.log(prgnp)   0.2852  0.0805  3.5437  0.0012
+np.log(usgnp)   0.4860  0.2220  2.1896  0.0357
+time           -0.0267  0.0046 -5.7629  0.0000
+
+--- OLS Results with HAC (Newey-West) Standard Errors (maxlags=2) ---
+OLS Estimates with HAC SEs:
+                     b      se       t    pval
+Intercept      -6.6634  1.4318 -4.6539  0.0000
+np.log(mincov) -0.2123  0.0426 -4.9821  0.0000
+np.log(prgnp)   0.2852  0.0928  3.0720  0.0021
+np.log(usgnp)   0.4860  0.2601  1.8687  0.0617
+time           -0.0267  0.0054 -4.9710  0.0000
+
+--- Test for ARCH(1) Effects in NYSE Returns ---
+Regression: resid_sq ~ resid_sq_lag1
+                    b      se       t  pval
+Intercept      2.9474  0.4402  6.6951   0.0
+resid_sq_lag1  0.3371  0.0359  9.3767   0.0
+

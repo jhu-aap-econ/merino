@@ -152,8 +152,8 @@ print(f"table: \n{table}\n")
 # %% [markdown]
 # **Interpretation of Beta Coefficients:**
 #
-# - **`nox_sc` coefficient (-0.2673):**  A one standard deviation increase in nitrogen oxide concentration (`nox`) is associated with a decrease of 0.2673 standard deviations in housing price, holding other standardized variables constant.
-# - **`rooms_sc` coefficient (0.5145):** A one standard deviation increase in the number of rooms (`rooms`) is associated with an increase of 0.5145 standard deviations in housing price, holding other standardized variables constant.
+# - **`nox_sc` coefficient (-0.3404):**  A one standard deviation increase in nitrogen oxide concentration (`nox`) is associated with a decrease of 0.3404 standard deviations in housing price, holding other standardized variables constant.
+# - **`rooms_sc` coefficient (0.5139):** A one standard deviation increase in the number of rooms (`rooms`) is associated with an increase of 0.5139 standard deviations in housing price, holding other standardized variables constant.
 #
 # **Comparing Effects:**
 #
@@ -199,8 +199,8 @@ print(f"table: \n{table}\n")
 # %% [markdown]
 # **Interpretation of Log-Log Model Coefficients:**
 #
-# - **`np.log(nox)` coefficient (-0.9525):**  A 1% increase in nitrogen oxide concentration (`nox`) is associated with approximately a 0.9525% decrease in housing price, holding the number of rooms constant.  This is interpreted as an elasticity: the elasticity of housing price with respect to `nox` is approximately -0.95.
-# - **`rooms` coefficient (0.1284):**  An increase of one room is associated with approximately a $100 \cdot 0.1284 \% = 12.84 \%$ increase in housing price, holding `nox` constant. This is interpreted using the log-level approximation.
+# - **`np.log(nox)` coefficient (-0.7177):**  A 1% increase in nitrogen oxide concentration (`nox`) is associated with approximately a 0.7177% decrease in housing price, holding the number of rooms constant.  This is interpreted as an elasticity: the elasticity of housing price with respect to `nox` is approximately -0.72.
+# - **`rooms` coefficient (0.3059):**  An increase of one room is associated with approximately a $100 \cdot 0.3059 \% = 30.59 \%$ increase in housing price, holding `nox` constant. This is interpreted using the log-level approximation.
 #
 # **When to use Log Transformations:**
 #
@@ -252,13 +252,13 @@ print(f"table: \n{table}\n")
 # %% [markdown]
 # **Interpretation of Quadratic Term:**
 #
-# - **`rooms` coefficient (1.1211) and `I(rooms**2)` coefficient (-0.1281):** The positive coefficient on `rooms` and the negative coefficient on `rooms**2` suggest an inverted U-shaped relationship between `rooms` and $\log(\text{price})$.  Initially, as the number of rooms increases, housing price increases at an increasing rate. However, beyond a certain point, the rate of increase slows down, and eventually, further increases in rooms might even lead to decreases in price (although this might be outside the realistic range of rooms in houses).
+# - **`rooms` coefficient (-0.5451) and `I(rooms**2)` coefficient (0.0623):** The negative coefficient on `rooms` and the positive coefficient on `rooms**2` suggest a U-shaped relationship between `rooms` and $\log(\text{price})$.  Initially, as the number of rooms increases, housing price decreases at a decreasing rate. However, beyond a certain point, further increases in rooms lead to increases in price.
 #
 # **Finding the Turning Point for Rooms:**
 #
 # The turning point (in terms of `rooms`) can be calculated as:
 #
-# $$ \text{rooms} = -\frac{\beta_{\text{rooms}}}{2\beta_{\text{rooms}^2}} = -\frac{1.1211}{2 \cdot (-0.1281)} \approx 4.38 $$
+# $$ \text{rooms} = -\frac{\beta_{\text{rooms}}}{2\beta_{\text{rooms}^2}} = -\frac{-0.5451}{2 \cdot 0.0623} \approx 4.38 $$
 #
 # This suggests that the relationship between `rooms` and $\log(\text{price})$ reaches its maximum (within the range of rooms considered in the model) at approximately 4.38 rooms.  It's important to examine the data range to see if this turning point is within the realistic range of the independent variable.
 #
@@ -295,7 +295,7 @@ print(f"P-value: {fpval}\n")
 # %% [markdown]
 # **Interpretation of F-test:**
 #
-# The F-statistic is approximately 55.14, and the p-value is very close to zero.  Since the p-value is much smaller than conventional significance levels (e.g., 0.05 or 0.01), we reject the null hypothesis that both coefficients on `rooms` and `rooms**2` are jointly zero.  We conclude that the number of rooms, considering both its linear and quadratic terms, is jointly statistically significant in explaining housing prices in this model.
+# The F-statistic is 110.42, and the p-value is very close to zero.  Since the p-value is much smaller than conventional significance levels (e.g., 0.05 or 0.01), we reject the null hypothesis that both coefficients on `rooms` and `rooms**2` are jointly zero.  We conclude that the number of rooms, considering both its linear and quadratic terms, is jointly statistically significant in explaining housing prices in this model.
 #
 # ### 6.1.6 Interaction Terms
 #

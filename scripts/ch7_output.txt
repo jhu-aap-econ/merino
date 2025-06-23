@@ -1,0 +1,149 @@
+table: 
+                b      se        t    pval
+Intercept -1.5679  0.7246  -2.1640  0.0309
+female    -1.8109  0.2648  -6.8379  0.0000
+educ       0.5715  0.0493  11.5836  0.0000
+exper      0.0254  0.0116   2.1951  0.0286
+tenure     0.1410  0.0212   6.6632  0.0000
+
+table: 
+                     b      se        t    pval
+Intercept       0.3214  0.1000   3.2135  0.0014
+married         0.2127  0.0554   3.8419  0.0001
+female         -0.1104  0.0557  -1.9797  0.0483
+married:female -0.3006  0.0718  -4.1885  0.0000
+educ            0.0789  0.0067  11.7873  0.0000
+exper           0.0268  0.0052   5.1118  0.0000
+I(exper ** 2)  -0.0005  0.0001  -4.8471  0.0000
+tenure          0.0291  0.0068   4.3016  0.0000
+I(tenure ** 2) -0.0005  0.0002  -2.3056  0.0215
+
+table: 
+                       b      se        t    pval
+Intercept        -1.5679  0.7246  -2.1640  0.0309
+isfemale[T.True] -1.8109  0.2648  -6.8379  0.0000
+educ              0.5715  0.0493  11.5836  0.0000
+exper             0.0254  0.0116   2.1951  0.0286
+tenure            0.1410  0.0212   6.6632  0.0000
+
+freq_gender: 
+col_0   count
+gender       
+female    245
+male      289
+
+freq_occupation: 
+col_0       count
+oc               
+management     55
+office         97
+sales          38
+services       83
+technical     105
+worker        156
+
+table: 
+                         b      se       t    pval
+Intercept           0.9050  0.1717  5.2718  0.0000
+C(gender)[T.male]   0.2238  0.0423  5.2979  0.0000
+C(oc)[T.office]    -0.2073  0.0776 -2.6699  0.0078
+C(oc)[T.sales]     -0.3601  0.0936 -3.8455  0.0001
+C(oc)[T.services]  -0.3626  0.0818 -4.4305  0.0000
+C(oc)[T.technical] -0.0101  0.0740 -0.1363  0.8916
+C(oc)[T.worker]    -0.1525  0.0763 -1.9981  0.0462
+education           0.0759  0.0101  7.5449  0.0000
+experience          0.0119  0.0017  7.0895  0.0000
+
+table_newref: 
+                                                  b      se       t    pval
+Intercept                                    1.1187  0.1765  6.3393  0.0000
+C(gender, Treatment("male"))[T.female]      -0.2238  0.0423 -5.2979  0.0000
+C(oc, Treatment("technical"))[T.management]  0.0101  0.0740  0.1363  0.8916
+C(oc, Treatment("technical"))[T.office]     -0.1972  0.0678 -2.9082  0.0038
+C(oc, Treatment("technical"))[T.sales]      -0.3500  0.0863 -4.0541  0.0001
+C(oc, Treatment("technical"))[T.services]   -0.3525  0.0750 -4.7030  0.0000
+C(oc, Treatment("technical"))[T.worker]     -0.1425  0.0705 -2.0218  0.0437
+education                                    0.0759  0.0101  7.5449  0.0000
+experience                                   0.0119  0.0017  7.0895  0.0000
+
+table_reg: 
+                              b      se       t    pval
+Intercept                0.9050  0.1717  5.2718  0.0000
+gender[T.male]           0.2238  0.0423  5.2979  0.0000
+occupation[T.office]    -0.2073  0.0776 -2.6699  0.0078
+occupation[T.sales]     -0.3601  0.0936 -3.8455  0.0001
+occupation[T.services]  -0.3626  0.0818 -4.4305  0.0000
+occupation[T.technical] -0.0101  0.0740 -0.1363  0.8916
+occupation[T.worker]    -0.1525  0.0763 -1.9981  0.0462
+education                0.0759  0.0101  7.5449  0.0000
+experience               0.0119  0.0017  7.0895  0.0000
+
+table_anova: 
+                sum_sq     df          F        PR(>F)
+gender        5.414018    1.0  28.067296  1.727015e-07
+occupation    7.152529    5.0   7.416013  9.805485e-07
+education    10.980589    1.0  56.925450  2.010374e-13
+experience    9.695055    1.0  50.261001  4.365391e-12
+Residual    101.269451  525.0        NaN           NaN
+
+freq: 
+col_0      count
+rc              
+(0,10]        10
+(10,25]       16
+(25,40]       13
+(40,60]       18
+(60,100]      37
+(100,175]     62
+
+table_reg: 
+                                                b      se        t    pval
+Intercept                                  9.1653  0.4114  22.2770  0.0000
+C(rc, Treatment("(100,175]"))[T.(0,10]]    0.6996  0.0535  13.0780  0.0000
+C(rc, Treatment("(100,175]"))[T.(10,25]]   0.5935  0.0394  15.0493  0.0000
+C(rc, Treatment("(100,175]"))[T.(25,40]]   0.3751  0.0341  11.0054  0.0000
+C(rc, Treatment("(100,175]"))[T.(40,60]]   0.2628  0.0280   9.3991  0.0000
+C(rc, Treatment("(100,175]"))[T.(60,100]]  0.1316  0.0210   6.2540  0.0000
+LSAT                                       0.0057  0.0031   1.8579  0.0655
+GPA                                        0.0137  0.0742   0.1850  0.8535
+np.log(libvol)                             0.0364  0.0260   1.3976  0.1647
+np.log(cost)                               0.0008  0.0251   0.0335  0.9734
+
+table_anova: 
+                                 sum_sq     df          F        PR(>F)
+C(rc, Treatment("(100,175]"))  1.868867    5.0  50.962988  1.174406e-28
+LSAT                           0.025317    1.0   3.451900  6.551320e-02
+GPA                            0.000251    1.0   0.034225  8.535262e-01
+np.log(libvol)                 0.014327    1.0   1.953419  1.646748e-01
+np.log(cost)                   0.000008    1.0   0.001120  9.733564e-01
+Residual                       0.924111  126.0        NaN           NaN
+
+table: 
+                    b      se       t    pval
+Intercept      1.4808  0.2073  7.1422  0.0000
+female        -0.3535  0.4105 -0.8610  0.3898
+sat            0.0011  0.0002  5.8073  0.0000
+hsperc        -0.0085  0.0014 -6.1674  0.0000
+tothrs         0.0023  0.0009  2.7182  0.0069
+female:sat     0.0008  0.0004  1.9488  0.0521
+female:hsperc -0.0005  0.0032 -0.1739  0.8621
+female:tothrs -0.0001  0.0016 -0.0712  0.9433
+
+fstat: 1.5338978108616914
+
+fpval: 0.20537335628138922
+
+table_m: 
+                b      se       t    pval
+Intercept  1.4808  0.2060  7.1894  0.0000
+sat        0.0011  0.0002  5.8458  0.0000
+hsperc    -0.0085  0.0014 -6.2082  0.0000
+tothrs     0.0023  0.0009  2.7362  0.0066
+
+table_f: 
+                b      se       t    pval
+Intercept  1.1273  0.3616  3.1176  0.0025
+sat        0.0018  0.0003  5.1950  0.0000
+hsperc    -0.0090  0.0029 -3.0956  0.0027
+tothrs     0.0022  0.0014  1.5817  0.1174
+

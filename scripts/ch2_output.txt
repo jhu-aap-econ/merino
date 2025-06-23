@@ -1,0 +1,131 @@
+Manual calculation:
+Intercept (β₀): 963.19
+Slope (β₁): 18.50
+
+Statsmodels calculation:
+Intercept (β₀): 963.19
+Slope (β₁): 18.50
+Regression Results:
+Intercept (β₀): -0.90
+Education coefficient (β₁): 0.54
+R-squared: 0.165
+Regression Results:
+Intercept (β₀): 26.81
+Share coefficient (β₁): 0.46
+R-squared: 0.856
+First 15 observations:
+     ROE  Actual Salary  Predicted Salary  Residual
+0  14.10           1095           1224.06   -129.06
+1  10.90           1001           1164.85   -163.85
+2  23.50           1122           1397.97   -275.97
+3   5.90            578           1072.35   -494.35
+4  13.80           1368           1218.51    149.49
+5  20.00           1145           1333.22   -188.22
+6  16.40           1078           1266.61   -188.61
+7  16.30           1094           1264.76   -170.76
+8  10.50           1237           1157.45     79.55
+9  26.30            833           1449.77   -616.77
+10 25.90            567           1442.37   -875.37
+11 26.80            933           1459.02   -526.02
+12 14.80           1339           1237.01    101.99
+13 22.30            937           1375.77   -438.77
+14 56.30           2011           2004.81      6.19
+Mean of residuals: 0.0000000000
+Covariance between education and residuals: -0.0000000000
+
+Verifying that (x̄, ȳ) lies on regression line:
+wage_mean: 5.896102674787035
+Predicted wage at mean education: 5.896103
+R-squared calculations:
+Using var(ŷ)/var(y): 0.0132
+Using 1 - var(û)/var(y): 0.0132
+Using correlation coefficient: 0.0132
+Regression Summary:
+==================
+R-squared: 0.8561
+Adjusted R-squared: 0.8553
+F-statistic: 1017.66
+Number of observations: 173.0
+
+Coefficient Estimates:
+====================
+           Coefficient  Std. Error  t-value  p-value
+Intercept        26.81        0.89    30.22     0.00
+shareA            0.46        0.01    31.90     0.00
+Log-Level Model Results:
+Intercept (β₀): 0.5838
+Education coefficient (β₁): 0.0827
+R-squared: 0.1858
+Log-Log Model Results:
+Intercept (β₀): 4.8220
+Sales elasticity (β₁): 0.2567
+R-squared: 0.2108
+Regression Comparisons:
+======================
+
+1. Regular regression:
+β₀: 963.19
+β₁: 18.50
+R²: 0.0132
+
+2. Regression through origin:
+β₁: 63.54
+R²: 0.4220
+
+3. Regression on constant:
+β₀: 1281.12
+R²: 0.0000
+Manual Calculations:
+SER: 9.5659
+SE(β₀): 0.9976
+SE(β₁): 0.0348
+
+Statsmodels Results:
+==============================================================================
+                 coef    std err          t      P>|t|      [0.025      0.975]
+------------------------------------------------------------------------------
+Intercept     32.1427      0.998     32.221      0.000      30.182      34.104
+lnchprg       -0.3189      0.035     -9.152      0.000      -0.387      -0.250
+==============================================================================
+True vs. Estimated Parameters:
+=============================
+True β₀: 1.0000 | Estimated β₀: 1.1902
+True β₁: 0.5000 | Estimated β₁: 0.4443
+
+R-squared: 0.0449
+Monte Carlo Results:
+===================
+
+Intercept (β₀):
+True value: 1.0000
+Mean estimate: 1.0427
+Standard deviation: 0.2632
+
+Slope (β₁):
+True value: 0.5000
+Mean estimate: 0.4890
+Standard deviation: 0.0656
+Monte Carlo Results with E(u|x) ≠ 0:
+===================================
+
+Intercept (β₀):
+True value: 1.0000
+Mean estimate: 0.2427
+Bias: -0.7573
+
+Slope (β₁):
+True value: 0.5000
+Mean estimate: 0.6890
+Bias: 0.1890
+Monte Carlo Results with Heteroscedasticity:
+==========================================
+
+Intercept (β₀):
+True value: 1.0000
+Mean estimate: 1.0557
+Standard deviation: 0.3712
+
+Slope (β₁):
+True value: 0.5000
+Mean estimate: 0.4845
+Standard deviation: 0.1053

@@ -157,8 +157,8 @@ print("--- F-Test Comparison ---")
 print(f"Default F-statistic: {fstat_default:.4f}")
 print(f"Default F p-value:   {fpval_default:.4f}\n")
 
-# Interpretation (Default F-Test): The default F-test strongly rejects the null hypothesis
-# (p-value < 0.0001), suggesting race is jointly significant, assuming homoskedasticity.
+# Interpretation (Default F-Test): The default F-test has F-statistic 0.6796 and p-value 0.5075,
+# failing to reject the null hypothesis that race variables are jointly insignificant.
 
 # %%
 # --- F-Test using Robust (HC3) VCOV ---
@@ -171,10 +171,10 @@ fpval_hc3 = ftest_hc3.pvalue
 print(f"Robust (HC3) F-statistic: {fstat_hc3:.4f}")
 print(f"Robust (HC3) F p-value:   {fpval_hc3:.4f}\n")
 
-# Interpretation (HC3 F-Test): The robust F-statistic (5.44) is slightly smaller than the
-# default (5.66), and the p-value (0.0049) is slightly larger but still very small.
-# The conclusion remains the same: we reject the null hypothesis and conclude that race
-# is jointly statistically significant, even after accounting for potential heteroskedasticity.
+# Interpretation (HC3 F-Test): The robust F-statistic (0.6725) is slightly smaller than the
+# default (0.6796), and the p-value (0.5111) is slightly larger but consistent with the default.
+# The conclusion remains the same: we fail to reject the null hypothesis and conclude that race
+# is not jointly statistically significant, even after accounting for potential heteroskedasticity.
 
 # %%
 # --- F-Test using Robust (HC0) VCOV ---
@@ -185,9 +185,9 @@ fpval_hc0 = ftest_hc0.pvalue
 print(f"Robust (HC0) F-statistic: {fstat_hc0:.4f}")
 print(f"Robust (HC0) F p-value:   {fpval_hc0:.4f}\n")
 
-# Interpretation (HC0 F-Test): The HC0 robust F-test gives very similar results to the HC3 test
-# in this case. In general, if the default and robust test statistics lead to different
-# conclusions, the robust result is preferred.
+# Interpretation (HC0 F-Test): The HC0 robust F-test gives F-statistic 0.7478 and p-value 0.4741,
+# very similar results to the HC3 test. In general, if the default and robust test statistics
+# lead to different conclusions, the robust result is preferred.
 
 # %% [markdown]
 # ## 8.2 Heteroskedasticity Tests
@@ -247,7 +247,7 @@ bp_lm_pval = result_bp_lm[1]
 print(f"BP LM statistic: {bp_lm_statistic:.4f}")
 print(f"BP LM p-value:   {bp_lm_pval:.4f}\n")
 
-# Interpretation (BP LM Test): The LM statistic is 10.20, and the p-value is 0.0169.
+# Interpretation (BP LM Test): The LM statistic is 14.0924, and the p-value is 0.0028.
 # Since p < 0.05, we reject the null hypothesis of homoskedasticity at the 5% level.
 # There is significant evidence that the error variance depends on the explanatory variables.
 
@@ -268,7 +268,7 @@ bp_F_pval = results_resid.f_pvalue
 print(f"BP F statistic: {bp_F_statistic:.4f}")
 print(f"BP F p-value:   {bp_F_pval:.4f}\n")
 
-# Interpretation (BP F Test): The F-statistic is 3.49, and the p-value is 0.0184.
+# Interpretation (BP F Test): The F-statistic is 5.3389, and the p-value is 0.0020.
 # This also leads to rejecting the null hypothesis of homoskedasticity at the 5% level.
 # The conclusion matches the LM version. Using robust standard errors for the original
 # price model is recommended.
@@ -310,7 +310,7 @@ bp_pval_log = result_bp_log[1]
 print(f"BP LM statistic: {bp_statistic_log:.4f}")
 print(f"BP LM p-value:   {bp_pval_log:.4f}\n")
 
-# Interpretation (BP Test, Log Model): The LM statistic is 3.46, and the p-value is 0.3260.
+# Interpretation (BP Test, Log Model): The LM statistic is 4.2232, and the p-value is 0.2383.
 # We fail to reject the null hypothesis of homoskedasticity at conventional levels (e.g., 5% or 10%).
 # This suggests that the BP test does not find evidence of heteroskedasticity related linearly
 # to the log predictors in this log-transformed model.
@@ -333,13 +333,12 @@ white_pval_log = result_white_log[1]
 print(f"White LM statistic: {white_statistic_log:.4f}")
 print(f"White LM p-value:   {white_pval_log:.4f}\n")
 
-# Interpretation (White Test, Log Model): The White test LM statistic is 8.11, and the
-# p-value is 0.0173. Unlike the BP test, the White test *does* reject the null hypothesis
-# of homoskedasticity at the 5% level. This indicates that while the variance might not be
-# linearly related to the log predictors (as per BP), it seems to be related to the
-# level of predicted log(price) in a non-linear way captured by the fitted values.
-# This suggests that even after logging the dependent variable, some heteroskedasticity
-# might remain, and using robust standard errors is still advisable.
+# Interpretation (White Test, Log Model): The White test LM statistic is 3.4473, and the
+# p-value is 0.1784. Unlike the BP test, the White test does not reject the null hypothesis
+# of homoskedasticity at the 5% level. This indicates that the variance might not be
+# related to the level of predicted log(price) in a non-linear way captured by the fitted values.
+# This suggests that after logging the dependent variable, heteroskedasticity is not
+# significantly detected by the White test.
 
 # %% [markdown]
 # ## 8.3 Weighted Least Squares (WLS)
@@ -411,11 +410,11 @@ print(f"WLS Estimates:\n{table_wls}\n")
 
 # Interpretation (OLS vs WLS):
 # Comparing WLS to OLS (robust), the coefficient estimates differ somewhat (e.g., 'inc' coeff
-# is 0.82 in OLS, 0.69 in WLS). The WLS standard errors are generally smaller than the
-# OLS robust SEs (e.g., SE for 'inc' is 0.0597 in WLS vs 0.0982 in OLS robust).
+# is 0.7706 in OLS, 0.7404 in WLS). The WLS standard errors are generally smaller than the
+# OLS robust SEs (e.g., SE for 'inc' is 0.0643 in WLS vs 0.0994 in OLS robust).
 # This suggests WLS is more efficient *if* the assumption Var=sigma^2*inc is correct.
 # The coefficient on e401k (eligibility) is positive and significant in both models,
-# but the point estimate is larger in WLS (11.8 vs 9.6).
+# with point estimate 5.1883 in WLS vs 6.8862 in OLS robust.
 
 # %% [markdown]
 # What if our assumed variance function ($Var = \sigma^2 inc$) is wrong? The WLS estimator will still be consistent (under standard assumptions) but its standard errors might be incorrect, and it might not be efficient. We can compute robust standard errors *for the WLS estimator* to get valid inference even if the weights are misspecified.
@@ -465,8 +464,8 @@ print(f"Robust WLS SEs:\n{table_robust_wls}\n")
 # Interpretation (Default WLS SE vs Robust WLS SE):
 # Comparing the robust WLS SEs to the default WLS SEs, we see some differences, though
 # perhaps less dramatic than the OLS vs Robust OLS comparison earlier. For instance, the
-# robust SE for 'inc' (0.0692) is slightly larger than the default WLS SE (0.0597).
-# The robust SE for e401k (1.81) is also larger than the default (1.50).
+# robust SE for 'inc' (0.0752) is slightly larger than the default WLS SE (0.0643).
+# The robust SE for e401k (1.5743) is also smaller than the default (1.7034).
 # This suggests that the initial assumption Var=sigma^2*inc might not perfectly capture
 # the true heteroskedasticity. However, the conclusions about significance remain largely
 # unchanged in this case. Using robust standard errors with WLS provides insurance against
@@ -518,7 +517,7 @@ bp_pval_smoke = result_bp_smoke[1]
 print(f"BP LM statistic: {bp_statistic_smoke:.4f}")
 print(f"BP LM p-value:   {bp_pval_smoke:.4f}\n")
 
-# Interpretation (BP Test): The p-value is very small (< 0.0001), strongly rejecting
+# Interpretation (BP Test): The p-value is 0.0000 (very small), strongly rejecting
 # the null of homoskedasticity. FGLS is likely warranted for efficiency.
 
 # %%
@@ -550,7 +549,8 @@ table_varfunc = pd.DataFrame(
 print(f"Variance Function Estimates:\n{table_varfunc}\n")
 
 # Interpretation (Variance Function): This regression tells us which variables are
-# significantly related to the log error variance. For instance, log(income) and age
+# significantly related to the log error variance. For instance, log(income) (coefficient 0.2915),
+# educ (coefficient -0.0797), age (coefficient 0.2040), and restaurn (coefficient -0.6270)
 # appear significant predictors of the variance.
 
 # %%
@@ -584,9 +584,9 @@ print(f"FGLS Estimates:\n{table_fgls_wls}\n")
 
 # Interpretation (FGLS vs OLS):
 # Comparing the FGLS estimates to the original OLS estimates:
-# - The coefficient for log(cigpric) is -2.64 in FGLS vs -0.75 in OLS. The FGLS estimate is still insignificant.
-# - The coefficient for the restaurant smoking restriction ('restaurn') is -2.74 in FGLS vs -2.86 in OLS, and remains significant.
-# - Standard errors have generally changed. For instance, the SE for log(income) decreased from 0.72 (OLS) to 0.44 (FGLS).
+# - The coefficient for log(cigpric) is -2.9403 in FGLS vs -0.7509 in OLS. The FGLS estimate is still insignificant.
+# - The coefficient for the restaurant smoking restriction ('restaurn') is -3.4611 in FGLS vs -2.8251 in OLS, and remains significant.
+# - Standard errors have generally changed. For instance, the SE for log(income) decreased from 0.7278 (OLS) to 0.4370 (FGLS).
 # - FGLS estimates are preferred for efficiency if the variance model is reasonably well-specified.
 # One could also compute robust standard errors for the FGLS estimates as a further check.
 

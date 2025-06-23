@@ -97,7 +97,7 @@ print("--- RESET Test (Manual F-Test) ---")
 print(f"RESET F-statistic (manual): {fstat_man:.4f}")
 print(f"RESET p-value (manual):     {fpval_man:.4f}\n")
 
-# Interpretation (Manual RESET): The F-statistic is 4.67 and the p-value is 0.0117.
+# Interpretation (Manual RESET): The F-statistic is 4.6682 and the p-value is 0.0120.
 # Since the p-value is less than 0.05, we reject the null hypothesis.
 # This suggests that the original linear model suffers from functional form misspecification.
 # Non-linear terms (perhaps logs, squares, or interactions) might be needed.
@@ -123,8 +123,8 @@ fpval_auto = reset_output.pvalue
 print(f"RESET F-statistic (auto): {fstat_auto:.4f}")
 print(f"RESET p-value (auto):     {fpval_auto:.4f}\n")
 
-# Interpretation (Automated RESET): The automated test yields the same F-statistic (4.67)
-# and p-value (0.0117), confirming the rejection of the null hypothesis and indicating
+# Interpretation (Automated RESET): The automated test yields the same F-statistic (4.6682)
+# and p-value (0.0120), confirming the rejection of the null hypothesis and indicating
 # functional form misspecification in the linear model.
 ```
 
@@ -175,7 +175,7 @@ anovaResults1 = sm.stats.anova_lm(results1, results3)
 print(f"F-test (Model 1 vs Comprehensive):\n{anovaResults1}\n")
 # Look at the p-value (Pr(>F)) in the second row.
 
-# Interpretation (Model 1 vs Comprehensive): The p-value is 0.00059.
+# Interpretation (Model 1 vs Comprehensive): The p-value is 0.000753.
 # We strongly reject the null hypothesis. This means the log terms (from Model 2)
 # add significant explanatory power to the linear model (Model 1).
 # Model 1 appears misspecified relative to the comprehensive model.
@@ -190,7 +190,7 @@ anovaResults2 = sm.stats.anova_lm(results2, results3)
 print(f"F-test (Model 2 vs Comprehensive):\n{anovaResults2}\n")
 # Look at the p-value (Pr(>F)) in the second row.
 
-# Interpretation (Model 2 vs Comprehensive): The p-value is 0.0152.
+# Interpretation (Model 2 vs Comprehensive): The p-value is 0.001494.
 # We also reject this null hypothesis at the 5% level. This means the level terms
 # (lotsize, sqrft from Model 1) add significant explanatory power to the log-log model (Model 2).
 # Model 2 also appears misspecified relative to the comprehensive model.
@@ -284,7 +284,7 @@ print(f"Variance of beta1 estimate (No ME):   {b1_var:.6f}")
 print(f"Variance of beta1 estimate (ME in y): {b1_me_var:.6f}\n")
 
 # Interpretation (Variance): The variance of the beta1 estimate is larger when there is
-# measurement error in y (0.002026) compared to when there is no measurement error (0.001015).
+# measurement error in y (0.002044) compared to when there is no measurement error (0.001034).
 # This confirms that ME in y reduces the precision of the OLS estimates (increases standard errors).
 ```
 
@@ -343,7 +343,7 @@ print(f"Average beta1 estimate (No ME):  {b1_mean:.4f}")
 print(f"Average beta1 estimate (ME in x): {b1_me_mean:.4f}\n")
 
 # Interpretation (Bias): The average estimate without ME is close to the true value (0.5).
-# However, the average estimate with ME in x (0.2500) is substantially smaller than 0.5.
+# However, the average estimate with ME in x (0.2445) is substantially smaller than 0.5.
 # This demonstrates the attenuation bias caused by classical measurement error in an
 # independent variable. The estimate is biased towards zero.
 # Theoretical bias factor: Var(x*)/(Var(x*) + Var(e1)). Here Var(x*)=1, Var(e1)=1.
@@ -357,8 +357,8 @@ b1_me_var = np.var(b1_me, ddof=1)
 print(f"Variance of beta1 estimate (No ME):  {b1_var:.6f}")
 print(f"Variance of beta1 estimate (ME in x): {b1_me_var:.6f}\n")
 
-# Interpretation (Variance): Interestingly, the variance of the estimate with ME in x (0.000627)
-# is smaller than the variance without ME (0.001013). While the estimate is biased,
+# Interpretation (Variance): Interestingly, the variance of the estimate with ME in x (0.000544)
+# is smaller than the variance without ME (0.001034). While the estimate is biased,
 # the presence of ME in x (which adds noise) can sometimes reduce the variance of the
 # *biased* estimator compared to the variance of the *unbiased* estimator using the true x*.
 # However, this smaller variance is around the wrong (biased) value.
@@ -516,9 +516,9 @@ print("--- Outlier Detection using Studentized Residuals ---")
 print(f"Maximum studentized residual: {studres_max:.4f}")
 print(f"Minimum studentized residual: {studres_min:.4f}\n")
 
-# Interpretation: The maximum value (3.19) and minimum value (-2.80) are both relatively
-# large in absolute terms (roughly 3 standard deviations from zero). This suggests these
-# observations might be outliers and potentially influential. Further investigation
+# Interpretation: The maximum value (4.5550) and minimum value (-1.8180) are both relatively
+# large in absolute terms, especially the maximum (roughly 4.5 standard deviations from zero).
+# This suggests these observations might be outliers and potentially influential. Further investigation
 # (e.g., examining the data for these specific firms) might be needed.
 ```
 
@@ -611,14 +611,14 @@ table_lad = pd.DataFrame(
 print(f"LAD Estimates:\n{table_lad}\n")
 
 # Interpretation (OLS vs LAD):
-# - The coefficient on sales/1000 is 0.0338 (OLS) vs 0.0494 (LAD).
-# - The coefficient on profit margin is 0.0442 (OLS) vs 0.0476 (LAD).
+# - The coefficient on sales/1000 is 0.0534 (OLS) vs 0.0186 (LAD).
+# - The coefficient on profit margin is 0.0446 (OLS) vs 0.1179 (LAD).
 # - The intercept is also different.
 # The differences suggest that the relationship might differ between the conditional mean (OLS)
 # and the conditional median (LAD), possibly due to outliers or skewness in the conditional
-# distribution of rdintens. The profit margin effect seems fairly robust across methods,
-# while the sales effect estimate changes more noticeably. Since we identified potential
-# outliers earlier, the LAD estimates might be considered more robust in this case.
+# distribution of rdintens. The profit margin effect seems quite different across methods (LAD shows
+# a larger coefficient and higher significance), while the sales effect is much smaller and insignificant
+# in LAD. Since we identified potential outliers earlier, the LAD estimates might be considered more robust.
 ```
 
 This notebook covered several advanced but common issues in regression analysis: ensuring correct functional form, understanding the impact of measurement error, handling missing data appropriately, identifying outliers, and using robust estimation techniques like LAD. Careful consideration of these points is vital for building reliable econometric models.

@@ -1,0 +1,14 @@
+R-squared of Restricted Model (r2_r): 0.0413
+
+R-squared of LM Regression (r2_LM): 0.0015
+
+LM Test Statistic: 4.071
+
+Critical Value (Chi-squared with 2 df, alpha=0.10): 4.605
+
+P-value for LM Test: 0.1306
+
+F-statistic: 2.034
+
+P-value for F-test: 0.1310
+
