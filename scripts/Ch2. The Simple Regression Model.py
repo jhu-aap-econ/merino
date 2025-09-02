@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.17.2
+#       jupytext_version: 1.17.3
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -15,6 +15,29 @@
 
 # %% [markdown]
 # # 2. The Simple Regression Model
+#
+# :::{important} Learning Objectives
+# :class: dropdown
+# By the end of this chapter, you should be able to:
+#
+# **2.1** List the assumptions of the simple linear regression model and interpret the parameters in the model.
+#
+# **2.2** Apply the formulas for the slope and intercept estimates using ordinary least squares estimation.
+#
+# **2.3** Use the formulas to calculate the fitted values and residuals, and list the properties of these statistics on any sample of data.
+#
+# **2.4** Compute and interpret the R-squared of a simple regression.
+#
+# **2.5** List and interpret the assumptions used to obtain unbiasedness of the ordinary least squares (OLS) estimator.
+#
+# **2.6** Explain the meaning of the homoskedasticity (constant variance) assumption, and discuss its role in calculating the sampling variance of the OLS estimators.
+#
+# **2.7** Discuss the limitations of the simple regression model for uncovering causal effects.
+#
+# **2.8** Interpret the simple regression estimates in the case of a binary (dummy) explanatory variable.
+#
+# **2.9** Describe the potential outcomes framework for causal inference and explain how experimental interventions (randomized controlled trials) can be analyzed using simple regression.
+# :::
 #
 # Welcome to this notebook, which delves into the fundamental concepts of the Simple Linear Regression model. This model is a cornerstone of econometrics and statistical analysis, used to understand the relationship between two variables. In this chapter, we will explore the mechanics of Ordinary Least Squares (OLS) regression, learn how to interpret its results, and understand the crucial assumptions that underpin its validity.
 #
@@ -30,13 +53,16 @@ import pandas as pd
 import seaborn as sns
 import statsmodels.formula.api as smf
 import wooldridge as wool
+from IPython.display import display
 from scipy import stats
 
-# Set plotting style - Feel free to uncomment and customize these for your preferred look
-# plt.style.use("seaborn")  # Consider 'ggplot', 'seaborn-v0_8-whitegrid', etc.
-# sns.set_palette("deep")  # Explore 'viridis', 'magma', 'plasma', etc.
-# plt.rcParams["figure.figsize"] = [10, 6]  # Adjust figure size as needed
-# plt.rcParams["axes.grid"] = True  # Toggle gridlines on plots
+# Set plotting style for enhanced visualizations
+sns.set_style("whitegrid")  # Clean seaborn style with grid
+sns.set_palette("husl")  # Attractive color palette
+plt.rcParams["figure.figsize"] = [10, 6]  # Default figure size
+plt.rcParams["font.size"] = 11  # Slightly larger font size
+plt.rcParams["axes.titlesize"] = 14  # Larger title font
+plt.rcParams["axes.labelsize"] = 12  # Larger axis label font
 
 # %% [markdown]
 # ## 2.1 Simple OLS Regression
@@ -94,12 +120,18 @@ y_bar = np.mean(y)  # Calculate the mean of salary
 b1 = cov_xy / var_x  # Calculate beta_1_hat using the formula
 b0 = y_bar - b1 * x_bar  # Calculate beta_0_hat using the formula
 
-print("Manual calculation:")
-print(f"Intercept (β₀): {b0:.2f}")  # Print the intercept, formatted to 2 decimal places
-print(f"Slope (β₁): {b1:.2f}")  # Print the slope, formatted to 2 decimal places
+# Display results using DataFrame for better formatting
+manual_results = pd.DataFrame(
+    {
+        "Parameter": ["Intercept ($\\beta_0$)", "Slope ($\\beta_1$)"],
+        "Estimate": [b0, b1],
+        "Formatted": [f"{b0:.2f}", f"{b1:.2f}"],
+    },
+)
+manual_results[["Parameter", "Formatted"]]
 
 # %% [markdown]
-# The code first loads the `ceosal1` dataset and extracts the 'roe' and 'salary' columns as our $x$ and $y$ variables, respectively. Then, it calculates the covariance between `roe` and `salary`, the variance of `roe`, and the means of both variables. Finally, it applies the formulas to compute $\hat{\beta}_1$ and $\hat{\beta}_0$ and prints them.
+# The code first loads the `ceosal1` dataset and extracts the 'roe' and 'salary' columns as our $x$ and $y$ variables, respectively. Then, it calculates the covariance between `roe` and `salary`, the variance of `roe`, and the means of both variables. Finally, it applies the formulas to compute $\hat{\beta}_1$ and $\hat{\beta}_0$ and displays them.
 #
 # Now, let's use the `statsmodels` library, which provides a more convenient and comprehensive way to perform OLS regression. This will also serve as a verification of our manual calculations.
 
@@ -112,13 +144,15 @@ reg = smf.ols(
 results = reg.fit()  # Fit the model to the data and store the results
 b = results.params  # Extract the estimated coefficients
 
-print("\nStatsmodels calculation:")
-print(
-    f"Intercept (β₀): {b.iloc[0]:.2f}",
-)  # Print the intercept from statsmodels results, using iloc for position
-print(
-    f"Slope (β₁): {b.iloc[1]:.2f}",
-)  # Print the slope from statsmodels results, using iloc for position
+# Display statsmodels results using DataFrame
+statsmodels_results = pd.DataFrame(
+    {
+        "Parameter": ["Intercept ($\\beta_0$)", "Slope ($\\beta_1$)"],
+        "Estimate": [b.iloc[0], b.iloc[1]],
+        "Formatted": [f"{b.iloc[0]:.2f}", f"{b.iloc[1]:.2f}"],
+    },
+)
+statsmodels_results[["Parameter", "Formatted"]]
 
 
 # %% [markdown]
@@ -128,7 +162,7 @@ print(
 
 # %%
 def plot_regression(x, y, data, results, title, add_ci=True):
-    """Create an enhanced regression plot with confidence intervals and annotations.
+    """Create an enhanced regression plot with seaborn styling.
 
     Parameters
     ----------
@@ -146,73 +180,39 @@ def plot_regression(x, y, data, results, title, add_ci=True):
         Whether to add confidence intervals
 
     """
-    fig, ax = plt.subplots(
-        figsize=(10, 6),
-    )  # Create a figure and an axes object for the plot
+    # Create figure with seaborn styling
+    fig, ax = plt.subplots(figsize=(12, 8))
 
-    # Scatter plot of the actual data points
-    sns.scatterplot(
+    # Use seaborn's regplot with clean defaults
+    sns.regplot(
         data=data,
         x=x,
         y=y,
-        alpha=0.5,
+        ci=95 if add_ci else None,
         ax=ax,
-    )  # Scatter plot of x vs y with some transparency
-
-    # Regression line - Calculate predicted y values for a range of x values
-    x_range = np.linspace(
-        data[x].min(),
-        data[x].max(),
-        100,
-    )  # Generate 100 evenly spaced x values
-    y_pred = (
-        results.params.iloc[0] + results.params.iloc[1] * x_range
-    )  # Calculate predicted y values using the regression equation
-
-    plt.plot(
-        x_range,
-        y_pred,
-        color="red",
-        label="Regression Line",
-    )  # Plot the regression line in red
-
-    if add_ci:
-        # Add confidence intervals - Calculate confidence intervals for the predicted values
-        y_hat = results.get_prediction(
-            pd.DataFrame({x: x_range}),
-        )  # Get prediction object for the x_range
-        ci = y_hat.conf_int()  # Extract confidence interval bounds
-        plt.fill_between(  # Fill the area between the confidence interval bounds
-            x_range,
-            ci[:, 0],  # Lower bound of confidence interval
-            ci[:, 1],  # Upper bound of confidence interval
-            color="red",
-            alpha=0.1,  # Set transparency of the shaded area
-            label="95% CI",  # Label for the confidence interval
-        )
-
-    # Add equation and R-squared as text annotations on the plot
-    eq = f"y = {results.params.iloc[0]:.2f} + {results.params.iloc[1]:.2f}x"  # Format the regression equation
-    r2 = f"R² = {results.rsquared:.3f}"  # Format the R-squared value
-    plt.text(  # Add text to the plot
-        0.05,
-        0.95,
-        eq + "\n" + r2,
-        transform=ax.transAxes,  # Specify that coordinates are relative to the axes
-        verticalalignment="top",  # Align text to the top
-        bbox=dict(
-            boxstyle="round",
-            facecolor="white",
-            alpha=0.8,
-        ),  # Add a white box around the text for better readability
     )
 
-    plt.title(title)  # Set the title of the plot
-    plt.xlabel(x)  # Set the label for the x-axis
-    plt.ylabel(y)  # Set the label for the y-axis
-    plt.legend()  # Display the legend
-    plt.grid(True, alpha=0.3)  # Add grid lines with transparency
-    plt.tight_layout()  # Adjust plot layout to prevent labels from overlapping
+    # Add equation and R-squared as text annotations
+    eq = f"y = {results.params.iloc[0]:.2f} + {results.params.iloc[1]:.2f}x"
+    r2 = f"$R^2$ = {results.rsquared:.3f}"
+
+    # Add equation and R-squared with clean styling
+    textstr = f"{eq}\n{r2}"
+    ax.text(
+        0.05,
+        0.95,
+        textstr,
+        transform=ax.transAxes,
+        verticalalignment="top",
+        bbox=dict(boxstyle="round", facecolor="white", alpha=0.8),
+    )
+
+    # Clean title and labels
+    ax.set_title(title)
+    ax.set_xlabel(x.replace("_", " ").title())
+    ax.set_ylabel(y.replace("_", " ").title())
+
+    plt.tight_layout()
 
 
 # %% [markdown]
@@ -225,13 +225,15 @@ plot_regression("roe", "salary", ceosal1, results, "CEO Salary vs Return on Equi
 # %% [markdown]
 # Running this code will generate a scatter plot with 'roe' on the x-axis and 'salary' on the y-axis, along with the OLS regression line and its 95% confidence interval. The plot also displays the estimated regression equation and the R-squared value.
 #
-# **Interpretation of Example 2.3:**
+# :::{note} Interpretation of Example 2.3
+# :class: dropdown
 #
 # Looking at the output and the plot, we can interpret the results. The estimated regression equation (visible on the plot) will be something like:
 #
 # $$ \widehat{\text{salary}} = \hat{\beta}_0 + \hat{\beta}_1 \text{roe} $$
 #
 # We find $\hat{\beta}_1 = 18.50$. This means that, on average, for every one percentage point increase in ROE, CEO salary is predicted to increase by approximately \$18,500 (since salary is in thousands of dollars). The intercept, $\hat{\beta}_0 = 963.19$, represents the predicted salary when ROE is zero.  The R-squared value (also on the plot) is 0.013, indicating that only about 1.3% of the variation in CEO salaries is explained by ROE in this simple linear model. This suggests that ROE alone is not a strong predictor of CEO salary, and other factors are likely more important.
+# :::
 #
 # ### Example 2.4: Wage and Education
 #
@@ -249,16 +251,34 @@ wage1 = wool.data("wage1")  # Load the wage1 dataset
 reg = smf.ols(formula="wage ~ educ", data=wage1)  # Define and fit the OLS model
 results = reg.fit()  # Fit the model
 
-# Print regression results
-print("Regression Results:")
-print(
-    f"Intercept (β₀): {results.params.iloc[0]:.2f}",
-)  # Print the estimated intercept, using iloc for position
-print(
-    f"Education coefficient (β₁): {results.params.iloc[1]:.2f}",
-)  # Print the estimated coefficient for education, using iloc for position
-print(f"R-squared: {results.rsquared:.3f}")  # Print the R-squared value
+# Display regression results using DataFrame
+wage_results = pd.DataFrame(
+    {
+        "Parameter": [
+            "Intercept ($\\beta_0$)",
+            "Education coefficient ($\\beta_1$)",
+            "R-squared",
+        ],
+        "Value": [results.params.iloc[0], results.params.iloc[1], results.rsquared],
+        "Formatted": [
+            f"{results.params.iloc[0]:.2f}",
+            f"{results.params.iloc[1]:.2f}",
+            f"{results.rsquared:.3f}",
+        ],
+    },
+)
+wage_results[["Parameter", "Formatted"]]
 
+# %% [markdown]
+# This code loads the `wage1` dataset, fits the regression model of `wage` on `educ` using `statsmodels`, and then shows the estimated coefficients and R-squared.
+#
+# :::{note} Interpretation of Example 2.4
+# :class: dropdown
+#
+# We find $\hat{\beta}_1 = 0.54$. This implies that, on average, each additional year of education is associated with an increase in hourly wage of approximately \$0.54. The intercept, $\hat{\beta}_0 = -0.90$, represents the predicted wage for someone with zero years of education. The R-squared is 0.165, meaning that about 16.5% of the variation in hourly wages is explained by years of education in this simple model. Education appears to be a somewhat more important factor in explaining wages than ROE was for CEO salaries, but still, a large portion of wage variation remains unexplained by education alone.
+# :::
+
+# %%
 # Create visualization
 plot_regression(
     "educ",
@@ -269,11 +289,7 @@ plot_regression(
 )  # Generate regression plot
 
 # %% [markdown]
-# This code loads the `wage1` dataset, fits the regression model of `wage` on `educ` using `statsmodels`, and then prints the estimated coefficients and R-squared. Finally, it generates a regression plot using our `plot_regression` function.
-#
-# **Interpretation of Example 2.4:**
-#
-# We find $\hat{\beta}_1 = 0.54$. This implies that, on average, each additional year of education is associated with an increase in hourly wage of approximately \$0.54. The intercept, $\hat{\beta}_0 = -0.90$, represents the predicted wage for someone with zero years of education. The R-squared is 0.165, meaning that about 16.5% of the variation in hourly wages is explained by years of education in this simple model. Education appears to be a somewhat more important factor in explaining wages than ROE was for CEO salaries, but still, a large portion of wage variation remains unexplained by education alone.
+# The regression plot visualizes the relationship between years of education and hourly wage, showing the fitted regression line along with the data points and confidence interval.
 #
 # ### Example 2.5: Voting Outcomes and Campaign Expenditures
 #
@@ -291,16 +307,34 @@ vote1 = wool.data("vote1")  # Load the vote1 dataset
 reg = smf.ols(formula="voteA ~ shareA", data=vote1)  # Define and fit the OLS model
 results = reg.fit()  # Fit the model
 
-# Print regression results
-print("Regression Results:")
-print(
-    f"Intercept (β₀): {results.params.iloc[0]:.2f}",
-)  # Print the estimated intercept, using iloc for position
-print(
-    f"Share coefficient (β₁): {results.params.iloc[1]:.2f}",
-)  # Print the estimated coefficient for shareA, using iloc for position
-print(f"R-squared: {results.rsquared:.3f}")  # Print the R-squared value
+# Display regression results using DataFrame
+vote_results = pd.DataFrame(
+    {
+        "Parameter": [
+            "Intercept ($\\beta_0$)",
+            "Share coefficient ($\\beta_1$)",
+            "R-squared",
+        ],
+        "Value": [results.params.iloc[0], results.params.iloc[1], results.rsquared],
+        "Formatted": [
+            f"{results.params.iloc[0]:.2f}",
+            f"{results.params.iloc[1]:.2f}",
+            f"{results.rsquared:.3f}",
+        ],
+    },
+)
+vote_results[["Parameter", "Formatted"]]
 
+# %% [markdown]
+# This code loads the `vote1` dataset, fits the regression model using `statsmodels`, and shows the estimated coefficients and R-squared.
+#
+# :::{note} Interpretation of Example 2.5
+# :class: dropdown
+#
+# We find $\hat{\beta}_1 = 0.46$. This suggests that for every one percentage point increase in candidate A's share of campaign spending, candidate A's vote share is predicted to increase by approximately 0.46 percentage points. The intercept, $\hat{\beta}_0 = 26.81$, represents the predicted vote share for candidate A if their campaign spending share is zero. The R-squared is 0.856, which is quite high! It indicates that about 85.6% of the variation in candidate A's vote share is explained by their share of campaign spending in this simple model. This suggests that campaign spending share is a very strong predictor of voting outcomes, at least in this dataset.
+# :::
+
+# %%
 # Create visualization
 plot_regression(
     "shareA",
@@ -311,11 +345,7 @@ plot_regression(
 )  # Generate regression plot
 
 # %% [markdown]
-# This code follows the same pattern as the previous examples: load data, fit the regression model using `statsmodels`, print the coefficients and R-squared, and generate a regression plot.
-#
-# **Interpretation of Example 2.5:**
-#
-# We find $\hat{\beta}_1 = 0.46$. This suggests that for every one percentage point increase in candidate A's share of campaign spending, candidate A's vote share is predicted to increase by approximately 0.46 percentage points. The intercept, $\hat{\beta}_0 = 26.81$, represents the predicted vote share for candidate A if their campaign spending share is zero. The R-squared is 0.856, which is quite high! It indicates that about 85.6% of the variation in candidate A's vote share is explained by their share of campaign spending in this simple model. This suggests that campaign spending share is a very strong predictor of voting outcomes, at least in this dataset.
+# The regression plot demonstrates the strong linear relationship between campaign spending share and vote share, with most data points closely following the fitted line.
 #
 # ## 2.2. Coefficients, Fitted Values, and Residuals
 #
@@ -362,31 +392,37 @@ pd.set_option(
     "display.float_format",
     lambda x: "%.2f" % x,
 )  # Set float format for display
-print("First 15 observations:")
-print(table.head(15))  # Print the first 15 rows of the table
-
-# Create residual plot - Scatter plot of fitted values against residuals
-plt.figure(figsize=(10, 6))  # Create a figure for the plot
-sns.scatterplot(
-    x=salary_hat,
-    y=u_hat,
-    alpha=0.5,
-)  # Scatter plot of fitted values vs residuals
-plt.axhline(y=0, color="r", linestyle="--")  # Add a horizontal line at y=0
-plt.title("Residual Plot")  # Set the title of the plot
-plt.xlabel("Fitted Values")  # Set the x-axis label
-plt.ylabel("Residuals")  # Set the y-axis label
-plt.grid(True, alpha=0.3)  # Add grid lines
-plt.tight_layout()  # Adjust layout
+table.head(15)  # Display the first 15 rows of the table
 
 # %% [markdown]
-# This code calculates the fitted values and residuals using the `results` object from our previous regression. It then creates a Pandas DataFrame to display ROE, actual salary, predicted salary, and residuals for each observation. We print the first 15 rows of this table. Finally, it generates a residual plot, which is a scatter plot of fitted values against residuals, with a horizontal line at zero.
+# This code calculates the fitted values and residuals, then creates and displays a summary table showing ROE, actual salary, predicted salary, and residuals for the first 15 observations.
 #
-# **Interpretation of Example 2.6:**
+# :::{note} Interpretation of Example 2.6
+# :class: dropdown
 #
 # By examining the table, you can see for each company the actual CEO salary, the salary predicted by the regression model based on ROE, and the residual, which is the difference between the actual and predicted salary. A positive residual means the actual salary is higher than predicted, and a negative residual means it's lower.
-#
-# The residual plot is useful for checking some of the assumptions of OLS regression, particularly the assumption of homoscedasticity (constant variance of errors). Ideally, in a good regression model, we would expect to see residuals randomly scattered around zero, with no systematic pattern. In this plot, we are looking for patterns such as the spread of residuals increasing or decreasing as fitted values change, which could indicate heteroscedasticity.
+# :::
+
+# %%
+# Create residual plot with seaborn defaults
+fig, ax = plt.subplots(figsize=(10, 6))
+
+# Simple, clean scatter plot
+sns.scatterplot(x=salary_hat, y=u_hat, ax=ax)
+
+# Add reference line
+ax.axhline(y=0, linestyle="--", label="Zero Line")
+
+# Clean titles and labels
+ax.set_title("Residual Plot")
+ax.set_xlabel("Fitted Values")
+ax.set_ylabel("Residuals")
+ax.legend()
+
+plt.tight_layout()
+
+# %% [markdown]
+# The residual plot is useful for checking assumptions of OLS regression, particularly homoscedasticity (constant variance of errors). Ideally, residuals should be randomly scattered around zero with no systematic pattern. Look for patterns where the spread of residuals changes with fitted values, which could indicate heteroscedasticity.
 #
 # ### Example 2.7: Wage and Education
 #
@@ -411,37 +447,48 @@ u_hat = results.resid  # Extract residuals
 
 # Property 1: Mean of residuals should be zero
 u_hat_mean = np.mean(u_hat)  # Calculate the mean of residuals
-print(f"Mean of residuals: {u_hat_mean:.10f}")  # Print the mean of residuals
 
 # Property 2: Covariance between education and residuals should be zero
 educ_u_cov = np.cov(wage1["educ"], u_hat)[
     1,
     0,
 ]  # Calculate covariance between educ and residuals
-print(
-    f"Covariance between education and residuals: {educ_u_cov:.10f}",
-)  # Print the covariance
 
-# Property 3: Point (x̄, ȳ) lies on regression line
+# Property 3: Point (x_mean, y_mean) lies on regression line
 educ_mean = np.mean(wage1["educ"])  # Calculate mean of education
 wage_mean = np.mean(wage1["wage"])  # Calculate mean of wage
 wage_pred = (
     b.iloc[0] + b.iloc[1] * educ_mean
 )  # Predict wage at mean education using regression line
 
-print("\nVerifying that (x̄, ȳ) lies on regression line:")
-wage_mean = np.mean(
-    wage1["wage"],
-)  # Recalculate mean of wage (already calculated above, but for clarity)
-print(f"wage_mean: {wage_mean}")  # Print the mean wage
-print(f"Predicted wage at mean education: {wage_pred:.6f}")  # Print the predicted wage
+# Display regression properties
+properties_data = pd.DataFrame(
+    {
+        "Property": [
+            "Mean of residuals",
+            "Covariance between education and residuals",
+            "Mean wage",
+            "Predicted wage at mean education",
+        ],
+        "Value": [u_hat_mean, educ_u_cov, wage_mean, wage_pred],
+        "Formatted": [
+            f"{u_hat_mean:.10f}",
+            f"{educ_u_cov:.10f}",
+            f"{wage_mean:.6f}",
+            f"{wage_pred:.6f}",
+        ],
+    },
+)
+properties_data[["Property", "Formatted"]]
 
 # %% [markdown]
 # This code calculates the mean of the residuals, the covariance between education and residuals, and verifies that the predicted wage at the mean level of education is equal to the mean wage.
 #
-# **Interpretation of Example 2.7:**
+# :::{note} Interpretation of Example 2.7
+# :class: dropdown
 #
 # The output should show that the mean of residuals is very close to zero (practically zero, given potential floating-point inaccuracies). Similarly, the covariance between education and residuals should be very close to zero. Finally, the predicted wage at the average level of education should be very close to the average wage. These results confirm the mathematical properties of OLS residuals. These properties are not assumptions, but rather outcomes of the OLS estimation procedure.
+# :::
 #
 # ## 2.3. Goodness of Fit
 #
@@ -499,58 +546,66 @@ sal_hat = results.fittedvalues  # Get fitted values
 u_hat = results.resid  # Get residuals
 sal = ceosal1["salary"]  # Get actual salary values
 
-# Calculate R² in three different ways - Using different formulas for R-squared
-R2_a = np.var(sal_hat, ddof=1) / np.var(sal, ddof=1)  # R² = var(ŷ)/var(y)
-R2_b = 1 - np.var(u_hat, ddof=1) / np.var(sal, ddof=1)  # R² = 1 - var(û)/var(y)
-R2_c = np.corrcoef(sal, sal_hat)[1, 0] ** 2  # R² = correlation(y, ŷ)²
+# Calculate $R^2$ in three different ways - Using different formulas for R-squared
+R2_a = np.var(sal_hat, ddof=1) / np.var(sal, ddof=1)  # $R^2$ = var(y_hat)/var(y)
+R2_b = 1 - np.var(u_hat, ddof=1) / np.var(sal, ddof=1)  # $R^2$ = 1 - var(u_hat)/var(y)
+R2_c = np.corrcoef(sal, sal_hat)[1, 0] ** 2  # $R^2$ = correlation(y, y_hat)^2
 
-print("R-squared calculations:")
-print(
-    f"Using var(ŷ)/var(y): {R2_a:.4f}",
-)  # Print R-squared calculated using variance of fitted values
-print(
-    f"Using 1 - var(û)/var(y): {R2_b:.4f}",
-)  # Print R-squared calculated using variance of residuals
-print(
-    f"Using correlation coefficient: {R2_c:.4f}",
-)  # Print R-squared calculated using correlation coefficient
-
-# Create visualization of model fit - Two subplots: Actual vs Predicted and Residuals vs Fitted
-plt.figure(figsize=(12, 5))
-
-# Actual vs Predicted plot - Scatter plot of actual salary against predicted salary
-plt.subplot(1, 2, 1)  # First subplot in a 1x2 grid
-sns.scatterplot(x=sal, y=sal_hat, alpha=0.5)  # Scatter plot
-plt.plot(
-    [sal.min(), sal.max()],
-    [sal.min(), sal.max()],
-    "r--",
-    label="Perfect Fit",
-)  # 45-degree line for perfect fit
-plt.title("Actual vs Predicted Salary")  # Set title
-plt.xlabel("Actual Salary")  # Set x-axis label
-plt.ylabel("Predicted Salary")  # Set y-axis label
-plt.legend()  # Show legend
-
-# Residuals vs Fitted plot - Scatter plot of fitted salary against residuals
-plt.subplot(1, 2, 2)  # Second subplot in a 1x2 grid
-sns.scatterplot(x=sal_hat, y=u_hat, alpha=0.5)  # Scatter plot
-plt.axhline(y=0, color="r", linestyle="--", label="Zero Line")  # Horizontal line at y=0
-plt.title("Residuals vs Fitted Values")  # Set title
-plt.xlabel("Fitted Values")  # Set x-axis label
-plt.ylabel("Residuals")  # Set y-axis label
-plt.legend()  # Show legend
-
-plt.tight_layout()  # Adjust layout
+# Display R-squared calculations
+r_squared_data = pd.DataFrame(
+    {
+        "Method": [
+            "Using var($\\hat{y}$)/var(y)",
+            "Using 1 - var($\\hat{u}$)/var(y)",
+            "Using correlation coefficient",
+        ],
+        "Formula": [
+            "var($\\hat{y}$)/var(y)",
+            "1 - var($\\hat{u}$)/var(y)",
+            "corr(y, $\\hat{y}$)^2",
+        ],
+        "R-squared": [R2_a, R2_b, R2_c],
+        "Formatted": [f"{R2_a:.4f}", f"{R2_b:.4f}", f"{R2_c:.4f}"],
+    },
+)
+r_squared_data[["Method", "Formatted"]]
 
 # %% [markdown]
-# This code calculates R-squared in three different ways using the formulas we discussed. All three methods should yield the same R-squared value (within rounding errors). It then creates two plots side-by-side:
-# 1. **Actual vs Predicted Plot**: This plot shows actual salary on the x-axis and predicted salary on the y-axis. If the model fit were perfect (R² = 1), all points would lie on the 45-degree dashed red line. The closer the points are to this line, the better the fit.
-# 2. **Residuals vs Fitted Values Plot**: We already saw this plot in Example 2.6. In the context of goodness of fit, we can see how the residuals are distributed relative to the fitted values. Ideally, residuals should be randomly scattered around zero with no discernible pattern, indicating that the model has captured all systematic variation.
+# This code calculates R-squared using three different formulas to demonstrate their equivalence. All three methods should yield the same R-squared value (within rounding errors).
 #
-# **Interpretation of Example 2.8:**
+# :::{note} Interpretation of Example 2.8
+# :class: dropdown
 #
-# The R-squared value calculated (around 0.013 in our example) will be the same regardless of which formula is used, confirming their equivalence. The Actual vs Predicted plot will show how well the predicted salaries align with the actual salaries. Points clustered closer to the 45-degree line indicate a better fit. The Residuals vs Fitted Values plot helps to visually assess if the variance of residuals is constant across fitted values and if there are any patterns in residuals that might suggest model inadequacy.
+# The R-squared value calculated (around 0.013 in our example) will be the same regardless of which formula is used, confirming their equivalence. This low R-squared indicates that ROE explains very little of the variation in CEO salaries.
+# :::
+
+# %%
+# Create model fit visualization with seaborn defaults
+fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+
+# Actual vs Predicted plot
+sns.scatterplot(x=sal, y=sal_hat, ax=axes[0])
+axes[0].plot([sal.min(), sal.max()], [sal.min(), sal.max()], "--", label="Perfect Fit")
+axes[0].set_title("Actual vs Predicted Salary")
+axes[0].set_xlabel("Actual Salary")
+axes[0].set_ylabel("Predicted Salary")
+axes[0].legend()
+
+# Residuals vs Fitted plot
+sns.scatterplot(x=sal_hat, y=u_hat, ax=axes[1])
+axes[1].axhline(y=0, linestyle="--", label="Zero Line")
+axes[1].set_title("Residuals vs Fitted Values")
+axes[1].set_xlabel("Fitted Values")
+axes[1].set_ylabel("Residuals")
+axes[1].legend()
+
+plt.tight_layout()
+
+# %% [markdown]
+# These two plots provide visual assessments of model fit:
+#
+# 1. **Actual vs Predicted Plot**: Shows how well predicted salaries align with actual salaries. If the model fit were perfect ($R^2$ = 1), all points would lie on the 45-degree dashed red line.
+# 2. **Residuals vs Fitted Values Plot**: Helps assess homoscedasticity and model adequacy. Ideally, residuals should be randomly scattered around zero with no discernible pattern.
 #
 # ### Example 2.9: Voting Outcomes and Campaign Expenditures
 #
@@ -574,17 +629,32 @@ summary_stats = pd.DataFrame(  # Create a DataFrame for summary statistics
     },
 )
 
-print("Regression Summary:")
-print("==================")
-print(f"R-squared: {results.rsquared:.4f}")  # Print R-squared
-print(f"Adjusted R-squared: {results.rsquared_adj:.4f}")  # Print Adjusted R-squared
-print(f"F-statistic: {results.fvalue:.2f}")  # Print F-statistic
-print(f"Number of observations: {results.nobs}")  # Print number of observations
-print("\nCoefficient Estimates:")
-print("====================")
-print(
-    summary_stats.round(4),
-)  # Print summary statistics table, rounded to 4 decimal places
+# Display regression summary
+summary_metrics = pd.DataFrame(
+    {
+        "Metric": [
+            "R-squared",
+            "Adjusted R-squared",
+            "F-statistic",
+            "Number of observations",
+        ],
+        "Value": [
+            results.rsquared,
+            results.rsquared_adj,
+            results.fvalue,
+            int(results.nobs),
+        ],
+        "Formatted": [
+            f"{results.rsquared:.4f}",
+            f"{results.rsquared_adj:.4f}",
+            f"{results.fvalue:.2f}",
+            f"{int(results.nobs)}",
+        ],
+    },
+)
+display(summary_metrics[["Metric", "Formatted"]])
+
+summary_stats.round(4)  # Display summary statistics table, rounded to 4 decimal places
 
 # Create enhanced visualization - Regression plot with confidence interval
 plt.figure(figsize=(10, 6))
@@ -597,13 +667,15 @@ plot_regression(
 )
 
 # %% [markdown]
-# This code fits the regression model for voting outcomes and campaign spending share. It then creates a summary table containing coefficient estimates, standard errors, t-values, and p-values. It prints this summary, along with R-squared, adjusted R-squared, F-statistic, and the number of observations. Finally, it generates an enhanced regression plot, including a 95% confidence interval, using our `plot_regression` function.
+# This code fits the regression model for voting outcomes and campaign spending share. It then creates a summary table containing coefficient estimates, standard errors, t-values, and p-values. It shows this summary, along with R-squared, adjusted R-squared, F-statistic, and the number of observations. Finally, it generates an enhanced regression plot, including a 95% confidence interval, using our `plot_regression` function.
 #
-# **Interpretation of Example 2.9:**
+# :::{note} Interpretation of Example 2.9
+# :class: dropdown
 #
 # The output will provide a comprehensive summary of the regression results. You can see the estimated coefficients for the intercept and `shareA`, their standard errors, t-values, and p-values. The p-values are used for hypothesis testing (we will discuss this in detail in later chapters). The R-squared and Adjusted R-squared values indicate the goodness of fit. Adjusted R-squared is a modified version of R-squared that adjusts for the number of regressors in the model (it is more relevant in multiple regression). The F-statistic is used for testing the overall significance of the regression model.
 #
 # The enhanced regression plot visually represents the relationship between `shareA` and `voteA`, along with the 95% confidence interval around the regression line, providing a visual sense of the uncertainty in our predictions.
+# :::
 #
 # ## 2.4 Nonlinearities
 #
@@ -646,42 +718,54 @@ reg = smf.ols(
 )  # Use np.log() to take logarithm of wage
 results = reg.fit()  # Fit the model
 
-print("Log-Level Model Results:")
-print(
-    f"Intercept (β₀): {results.params.iloc[0]:.4f}",
-)  # Print estimated intercept, using iloc for position
-print(
-    f"Education coefficient (β₁): {results.params.iloc[1]:.4f}",
-)  # Print estimated education coefficient, using iloc for position
-print(f"R-squared: {results.rsquared:.4f}")  # Print R-squared
+# Display Log-Level Model results
+log_level_results = pd.DataFrame(
+    {
+        "Parameter": [
+            "Intercept ($\\beta_0$)",
+            "Education coefficient ($\\beta_1$)",
+            "R-squared",
+        ],
+        "Value": [results.params.iloc[0], results.params.iloc[1], results.rsquared],
+        "Formatted": [
+            f"{results.params.iloc[0]:.4f}",
+            f"{results.params.iloc[1]:.4f}",
+            f"{results.rsquared:.4f}",
+        ],
+    },
+)
+log_level_results[["Parameter", "Formatted"]]
 
-# Create visualization - Scatter plot of educ vs log(wage) and regression line
-plt.figure(figsize=(10, 6))
-sns.scatterplot(
+# %% [markdown]
+# This code estimates the log-level model using `statsmodels` with `np.log(wage)` as the dependent variable and shows the estimated coefficients and R-squared.
+#
+# :::{note} Interpretation of Example 2.10
+# :class: dropdown
+#
+# We find $\hat{\beta}_1 = 0.0827$. In the log-level model, this coefficient can be interpreted as the approximate percentage change in wage for a one-unit increase in education. So, approximately, each additional year of education is associated with an 8.27% increase in hourly wage. The intercept $\hat{\beta}_0 = 0.5838$ represents the predicted log(wage) when education is zero. The R-squared value is 0.1858, indicating the proportion of variation in $\log(\text{wage})$ explained by education.
+# :::
+
+# %%
+# Create log-level visualization with seaborn defaults
+fig, ax = plt.subplots(figsize=(10, 6))
+
+# Simple, elegant regression plot
+sns.regplot(
     data=wage1,
     x="educ",
     y=np.log(wage1["wage"]),
-    alpha=0.5,
-)  # Scatter plot of educ vs log(wage)
-plt.plot(
-    wage1["educ"],
-    results.fittedvalues,
-    color="red",
-    label="Regression Line",
-)  # Plot regression line
-plt.title("Log(Wage) vs Years of Education")  # Set title
-plt.xlabel("Years of Education")  # Set x-axis label
-plt.ylabel("Log(Wage)")  # Set y-axis label
-plt.legend()  # Show legend
-plt.grid(True, alpha=0.3)  # Add grid lines
-plt.tight_layout()  # Adjust layout
+    ax=ax,
+)
+
+# Clean titles and labels
+ax.set_title("Log-Level Model: Log(Wage) vs Years of Education")
+ax.set_xlabel("Years of Education")
+ax.set_ylabel("Log(Hourly Wage)")
+
+plt.tight_layout()
 
 # %% [markdown]
-# This code estimates the log-level model using `statsmodels`. We use `np.log(wage)` as the dependent variable in the formula. It then prints the estimated coefficients and R-squared and generates a scatter plot of education against log(wage) with the regression line.
-#
-# **Interpretation of Example 2.10:**
-#
-# We find $\hat{\beta}_1 = 0.0827$. In the log-level model, this coefficient can be interpreted as the approximate percentage change in wage for a one-unit increase in education. So, approximately, each additional year of education is associated with an 8.27% increase in hourly wage. The intercept $\hat{\beta}_0 = 0.5838$ represents the predicted log(wage) when education is zero. The R-squared value is 0.1858, indicating the proportion of variation in $\log(\text{wage})$ explained by education.
+# The scatter plot visualizes the log-level relationship, showing how log(wage) varies with years of education, along with the fitted regression line.
 #
 # ### Example 2.11: CEO Salary and Firm Sales (Log-Log Model)
 #
@@ -702,42 +786,54 @@ reg = smf.ols(
 )  # Use np.log() for both salary and sales
 results = reg.fit()  # Fit the model
 
-print("Log-Log Model Results:")
-print(
-    f"Intercept (β₀): {results.params.iloc[0]:.4f}",
-)  # Print estimated intercept, using iloc for position
-print(
-    f"Sales elasticity (β₁): {results.params.iloc[1]:.4f}",
-)  # Print estimated elasticity (sales coefficient), using iloc for position
-print(f"R-squared: {results.rsquared:.4f}")  # Print R-squared
+# Display Log-Log Model results
+log_log_results = pd.DataFrame(
+    {
+        "Parameter": [
+            "Intercept ($\\beta_0$)",
+            "Sales elasticity ($\\beta_1$)",
+            "R-squared",
+        ],
+        "Value": [results.params.iloc[0], results.params.iloc[1], results.rsquared],
+        "Formatted": [
+            f"{results.params.iloc[0]:.4f}",
+            f"{results.params.iloc[1]:.4f}",
+            f"{results.rsquared:.4f}",
+        ],
+    },
+)
+log_log_results[["Parameter", "Formatted"]]
 
-# Create visualization - Scatter plot of log(sales) vs log(salary) and regression line
-plt.figure(figsize=(10, 6))
-sns.scatterplot(
+# %% [markdown]
+# This code estimates the log-log model using `statsmodels` with both variables in logarithmic form and shows the estimated coefficients and R-squared.
+#
+# :::{note} Interpretation of Example 2.11
+# :class: dropdown
+#
+# We find $\hat{\beta}_1 = 0.2567$. In the log-log model, this coefficient is the elasticity of salary with respect to sales. It means that a 1% increase in firm sales is associated with approximately a 0.2567% increase in CEO salary. The intercept $\hat{\beta}_0 = 4.8220$ does not have a direct practical interpretation in terms of original variables in this model, but it is needed for the regression equation. The R-squared value is 0.2108, indicating the proportion of variation in $\log(\text{salary})$ explained by $\log(\text{sales})$.
+# :::
+
+# %%
+# Create log-log visualization with seaborn defaults
+fig, ax = plt.subplots(figsize=(10, 6))
+
+# Simple, elegant regression plot
+sns.regplot(
     data=ceosal1,
     x=np.log(ceosal1["sales"]),
     y=np.log(ceosal1["salary"]),
-    alpha=0.5,
-)  # Scatter plot of log(sales) vs log(salary)
-plt.plot(
-    np.log(ceosal1["sales"]),
-    results.fittedvalues,
-    color="red",
-    label="Regression Line",
-)  # Plot regression line
-plt.title("Log(Salary) vs Log(Sales)")  # Set title
-plt.xlabel("Log(Sales)")  # Set x-axis label
-plt.ylabel("Log(Salary)")  # Set y-axis label
-plt.legend()  # Show legend
-plt.grid(True, alpha=0.3)  # Add grid lines
-plt.tight_layout()  # Adjust layout
+    ax=ax,
+)
+
+# Clean titles and labels
+ax.set_title("Log-Log Model: CEO Salary Elasticity")
+ax.set_xlabel("Log(Firm Sales)")
+ax.set_ylabel("Log(CEO Salary)")
+
+plt.tight_layout()
 
 # %% [markdown]
-# This code estimates the log-log model using `statsmodels`. We use `np.log(salary)` as the dependent variable and `np.log(sales)` as the independent variable. It prints the estimated coefficients and R-squared and generates a scatter plot of log(sales) against log(salary) with the regression line.
-#
-# **Interpretation of Example 2.11:**
-#
-# We find $\hat{\beta}_1 = 0.2567$. In the log-log model, this coefficient is the elasticity of salary with respect to sales. It means that a 1% increase in firm sales is associated with approximately a 0.2567% increase in CEO salary. The intercept $\hat{\beta}_0 = 4.8220$ does not have a direct practical interpretation in terms of original variables in this model, but it is needed for the regression equation. The R-squared value is 0.2108, indicating the proportion of variation in $\log(\text{salary})$ explained by $\log(\text{sales})$.
+# The scatter plot visualizes the log-log relationship between firm sales and CEO salary, demonstrating the elasticity concept where both variables are on logarithmic scales.
 #
 # ## 2.5. Regression through the Origin and Regression on a Constant
 #
@@ -774,79 +870,125 @@ results2 = reg2.fit()  # Fit model 2
 reg3 = smf.ols(formula="salary ~ 1", data=ceosal1)  # Regression on constant only
 results3 = reg3.fit()  # Fit model 3
 
-# Print results - Compare coefficients and R-squared for all three models
-print("Regression Comparisons:")
-print("======================")
-print("\n1. Regular regression:")
-print(
-    f"β₀: {results1.params.iloc[0]:.2f}",
-)  # Intercept from model 1, using iloc for position
-print(
-    f"β₁: {results1.params.iloc[1]:.2f}",
-)  # Slope from model 1, using iloc for position
-print(f"R²: {results1.rsquared:.4f}")  # R-squared from model 1
+# Compare results across all three models
+comparison_data = pd.DataFrame(
+    {
+        "Model": [
+            "1. Regular regression",
+            "2. Regression through origin",
+            "3. Regression on constant",
+        ],
+        "Intercept ($\\beta_0$)": [
+            f"{results1.params.iloc[0]:.2f}",
+            "N/A",
+            f"{results3.params.iloc[0]:.2f}",
+        ],
+        "Slope ($\\beta_1$)": [
+            f"{results1.params.iloc[1]:.2f}",
+            f"{results2.params.iloc[0]:.2f}",
+            "N/A",
+        ],
+        "R-squared": [
+            f"{results1.rsquared:.4f}",
+            f"{results2.rsquared:.4f}",
+            f"{results3.rsquared:.4f}",
+        ],
+    },
+)
+comparison_data
 
-print("\n2. Regression through origin:")
-print(
-    f"β₁: {results2.params.iloc[0]:.2f}",
-)  # Slope from model 2, using iloc for position
-print(f"R²: {results2.rsquared:.4f}")  # R-squared from model 2
+# Create regression comparison visualization
+fig, ax = plt.subplots(figsize=(12, 8))
 
-print("\n3. Regression on constant:")
-print(
-    f"β₀: {results3.params.iloc[0]:.2f}",
-)  # Intercept (mean) from model 3, using iloc for position
-print(f"R²: {results3.rsquared:.4f}")  # R-squared from model 3 (will be 0)
+# Enhanced scatter plot with seaborn
+sns.scatterplot(
+    data=ceosal1,
+    x="roe",
+    y="salary",
+    alpha=0.7,
+    s=80,
+    edgecolors="white",
+    linewidths=0.5,
+    label="Data Points",
+    ax=ax,
+)
 
-# Create visualization - Plot data and regression lines for all three models
-plt.figure(figsize=(10, 6))
-plt.scatter(
-    ceosal1["roe"],
-    ceosal1["salary"],
-    alpha=0.5,
-    label="Data",
-)  # Scatter plot of data points
-x_range = np.linspace(
-    ceosal1["roe"].min(),
-    ceosal1["roe"].max(),
-    100,
-)  # Generate x values for regression lines
+# Generate smooth x range for regression lines
+x_range = np.linspace(ceosal1["roe"].min(), ceosal1["roe"].max(), 100)
 
-# Plot all regression lines - Plot regression lines for each model
-plt.plot(
+# Plot regression lines with distinct, attractive colors
+colors = ["#e74c3c", "#27ae60", "#3498db"]  # Red, green, blue
+linestyles = ["-", "--", "-."]  # Different line styles
+labels = ["Regular Regression", "Through Origin", "Constant Only"]
+linewidths = [2.5, 2.5, 2.5]
+
+# Regular regression line
+ax.plot(
     x_range,
     results1.params.iloc[0] + results1.params.iloc[1] * x_range,
-    "r-",
-    label="Regular regression",  # Regular OLS regression line
+    color=colors[0],
+    linestyle=linestyles[0],
+    linewidth=linewidths[0],
+    label=labels[0],
+    alpha=0.9,
 )
-plt.plot(
+
+# Through origin line
+ax.plot(
     x_range,
     results2.params.iloc[0] * x_range,
-    "g--",
-    label="Through origin",
-)  # Regression through origin line
-plt.plot(
-    [x_range.min(), x_range.max()],
-    [results3.params.iloc[0], results3.params.iloc[0]],
-    "b-.",
-    label="Constant only",  # Regression on constant (horizontal line at mean)
+    color=colors[1],
+    linestyle=linestyles[1],
+    linewidth=linewidths[1],
+    label=labels[1],
+    alpha=0.9,
 )
 
-plt.title("Comparison of Different Regression Specifications")  # Set title
-plt.xlabel("Return on Equity (ROE)")  # Set x-axis label
-plt.ylabel("Salary")  # Set y-axis label
-plt.legend()  # Show legend
-plt.grid(True, alpha=0.3)  # Add grid lines
-plt.tight_layout()  # Adjust layout
+# Constant only line (horizontal)
+ax.axhline(
+    y=results3.params.iloc[0],
+    color=colors[2],
+    linestyle=linestyles[2],
+    linewidth=linewidths[2],
+    label=labels[2],
+    alpha=0.9,
+)
+
+# Enhanced styling
+ax.set_title(
+    "Comparison of Regression Specifications",
+    fontsize=16,
+    fontweight="bold",
+    pad=20,
+)
+ax.set_xlabel("Return on Equity (ROE)", fontsize=13, fontweight="bold")
+ax.set_ylabel("CEO Salary (thousands $)", fontsize=13, fontweight="bold")
+
+# Enhanced legend
+ax.legend(
+    loc="upper right",
+    frameon=True,
+    fancybox=True,
+    shadow=True,
+    fontsize=11,
+)
+
+# Enhanced grid
+ax.grid(True, alpha=0.3, linestyle="-", linewidth=0.5)
+ax.set_axisbelow(True)
+
+plt.tight_layout()
 
 # %% [markdown]
-# This code estimates three regression models: regular OLS, regression through the origin, and regression on a constant only. It prints the estimated coefficients and R-squared for each model and then generates a scatter plot of the data with all three regression lines plotted.
+# This visualization compares three different regression specifications with distinct styling for each model type.
 #
-# **Interpretation of Example 2.12:**
+# :::{note} Interpretation of Example 2.12
+# :class: dropdown
 #
 # By comparing the results, you can see how the estimated coefficients and R-squared values differ across these specifications. Regression through the origin forces the line to go through (0,0), which may or may not be appropriate depending on the context. Regression on a constant simply gives you the mean of the dependent variable as the prediction and will always have an R-squared of 0 (unless variance of y is also zero, which is trivial case).
 #
 # In the visualization, you can visually compare the fit of these different regression lines to the data. Notice that R-squared for regression through the origin can sometimes be higher or lower than regular OLS, and it should be interpreted cautiously as the total sum of squares is calculated differently in regression through the origin. Regression on a constant will be a horizontal line at the mean of salary.
+# :::
 #
 # ## 2.6. Expected Values, Variances, and Standard Errors
 #
@@ -926,15 +1068,17 @@ lnchprg_sq_mean = np.mean(meap93["lnchprg"] ** 2)  # Mean of squared lnchprg
 se_b1 = SER / (np.sqrt(lnchprg_var) * np.sqrt(n - 1))  # Standard error of beta_1
 se_b0 = se_b1 * np.sqrt(lnchprg_sq_mean)  # Standard error of beta_0
 
-print("Manual Calculations:")
-print(f"SER: {SER:.4f}")  # Print manually calculated SER
-print(f"SE(β₀): {se_b0:.4f}")  # Print manually calculated SE(beta_0)
-print(f"SE(β₁): {se_b1:.4f}")  # Print manually calculated SE(beta_1)
+# Display manual calculations
+manual_calculations = pd.DataFrame(
+    {
+        "Statistic": ["SER", "SE($\\beta_0$)", "SE($\\beta_1$)"],
+        "Manual Calculation": [SER, se_b0, se_b1],
+        "Formatted": [f"{SER:.4f}", f"{se_b0:.4f}", f"{se_b1:.4f}"],
+    },
+)
+display(manual_calculations[["Statistic", "Formatted"]])
 
-print("\nStatsmodels Results:")
-print(
-    results.summary().tables[1],
-)  # Print statsmodels summary table (coefficients, SEs, t-values, p-values)
+results.summary().tables[1]  # Display statsmodels summary table
 
 # Create visualization with confidence intervals - Regression plot with CI
 plt.figure(figsize=(10, 6))
@@ -947,11 +1091,13 @@ plot_regression(
 )
 
 # %% [markdown]
-# This code estimates the regression model, calculates the SER and standard errors of coefficients manually using the formulas, and then prints these manual calculations. It also prints the `statsmodels` regression summary table, which includes the standard errors calculated by `statsmodels` (which should match our manual calculations). Finally, it generates a regression plot with a 95% confidence interval.
+# This code estimates the regression model, calculates the SER and standard errors of coefficients manually using the formulas, and then shows these manual calculations. It also displays the `statsmodels` regression summary table, which includes the standard errors calculated by `statsmodels` (which should match our manual calculations). Finally, it generates a regression plot with a 95% confidence interval.
 #
-# **Interpretation of Example 2.12:**
+# :::{note} Interpretation of Example 2.12 (Standard Errors)
+# :class: dropdown
 #
 # By comparing the manually calculated SER and standard errors with those reported in the `statsmodels` summary table, you can verify that they are consistent. The standard errors provide a measure of the uncertainty associated with our coefficient estimates. Smaller standard errors mean our estimates are more precise. The regression plot with confidence intervals visually shows the range of plausible regression lines, given the uncertainty in our estimates.
+# :::
 #
 # ## 2.7 Monte Carlo Simulations
 #
@@ -987,70 +1133,62 @@ df = pd.DataFrame({"y": y, "x": x})  # Create DataFrame
 reg = smf.ols(formula="y ~ x", data=df)  # Define OLS model
 results = reg.fit()  # Fit model
 
-# Print results - Compare true and estimated parameters
-print("True vs. Estimated Parameters:")
-print("=============================")
-print(
-    f"True β₀: {beta0:.4f} | Estimated β₀: {results.params.iloc[0]:.4f}",
-)  # Compare true and estimated intercept, using iloc for position
-print(
-    f"True β₁: {beta1:.4f} | Estimated β₁: {results.params.iloc[1]:.4f}",
-)  # Compare true and estimated slope, using iloc for position
-print(f"\nR-squared: {results.rsquared:.4f}")  # Print R-squared
-
-# Create visualization - Two subplots: Data with regression lines and Error distribution
-plt.figure(figsize=(12, 5))
-
-# Data and regression lines - Scatter plot of simulated data with true and estimated regression lines
-plt.subplot(1, 2, 1)  # First subplot
-plt.scatter(x, y, alpha=0.5, label="Sample data")  # Scatter plot of x vs y
-x_range = np.linspace(x.min(), x.max(), 100)  # Generate x values for regression lines
-plt.plot(
-    x_range,
-    beta0 + beta1 * x_range,
-    "r-",
-    label="True regression line",  # True population regression line (red solid)
-    linewidth=2,
+# Display true vs estimated parameters
+parameter_comparison = pd.DataFrame(
+    {
+        "Parameter": ["Intercept ($\\beta_0$)", "Slope ($\\beta_1$)", "R-squared"],
+        "True Value": [beta0, beta1, "N/A"],
+        "Estimated Value": [
+            results.params.iloc[0],
+            results.params.iloc[1],
+            results.rsquared,
+        ],
+        "Comparison": [
+            f"{beta0:.4f} vs {results.params.iloc[0]:.4f}",
+            f"{beta1:.4f} vs {results.params.iloc[1]:.4f}",
+            f"{results.rsquared:.4f}",
+        ],
+    },
 )
-plt.plot(
+parameter_comparison[["Parameter", "Comparison"]]
+
+# Create Monte Carlo visualization with seaborn defaults
+fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+
+# Data and regression lines plot
+sns.scatterplot(x=x, y=y, ax=axes[0])
+x_range = np.linspace(x.min(), x.max(), 100)
+axes[0].plot(x_range, beta0 + beta1 * x_range, label="True Population Line")
+axes[0].plot(
     x_range,
     results.params.iloc[0] + results.params.iloc[1] * x_range,
-    "g--",
-    label="Estimated regression line",  # Estimated OLS regression line (green dashed)
+    "--",
+    label="Sample Estimate",
 )
-plt.title("Sample Data and Regression Lines")  # Set title
-plt.xlabel("x")  # Set x-axis label
-plt.ylabel("y")  # Set y-axis label
-plt.legend()  # Show legend
+axes[0].set_title("Simulated Data with Regression Lines")
+axes[0].set_xlabel("x")
+axes[0].set_ylabel("y")
+axes[0].legend()
 
-# Error distribution - Histogram of simulated error terms and true error distribution
-plt.subplot(1, 2, 2)  # Second subplot
-sns.histplot(
-    u,
-    bins=30,
-    stat="density",
-    alpha=0.5,
-)  # Histogram of simulated error terms
-x_range = np.linspace(u.min(), u.max(), 100)  # Generate x values for PDF
-plt.plot(
-    x_range,
-    stats.norm.pdf(x_range, 0, sigma_u),
-    "r-",
-    label="True error distribution",  # True error distribution PDF (red solid)
-)
-plt.title("Distribution of Errors")  # Set title
-plt.xlabel("Error term (u)")  # Set x-axis label
-plt.ylabel("Density")  # Set y-axis label
-plt.legend()  # Show legend
+# Error distribution plot
+sns.histplot(u, bins=25, stat="density", ax=axes[1])
+u_range = np.linspace(u.min(), u.max(), 100)
+axes[1].plot(u_range, stats.norm.pdf(u_range, 0, sigma_u), label="True Distribution")
+axes[1].set_title("Error Term Distribution")
+axes[1].set_xlabel("Error term (u)")
+axes[1].set_ylabel("Density")
+axes[1].legend()
 
-plt.tight_layout()  # Adjust layout
+plt.tight_layout()
 
 # %% [markdown]
 # This code simulates a dataset from a simple linear regression model with known parameters. It then estimates the model using OLS and compares the estimated coefficients to the true parameters. It also visualizes the simulated data with both the true population regression line and the estimated regression line, as well as the distribution of the error terms compared to the true error distribution.
 #
-# **Interpretation of Example 2.13.1:**
+# :::{note} Interpretation of Example 2.13.1
+# :class: dropdown
 #
 # By running this code, you will see that the estimated coefficients $\hat{\beta}_0$ and $\hat{\beta}_1$ are close to, but not exactly equal to, the true values $\beta_0$ and $\beta_1$. This is because we are using a single random sample, and there is sampling variability. The regression plot shows the scatter of data points around the true population regression line, and the estimated regression line is an approximation based on this sample. The error distribution histogram should resemble the true normal distribution of errors.
+# :::
 #
 # ### 2.7.2. Many Samples
 #
@@ -1084,74 +1222,50 @@ for i in range(r):  # Loop for r replications
     b0[i] = results.params.iloc[0]  # Store estimated intercept, using iloc for position
     b1[i] = results.params.iloc[1]  # Store estimated slope, using iloc for position
 
-# Calculate summary statistics - Calculate mean and standard deviation of estimated coefficients
-print("Monte Carlo Results:")
-print("===================")
-print("\nIntercept (β₀):")
-print(f"True value: {beta0:.4f}")  # True intercept
-print(f"Mean estimate: {np.mean(b0):.4f}")  # Mean of estimated intercepts
-print(
-    f"Standard deviation: {np.std(b0, ddof=1):.4f}",
-)  # Standard deviation of estimated intercepts
+# Display Monte Carlo results
+monte_carlo_results = pd.DataFrame(
+    {
+        "Parameter": ["Intercept ($\\beta_0$)", "Slope ($\\beta_1$)"],
+        "True Value": [beta0, beta1],
+        "Mean Estimate": [np.mean(b0), np.mean(b1)],
+        "Standard Deviation": [np.std(b0, ddof=1), np.std(b1, ddof=1)],
+        "Summary": [
+            f"True: {beta0:.4f}, Mean: {np.mean(b0):.4f}, SD: {np.std(b0, ddof=1):.4f}",
+            f"True: {beta1:.4f}, Mean: {np.mean(b1):.4f}, SD: {np.std(b1, ddof=1):.4f}",
+        ],
+    },
+)
+monte_carlo_results[["Parameter", "Summary"]]
 
-print("\nSlope (β₁):")
-print(f"True value: {beta1:.4f}")  # True slope
-print(f"Mean estimate: {np.mean(b1):.4f}")  # Mean of estimated slopes
-print(
-    f"Standard deviation: {np.std(b1, ddof=1):.4f}",
-)  # Standard deviation of estimated slopes
+# Create sampling distribution visualization with seaborn defaults
+fig, axes = plt.subplots(1, 2, figsize=(12, 5))
 
-# Create visualization - Two subplots: Sampling distribution of beta_0 and beta_1
-plt.figure(figsize=(12, 5))
+# Beta_0 distribution
+sns.histplot(b0, bins=25, stat="density", ax=axes[0])
+axes[0].axvline(beta0, linestyle="-", label="True Value")
+axes[0].axvline(np.mean(b0), linestyle="--", label="Sample Mean")
+axes[0].set_title("Sampling Distribution of $\\beta_0$")
+axes[0].set_xlabel("$\\beta_0$ Estimates")
+axes[0].legend()
 
-# Distribution of β₀ estimates - Histogram of estimated intercepts
-plt.subplot(1, 2, 1)  # First subplot
-sns.histplot(b0, bins=50, stat="density", alpha=0.5)  # Histogram of beta_0 estimates
-plt.axvline(
-    beta0,
-    color="r",
-    linestyle="--",
-    label="True value",
-)  # Vertical line at true beta_0
-plt.axvline(
-    np.mean(b0),
-    color="g",
-    linestyle="--",
-    label="Mean estimate",
-)  # Vertical line at mean of beta_0 estimates
-plt.title("Sampling Distribution of β₀")  # Set title
-plt.xlabel("β₀ estimates")  # x-axis label
-plt.ylabel("Density")  # y-axis label
-plt.legend()  # Show legend
+# Beta_1 distribution
+sns.histplot(b1, bins=25, stat="density", ax=axes[1])
+axes[1].axvline(beta1, linestyle="-", label="True Value")
+axes[1].axvline(np.mean(b1), linestyle="--", label="Sample Mean")
+axes[1].set_title("Sampling Distribution of $\\beta_1$")
+axes[1].set_xlabel("$\\beta_1$ Estimates")
+axes[1].legend()
 
-# Distribution of β₁ estimates - Histogram of estimated slopes
-plt.subplot(1, 2, 2)  # Second subplot
-sns.histplot(b1, bins=50, stat="density", alpha=0.5)  # Histogram of beta_1 estimates
-plt.axvline(
-    beta1,
-    color="r",
-    linestyle="--",
-    label="True value",
-)  # Vertical line at true beta_1
-plt.axvline(
-    np.mean(b1),
-    color="g",
-    linestyle="--",
-    label="Mean estimate",
-)  # Vertical line at mean of beta_1 estimates
-plt.title("Sampling Distribution of β₁")  # Set title
-plt.xlabel("β₁ estimates")  # x-axis label
-plt.ylabel("Density")  # y-axis label
-plt.legend()  # Show legend
-
-plt.tight_layout()  # Adjust layout
+plt.tight_layout()
 
 # %% [markdown]
 # This code performs a Monte Carlo simulation with a large number of replications (e.g., 10000). In each replication, it generates new error terms and $y$ values while keeping the $x$ values fixed. It estimates the OLS regression and stores the estimated coefficients. After all replications, it calculates the mean and standard deviation of the estimated coefficients and plots histograms of their sampling distributions.
 #
-# **Interpretation of Example 2.13.2:**
+# :::{note} Interpretation of Example 2.13.2
+# :class: dropdown
 #
 # By running this code, you will observe the sampling distributions of $\hat{\beta}_0$ and $\hat{\beta}_1$. The histograms should be roughly bell-shaped (approximating normal distributions, due to the Central Limit Theorem). Importantly, you should see that the mean of the estimated coefficients (vertical green dashed line in the histograms) is very close to the true population parameters (vertical red dashed line). This empirically demonstrates the unbiasedness of the OLS estimators under the SLR assumptions. The standard deviations of the estimated coefficients provide a measure of their sampling variability.
+# :::
 #
 # ### 2.7.3. Violation of SLR.4 (Zero Conditional Mean)
 #
@@ -1173,7 +1287,7 @@ b1 = np.empty(r)
 # Generate fixed x values - Fixed x values
 x = stats.norm.rvs(4, 1, size=n)
 
-# Perform Monte Carlo simulation with E(u|x) ≠ 0 - Simulation loop with violation of SLR.4
+# Perform Monte Carlo simulation with E(u|x) $\neq$ 0 - Simulation loop with violation of SLR.4
 for i in range(r):  # Loop for replications
     # Generate errors with non-zero conditional mean - Error term depends on x, violating SLR.4
     u_mean = (x - 4) / 5  # E(u|x) = (x - 4)/5 - Conditional mean of error depends on x
@@ -1190,60 +1304,50 @@ for i in range(r):  # Loop for replications
     b0[i] = results.params.iloc[0]  # Store estimated intercept, using iloc for position
     b1[i] = results.params.iloc[1]  # Store estimated slope, using iloc for position
 
-# Print results - Compare true values with mean estimates and bias
-print("Monte Carlo Results with E(u|x) ≠ 0:")
-print("===================================")
-print("\nIntercept (β₀):")
-print(f"True value: {beta0:.4f}")  # True intercept
-print(f"Mean estimate: {np.mean(b0):.4f}")  # Mean of estimated intercepts
-print(f"Bias: {np.mean(b0) - beta0:.4f}")  # Bias of intercept estimator
+# Display Monte Carlo results with bias analysis
+bias_results = pd.DataFrame(
+    {
+        "Parameter": ["Intercept ($\\beta_0$)", "Slope ($\\beta_1$)"],
+        "True Value": [beta0, beta1],
+        "Mean Estimate": [np.mean(b0), np.mean(b1)],
+        "Bias": [np.mean(b0) - beta0, np.mean(b1) - beta1],
+        "Analysis": [
+            f"True: {beta0:.4f}, Estimate: {np.mean(b0):.4f}, Bias: {np.mean(b0) - beta0:.4f}",
+            f"True: {beta1:.4f}, Estimate: {np.mean(b1):.4f}, Bias: {np.mean(b1) - beta1:.4f}",
+        ],
+    },
+)
+bias_results[["Parameter", "Analysis"]]
 
-print("\nSlope (β₁):")
-print(f"True value: {beta1:.4f}")  # True slope
-print(f"Mean estimate: {np.mean(b1):.4f}")  # Mean of estimated slopes
-print(f"Bias: {np.mean(b1) - beta1:.4f}")  # Bias of slope estimator
+# Create bias visualization with seaborn defaults
+fig, axes = plt.subplots(1, 2, figsize=(12, 5))
 
-# Create visualization - Sampling distributions of beta_0 and beta_1 with violation of SLR.4
-plt.figure(figsize=(12, 5))
+# Beta_0 distribution showing bias
+sns.histplot(b0, bins=25, stat="density", ax=axes[0])
+axes[0].axvline(beta0, linestyle="-", label="True Value")
+axes[0].axvline(np.mean(b0), linestyle="--", label="Biased Mean")
+axes[0].set_title("Sampling Distribution of $\\beta_0$\nwith E(u|x) $\\neq$ 0")
+axes[0].set_xlabel("$\\beta_0$ Estimates")
+axes[0].legend()
 
-# Distribution of β₀ estimates - Histogram of beta_0 estimates
-plt.subplot(1, 2, 1)  # First subplot
-sns.histplot(b0, bins=50, stat="density", alpha=0.5)  # Histogram
-plt.axvline(beta0, color="r", linestyle="--", label="True value")  # True value line
-plt.axvline(
-    np.mean(b0),
-    color="g",
-    linestyle="--",
-    label="Mean estimate",
-)  # Mean estimate line
-plt.title("Sampling Distribution of β₀\nwith E(u|x) ≠ 0")  # Title
-plt.xlabel("β₀ estimates")  # x-axis label
-plt.ylabel("Density")  # y-axis label
-plt.legend()  # Legend
+# Beta_1 distribution showing bias
+sns.histplot(b1, bins=25, stat="density", ax=axes[1])
+axes[1].axvline(beta1, linestyle="-", label="True Value")
+axes[1].axvline(np.mean(b1), linestyle="--", label="Biased Mean")
+axes[1].set_title("Sampling Distribution of $\\beta_1$\nwith E(u|x) $\\neq$ 0")
+axes[1].set_xlabel("$\\beta_1$ Estimates")
+axes[1].legend()
 
-# Distribution of β₁ estimates - Histogram of beta_1 estimates
-plt.subplot(1, 2, 2)  # Second subplot
-sns.histplot(b1, bins=50, stat="density", alpha=0.5)  # Histogram
-plt.axvline(beta1, color="r", linestyle="--", label="True value")  # True value line
-plt.axvline(
-    np.mean(b1),
-    color="g",
-    linestyle="--",
-    label="Mean estimate",
-)  # Mean estimate line
-plt.title("Sampling Distribution of β₁\nwith E(u|x) ≠ 0")  # Title
-plt.xlabel("β₁ estimates")  # x-axis label
-plt.ylabel("Density")  # y-axis label
-plt.legend()  # Legend
-
-plt.tight_layout()  # Layout
+plt.tight_layout()
 
 # %% [markdown]
 # In this code, we intentionally violate the zero conditional mean assumption by setting the mean of the error term to be dependent on $x$: $\text{E}(u|x) = (x - 4)/5$. We then perform the Monte Carlo simulation and examine the results.
 #
-# **Interpretation of Example 2.13.3:**
+# :::{note} Interpretation of Example 2.13.3
+# :class: dropdown
 #
 # By running this simulation, you will observe that the mean of the estimated coefficients $\hat{\beta}_0$ and $\hat{\beta}_1$ are no longer close to the true values $\beta_0$ and $\beta_1$. The bias, calculated as the difference between the mean estimate and the true value, will be noticeably different from zero. This empirically demonstrates that when the zero conditional mean assumption (SLR.4) is violated, the OLS estimators become biased. The histograms of the sampling distributions will be centered around the biased mean estimates, not the true values.
+# :::
 #
 # ### 2.7.4. Violation of SLR.5 (Homoscedasticity)
 #
@@ -1283,62 +1387,51 @@ for i in range(r):  # Loop for replications
     b0[i] = results.params.iloc[0]  # Store estimated intercept, using iloc for position
     b1[i] = results.params.iloc[1]  # Store estimated slope, using iloc for position
 
-# Print results - Compare true values with mean estimates and standard deviations
-print("Monte Carlo Results with Heteroscedasticity:")
-print("==========================================")
-print("\nIntercept (β₀):")
-print(f"True value: {beta0:.4f}")  # True intercept
-print(f"Mean estimate: {np.mean(b0):.4f}")  # Mean of estimated intercepts
-print(
-    f"Standard deviation: {np.std(b0, ddof=1):.4f}",
-)  # Standard deviation of estimated intercepts
+# Display Monte Carlo results with heteroscedasticity
+heteroscedasticity_results = pd.DataFrame(
+    {
+        "Parameter": ["Intercept ($\\beta_0$)", "Slope ($\\beta_1$)"],
+        "True Value": [beta0, beta1],
+        "Mean Estimate": [np.mean(b0), np.mean(b1)],
+        "Standard Deviation": [np.std(b0, ddof=1), np.std(b1, ddof=1)],
+        "Summary": [
+            f"True: {beta0:.4f}, Mean: {np.mean(b0):.4f}, SD: {np.std(b0, ddof=1):.4f}",
+            f"True: {beta1:.4f}, Mean: {np.mean(b1):.4f}, SD: {np.std(b1, ddof=1):.4f}",
+        ],
+    },
+)
+heteroscedasticity_results[["Parameter", "Summary"]]
 
-print("\nSlope (β₁):")
-print(f"True value: {beta1:.4f}")  # True slope
-print(f"Mean estimate: {np.mean(b1):.4f}")  # Mean of estimated slopes
-print(
-    f"Standard deviation: {np.std(b1, ddof=1):.4f}",
-)  # Standard deviation of estimated slopes
+# Create heteroscedasticity visualization with seaborn defaults
+fig, axes = plt.subplots(1, 2, figsize=(12, 5))
 
-# Create visualization - Scatter plot of data with heteroscedasticity and Error term vs x plot
-plt.figure(figsize=(12, 5))
+# Simple scatter plot with heteroscedasticity
+sns.scatterplot(x=x, y=y, ax=axes[0])
+x_range = np.linspace(x.min(), x.max(), 100)
+axes[0].plot(x_range, beta0 + beta1 * x_range, "--", label="True Regression Line")
+axes[0].set_title("Sample Data with Heteroscedasticity")
+axes[0].set_xlabel("x")
+axes[0].set_ylabel("y")
+axes[0].legend()
 
-# Scatter plot of one sample with heteroscedasticity - Visualize data with heteroscedasticity
-plt.subplot(1, 2, 1)  # First subplot
-plt.scatter(x, y, alpha=0.5)  # Scatter plot of x vs y
-plt.plot(
-    x_range,
-    beta0 + beta1 * x_range,
-    "r--",
-    label="True regression line",
-)  # True regression line
-plt.title("Sample Data with Heteroscedasticity")  # Title
-plt.xlabel("x")  # x-axis label
-plt.ylabel("y")  # y-axis label
-plt.legend()  # Legend
+# Error term visualization
+sns.scatterplot(x=x, y=u, ax=axes[1])
+axes[1].axhline(y=0, linestyle="--", label="E(u|x) = 0")
+axes[1].set_title("Error Terms vs. x")
+axes[1].set_xlabel("x")
+axes[1].set_ylabel("Error term (u)")
+axes[1].legend()
 
-# Distribution of errors conditional on x - Visualize heteroscedasticity directly
-plt.subplot(1, 2, 2)  # Second subplot
-plt.scatter(x, u, alpha=0.5)  # Scatter plot of x vs error term
-plt.axhline(
-    y=0,
-    color="r",
-    linestyle="--",
-    label="E(u|x) = 0",
-)  # Horizontal line at zero
-plt.title("Error Terms vs. x")  # Title
-plt.xlabel("x")  # x-axis label
-plt.ylabel("Error term (u)")  # y-axis label
-plt.legend()  # Legend
-
-plt.tight_layout()  # Layout
+plt.tight_layout()
 
 # %% [markdown]
 # In this code, we introduce heteroscedasticity by making the variance of the error term dependent on $x$: $\text{var}(u|x) = 4e^{(x-4.5)}$. We then perform the Monte Carlo simulation.
 #
-# **Interpretation of Example 2.13.4:**
+# :::{note} Interpretation of Example 2.13.4
+# :class: dropdown
 #
 # By running this simulation, you will observe that the mean of the estimated coefficients $\hat{\beta}_0$ and $\hat{\beta}_1$ are still close to the true values $\beta_0$ and $\beta_1$. This confirms that OLS estimators remain unbiased even under heteroscedasticity (as long as SLR.1-SLR.4 hold). However, you might notice that the standard deviations of the estimated coefficients (sampling variability) could be different compared to the homoscedastic case (Example 2.7.2), although unbiasedness is maintained. The scatter plot of data with heteroscedasticity will show that the spread of data points around the regression line is not constant across the range of $x$. The plot of error terms vs. $x$ directly visualizes the heteroscedasticity, as you'll see the spread of error terms changing with $x$.
+# :::
 #
 # Through these Monte Carlo simulations, we have empirically explored the properties of OLS estimators and the consequences of violating some of the key assumptions of the simple linear regression model.
 #

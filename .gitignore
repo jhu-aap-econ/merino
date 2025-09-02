@@ -163,3 +163,4 @@ cython_debug/
 
 # MyST build outputs
 _build
+sources
