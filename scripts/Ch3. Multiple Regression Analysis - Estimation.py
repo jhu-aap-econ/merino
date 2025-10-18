@@ -54,6 +54,7 @@ import patsy as pt
 import statsmodels.formula.api as smf
 import statsmodels.stats.outliers_influence as smo
 import wooldridge as wool
+from IPython.display import display
 
 # %% [markdown]
 # ## 3.1 Multiple Regression in Practice
@@ -333,7 +334,14 @@ k = 2  # Number of independent variables (hsGPA and ACT)
 
 # Extract dependent variable (college GPA)
 y = gpa1["colGPA"]
-print(f"Dependent variable shape: {y.shape}")
+# Show shape info
+shape_info = pd.DataFrame(
+    {
+        "Variable": ["y (colGPA)"],
+        "Shape": [str(y.shape)],
+    },
+)
+shape_info
 
 # Method 1: Manual construction of design matrix X
 # Design matrix X = [1, hsGPA, ACT] for each observation
@@ -354,8 +362,13 @@ y2, X2 = pt.dmatrices(
 )
 
 # Display design matrix structure
-print(f"Design matrix X dimensions: {X.shape} = (n × k+1)")
-print("First 5 rows of design matrix:")
+matrix_info = pd.DataFrame(
+    {
+        "Description": ["Design matrix dimensions", "Interpretation"],
+        "Value": [f"{X.shape}", "(n observations × k+1 variables)"],
+    },
+)
+display(matrix_info)
 X.head()
 
 # %% [markdown]
@@ -370,21 +383,30 @@ y_array = np.array(y).reshape(n, 1)  # Dependent variable as column vector (n ×
 
 # Step 2: Calculate intermediate matrices for clarity
 XtX = X_array.T @ X_array  # X'X matrix (k+1 × k+1)
-print(f"X'X matrix shape: {XtX.shape}")
-print(f"X'X is symmetric: {np.allclose(XtX, XtX.T)}")
-
 Xty = X_array.T @ y_array  # X'y vector (k+1 × 1)
-print(f"X'y vector shape: {Xty.shape}\n")
+
+# Display matrix operation results
+matrix_ops = pd.DataFrame(
+    {
+        "Operation": ["X'X matrix", "X'X symmetry check", "X'y vector"],
+        "Shape": [str(XtX.shape), "-", str(Xty.shape)],
+        "Result": ["(k+1 × k+1)", str(np.allclose(XtX, XtX.T)), "(k+1 × 1)"],
+    },
+)
+matrix_ops
 
 # Step 3: Apply OLS formula
 XtX_inverse = np.linalg.inv(XtX)  # (X'X)⁻¹
 beta_estimates = XtX_inverse @ Xty  # β̂ = (X'X)⁻¹X'y
 
 # Display results
-print("OLS coefficient estimates (β̂):")
-for i, name in enumerate(["Intercept", "hsGPA", "ACT"]):
-    print(f"  {name}: {beta_estimates[i, 0]:.4f}")
-beta_estimates
+coef_results = pd.DataFrame(
+    {
+        "Variable": ["Intercept", "hsGPA", "ACT"],
+        "Coefficient (β̂)": [beta_estimates[i, 0] for i in range(3)],
+    },
+)
+coef_results
 
 # %% [markdown]
 # This code performs the matrix operations to calculate $\hat{\beta}$. The result `b` should match the coefficients we obtained from `statsmodels` earlier.
@@ -403,8 +425,10 @@ beta_estimates
 
 # %%
 # residuals, estimated variance of u and SER:
-u_hat = y - X @ b  # Calculate residuals
-sigsq_hat = (u_hat.T @ u_hat) / (n - k - 1)  # Estimated error variance
+u_hat = (
+    y.values.reshape(-1, 1) - X.values @ beta_estimates
+)  # Calculate residuals as numpy array
+sigsq_hat = float((u_hat.T @ u_hat) / (n - k - 1))  # Estimated error variance (scalar)
 SER = np.sqrt(sigsq_hat)  # Standard Error of Regression
 SER  # Display SER
 
@@ -417,7 +441,9 @@ SER  # Display SER
 
 # %%
 # estimated variance-covariance matrix of beta_hat and standard errors:
-Vbeta_hat = sigsq_hat * np.linalg.inv(X.T @ X)  # Variance-covariance matrix
+Vbeta_hat = sigsq_hat * np.linalg.inv(
+    X.values.T @ X.values,
+)  # Variance-covariance matrix
 se = np.sqrt(np.diagonal(Vbeta_hat))  # Standard errors (diagonal elements' square root)
 se  # Display standard errors
 
@@ -633,11 +659,24 @@ R2_auxiliary = auxiliary_results.rsquared  # R² from auxiliary regression
 # Step 2: Calculate VIF using formula: VIF = 1 / (1 - R²)
 VIF_hsGPA = 1 / (1 - R2_auxiliary)
 
-print("VIF Calculation for hsGPA:")
-print(f"  R² from auxiliary regression: {R2_auxiliary:.4f}")
-print(f"  VIF = 1/(1-{R2_auxiliary:.4f}) = {VIF_hsGPA:.2f}")
-print(f"  Interpretation: Variance of β̂_hsGPA is inflated by factor of {VIF_hsGPA:.2f}")
-VIF_hsGPA
+# VIF Calculation for hsGPA
+vif_results = pd.DataFrame(
+    {
+        "Metric": [
+            "R² from auxiliary regression",
+            "VIF calculation",
+            "VIF for hsGPA",
+            "Interpretation",
+        ],
+        "Value": [
+            f"{R2_auxiliary:.4f}",
+            f"1/(1-{R2_auxiliary:.4f})",
+            f"{VIF_hsGPA:.2f}",
+            f"Variance inflated by {VIF_hsGPA:.2f}x",
+        ],
+    },
+)
+vif_results
 
 # %% [markdown]
 # The VIF for `hsGPA` (and similarly for `ACT`) will quantify the extent to which the variance of its estimated coefficient is inflated due to its correlation with the other independent variable (`ACT`).

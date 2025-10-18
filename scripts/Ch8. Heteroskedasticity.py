@@ -47,6 +47,7 @@ import patsy as pt  # Used for creating design matrices easily from formulas
 import statsmodels.api as sm  # Provides statistical models and tests
 import statsmodels.formula.api as smf  # Convenient formula interface for statsmodels
 import wooldridge as wool  # Access to Wooldridge textbook datasets
+from IPython.display import display
 
 # %% [markdown]
 # ## 8.1 Heteroskedasticity-Robust Inference
@@ -58,88 +59,86 @@ import wooldridge as wool  # Access to Wooldridge textbook datasets
 # ### Example 8.2: Heteroskedasticity-Robust Inference for GPA Equation
 #
 # We estimate a model for college cumulative GPA (`cumgpa`) using data for students observed in the spring semester (`spring == 1`). We compare the standard OLS results with results using robust standard errors.
-
-# %%
-# Load the GPA data
-gpa3 = wool.data("gpa3")
-
-# Define the regression model using statsmodels formula API
-# We predict cumgpa based on SAT score, high school percentile, total credit hours,
-# gender, and race dummies.
-# We only use data for the spring semester using the 'subset' argument.
-reg = smf.ols(
-    formula="cumgpa ~ sat + hsperc + tothrs + female + black + white",
-    data=gpa3,
-    subset=(gpa3["spring"] == 1),  # Use only spring observations
-)
-
-# --- Estimate with Default (Homoskedasticity-Assumed) Standard Errors ---
-results_default = reg.fit()
-
-# Display the results in a table
-print("--- OLS Results with Default Standard Errors ---")
-table_default = pd.DataFrame(
-    {
-        "b": round(results_default.params, 5),  # OLS Coefficients
-        "se": round(results_default.bse, 5),  # Default Standard Errors
-        "t": round(results_default.tvalues, 5),  # t-statistics based on default SEs
-        "pval": round(results_default.pvalues, 5),  # p-values based on default SEs
-    },
-)
-print(f"Default OLS Estimates:\n{table_default}\n")
-
-# Interpretation (Default): Based on these standard errors, variables like sat, hsperc,
-# tothrs, female, and black appear statistically significant (p < 0.05).
-# However, if heteroskedasticity is present, these SEs and p-values are unreliable.
-
-# %%
-# --- Estimate with White's Original Robust Standard Errors (HC0) ---
-# We fit the same model, but specify cov_type='HC0' to get robust SEs.
-results_white = reg.fit(cov_type="HC0")
-
-# Display the results
-print("--- OLS Results with Robust (HC0) Standard Errors ---")
-table_white = pd.DataFrame(
-    {
-        "b": round(results_white.params, 5),  # OLS Coefficients (same as default)
-        "se": round(results_white.bse, 5),  # Robust (HC0) Standard Errors
-        "t": round(results_white.tvalues, 5),  # Robust t-statistics
-        "pval": round(results_white.pvalues, 5),  # Robust p-values
-    },
-)
-print(f"HC0 Robust Estimates:\n{table_white}\n")
-
-# Interpretation (HC0): The coefficient estimates 'b' are identical to the default OLS run.
-# However, the standard errors 'se' have changed for most variables compared to the default.
-# For example, the SE for 'tothrs' increased from 0.00104 to 0.00121, reducing its t-statistic
-# and increasing its p-value (though still significant). The SE for 'black' decreased slightly.
-# The conclusions about significance might change depending on the variable and significance level.
-
-# %%
-# --- Estimate with Refined Robust Standard Errors (HC3) ---
-# HC3 applies a different small-sample correction, often preferred over HC0.
-results_refined = reg.fit(cov_type="HC3")
-
-# Display the results
-print("--- OLS Results with Robust (HC3) Standard Errors ---")
-table_refined = pd.DataFrame(
-    {
-        "b": round(results_refined.params, 5),  # OLS Coefficients (same as default)
-        "se": round(results_refined.bse, 5),  # Robust (HC3) Standard Errors
-        "t": round(results_refined.tvalues, 5),  # Robust t-statistics
-        "pval": round(results_refined.pvalues, 5),  # Robust p-values
-    },
-)
-print(f"Refined HC3 Robust Estimates:\n{table_refined}\n")
-
-# Interpretation (HC3): The HC3 robust standard errors are slightly different from the HC0 SEs
-# (e.g., SE for 'tothrs' is 0.00123 with HC3 vs 0.00121 with HC0). In this specific case,
-# the differences between HC0 and HC3 are minor and don't change the conclusions about
-# statistical significance compared to HC0. Using robust standard errors confirms that
-# sat, hsperc, tothrs, female, and black have statistically significant effects on cumgpa
-# in this sample, even if heteroskedasticity is present.
-
-# %% [markdown]
+#
+# ```
+# # Load the GPA data
+# gpa3 = wool.data("gpa3")
+#
+# # Define the regression model using statsmodels formula API
+# # We predict cumgpa based on SAT score, high school percentile, total credit hours,
+# # gender, and race dummies.
+# # We only use data for the spring semester using the 'subset' argument.
+# reg = smf.ols(
+#     formula="cumgpa ~ sat + hsperc + tothrs + female + black + white",
+#     data=gpa3,
+#     subset=(gpa3["spring"] == 1),  # Use only spring observations
+# )
+#
+# # --- Estimate with Default (Homoskedasticity-Assumed) Standard Errors ---
+# results_default = reg.fit()
+#
+# # Display the results in a table
+# # OLS Results with Default Standard Errors
+# table_default = pd.DataFrame(
+#     {
+#         "b": round(results_default.params, 5),  # OLS Coefficients
+#         "se": round(results_default.bse, 5),  # Default Standard Errors
+#         "t": round(results_default.tvalues, 5),  # t-statistics based on default SEs
+#         "pval": round(results_default.pvalues, 5),  # p-values based on default SEs
+#     },
+# )
+# display(table_default)
+#
+# # Interpretation (Default): Based on these standard errors, variables like sat, hsperc,
+# # tothrs, female, and black appear statistically significant (p < 0.05).
+# # However, if heteroskedasticity is present, these SEs and p-values are unreliable.
+#
+# # --- Estimate with White's Original Robust Standard Errors (HC0) ---
+# # We fit the same model, but specify cov_type='HC0' to get robust SEs.
+# results_white = reg.fit(cov_type="HC0")
+#
+# # Display the results
+# # OLS Results with Robust (HC0) Standard Errors
+# table_white = pd.DataFrame(
+#     {
+#         "b": round(results_white.params, 5),  # OLS Coefficients (same as default)
+#         "se": round(results_white.bse, 5),  # Robust (HC0) Standard Errors
+#         "t": round(results_white.tvalues, 5),  # Robust t-statistics
+#         "pval": round(results_white.pvalues, 5),  # Robust p-values
+#     },
+# )
+# display(table_white)
+#
+# # Interpretation (HC0): The coefficient estimates 'b' are identical to the default OLS run.
+# # However, the standard errors 'se' have changed for most variables compared to the default.
+# # For example, the SE for 'tothrs' increased from 0.00104 to 0.00121, reducing its t-statistic
+# # and increasing its p-value (though still significant). The SE for 'black' decreased slightly.
+# # The conclusions about significance might change depending on the variable and significance level.
+#
+# # --- Estimate with Refined Robust Standard Errors (HC3) ---
+# # HC3 applies a different small-sample correction, often preferred over HC0.
+# results_refined = reg.fit(cov_type="HC3")
+#
+# # Display the results
+# # OLS Results with Robust (HC3) Standard Errors
+# table_refined = pd.DataFrame(
+#     {
+#         "b": round(results_refined.params, 5),  # OLS Coefficients (same as default)
+#         "se": round(results_refined.bse, 5),  # Robust (HC3) Standard Errors
+#         "t": round(results_refined.tvalues, 5),  # Robust t-statistics
+#         "pval": round(results_refined.pvalues, 5),  # Robust p-values
+#     },
+# )
+# display(table_refined)
+#
+# # Interpretation (HC3): The HC3 robust standard errors are slightly different from the HC0 SEs
+# # (e.g., SE for 'tothrs' is 0.00123 with HC3 vs 0.00121 with HC0). In this specific case,
+# # the differences between HC0 and HC3 are minor and don't change the conclusions about
+# # statistical significance compared to HC0. Using robust standard errors confirms that
+# # sat, hsperc, tothrs, female, and black have statistically significant effects on cumgpa
+# # in this sample, even if heteroskedasticity is present.
+# ```
+#
 # Robust standard errors can also be used for hypothesis tests involving multiple restrictions, such as F-tests. We test the joint significance of the race dummies (`black` and `white`), comparing the standard F-test (assuming homoskedasticity) with robust F-tests.
 
 # %%
@@ -160,14 +159,19 @@ results_default = reg.fit()  # Fit with default SEs
 ftest_default = results_default.f_test(hypotheses)
 fstat_default = ftest_default.statistic  # Extract F-statistic value
 fpval_default = ftest_default.pvalue
-print("--- F-Test Comparison ---")
-print(f"Default F-statistic: {fstat_default:.4f}")
-print(f"Default F p-value:   {fpval_default:.4f}\n")
+# F-Test Comparison
+ftest_comparison = pd.DataFrame(
+    {
+        "Test Type": ["Default F-test"],
+        "F-statistic": [f"{fstat_default:.4f}"],
+        "p-value": [f"{fpval_default:.4f}"],
+    },
+)
+display(ftest_comparison)
 
 # Interpretation (Default F-Test): The default F-test has F-statistic 0.6796 and p-value 0.5075,
 # failing to reject the null hypothesis that race variables are jointly insignificant.
 
-# %%
 # --- F-Test using Robust (HC3) VCOV ---
 results_hc3 = reg.fit(cov_type="HC3")  # Fit with HC3 robust SEs
 ftest_hc3 = results_hc3.f_test(
@@ -175,22 +179,33 @@ ftest_hc3 = results_hc3.f_test(
 )  # Perform F-test using the robust VCOV matrix
 fstat_hc3 = ftest_hc3.statistic
 fpval_hc3 = ftest_hc3.pvalue
-print(f"Robust (HC3) F-statistic: {fstat_hc3:.4f}")
-print(f"Robust (HC3) F p-value:   {fpval_hc3:.4f}\n")
+ftest_hc3 = pd.DataFrame(
+    {
+        "Test Type": ["Robust (HC3) F-test"],
+        "F-statistic": [f"{fstat_hc3:.4f}"],
+        "p-value": [f"{fpval_hc3:.4f}"],
+    },
+)
+display(ftest_hc3)
 
 # Interpretation (HC3 F-Test): The robust F-statistic (0.6725) is slightly smaller than the
 # default (0.6796), and the p-value (0.5111) is slightly larger but consistent with the default.
 # The conclusion remains the same: we fail to reject the null hypothesis and conclude that race
 # is not jointly statistically significant, even after accounting for potential heteroskedasticity.
 
-# %%
 # --- F-Test using Robust (HC0) VCOV ---
 results_hc0 = reg.fit(cov_type="HC0")  # Fit with HC0 robust SEs
 ftest_hc0 = results_hc0.f_test(hypotheses)
 fstat_hc0 = ftest_hc0.statistic
 fpval_hc0 = ftest_hc0.pvalue
-print(f"Robust (HC0) F-statistic: {fstat_hc0:.4f}")
-print(f"Robust (HC0) F p-value:   {fpval_hc0:.4f}\n")
+ftest_hc0 = pd.DataFrame(
+    {
+        "Test Type": ["Robust (HC0) F-test"],
+        "F-statistic": [f"{fstat_hc0:.4f}"],
+        "p-value": [f"{fpval_hc0:.4f}"],
+    },
+)
+display(ftest_hc0)
 
 # Interpretation (HC0 F-Test): The HC0 robust F-test gives F-statistic 0.7478 and p-value 0.4741,
 # very similar results to the HC3 test. In general, if the default and robust test statistics
@@ -225,7 +240,7 @@ reg = smf.ols(formula="price ~ lotsize + sqrft + bdrms", data=hprice1)
 results = reg.fit()
 
 # Display the OLS results (for context)
-print("--- OLS Results (Levels Model) ---")
+# --- OLS Results (Levels Model) ---
 table_results = pd.DataFrame(
     {
         "b": round(results.params, 4),
@@ -234,7 +249,7 @@ table_results = pd.DataFrame(
         "pval": round(results.pvalues, 4),
     },
 )
-print(f"OLS Estimates:\n{table_results}\n")
+table_results  # Display OLS estimates
 
 # %%
 # --- Breusch-Pagan Test (LM version) using statsmodels function ---
@@ -248,9 +263,9 @@ y, X = pt.dmatrices(
 # Perform Breusch-Pagan test for heteroskedasticity
 # H₀: Var(u|X) = σ² (homoskedasticity)
 # H₁: Var(u|X) depends on X (heteroskedasticity)
-print("\n" + "=" * 60)
-print("BREUSCH-PAGAN TEST FOR HETEROSKEDASTICITY")
-print("=" * 60)
+# Separator line removed
+# BREUSCH-PAGAN TEST FOR HETEROSKEDASTICITY
+# Separator line removed
 
 # Run the test using statsmodels built-in function
 bp_test_results = sm.stats.diagnostic.het_breuschpagan(
@@ -265,22 +280,42 @@ bp_f_statistic = bp_test_results[2]  # F-statistic version
 bp_f_pvalue = bp_test_results[3]  # p-value for F-test
 
 # Display results with interpretation
-print(f"LM Test Statistic:    {bp_lm_statistic:8.4f}")
-print(f"LM Test p-value:      {bp_lm_pvalue:8.4f}")
-print(f"F Test Statistic:     {bp_f_statistic:8.4f}")
-print(f"F Test p-value:       {bp_f_pvalue:8.4f}")
-print("-" * 60)
+bp_results = pd.DataFrame(
+    {
+        "Test": ["LM Test", "LM Test", "F Test", "F Test"],
+        "Metric": ["Statistic", "p-value", "Statistic", "p-value"],
+        "Value": [
+            f"{bp_lm_statistic:8.4f}",
+            f"{bp_lm_pvalue:8.4f}",
+            f"{bp_f_statistic:8.4f}",
+            f"{bp_f_pvalue:8.4f}",
+        ],
+    },
+)
+display(bp_results)
 
 # Interpretation
 significance_level = 0.05
-if bp_lm_pvalue < significance_level:
-    print(f"Decision: REJECT H₀ at {significance_level:.0%} level")
-    print("Conclusion: Evidence of heteroskedasticity detected")
-    print("Recommendation: Use robust standard errors for valid inference")
-else:
-    print(f"Decision: FAIL TO REJECT H₀ at {significance_level:.0%} level")
-    print("Conclusion: No significant evidence of heteroskedasticity")
-    print("Recommendation: OLS standard errors are likely valid")
+test_decision = pd.DataFrame(
+    {
+        "Decision": [
+            f"REJECT H₀ at {significance_level:.0%} level"
+            if bp_lm_pvalue < significance_level
+            else f"FAIL TO REJECT H₀ at {significance_level:.0%} level",
+        ],
+        "Conclusion": [
+            "Evidence of heteroskedasticity detected"
+            if bp_lm_pvalue < significance_level
+            else "No significant evidence of heteroskedasticity",
+        ],
+        "Recommendation": [
+            "Use robust standard errors for valid inference"
+            if bp_lm_pvalue < significance_level
+            else "OLS standard errors are likely valid",
+        ],
+    },
+)
+test_decision
 
 # %%
 # --- Breusch-Pagan Test (F version) calculated manually ---
@@ -296,8 +331,13 @@ results_resid = reg_resid.fit()
 # The F-statistic from this regression is the BP F-test statistic.
 bp_F_statistic = results_resid.fvalue
 bp_F_pval = results_resid.f_pvalue
-print(f"BP F statistic: {bp_F_statistic:.4f}")
-print(f"BP F p-value:   {bp_F_pval:.4f}\n")
+# Display Breusch-Pagan test results
+pd.DataFrame(
+    {
+        "Metric": ["BP F statistic", "BP F p-value"],
+        "Value": [f"{bp_F_statistic:.4f}", f"{bp_F_pval:.4f}"],
+    },
+)
 
 # Interpretation (BP F Test): The F-statistic is 5.3389, and the p-value is 0.0020.
 # This also leads to rejecting the null hypothesis of homoskedasticity at the 5% level.
@@ -334,12 +374,17 @@ y_log, X_bp_log = pt.dmatrices(
     data=hprice1,
     return_type="dataframe",
 )
-print("--- Breusch-Pagan Test (Log Model) ---")
+# --- Breusch-Pagan Test (Log Model) ---
 result_bp_log = sm.stats.diagnostic.het_breuschpagan(results_log.resid, X_bp_log)
 bp_statistic_log = result_bp_log[0]
 bp_pval_log = result_bp_log[1]
-print(f"BP LM statistic: {bp_statistic_log:.4f}")
-print(f"BP LM p-value:   {bp_pval_log:.4f}\n")
+# Display Breusch-Pagan test results (log model)
+pd.DataFrame(
+    {
+        "Metric": ["BP LM statistic", "BP LM p-value"],
+        "Value": [f"{bp_statistic_log:.4f}", f"{bp_pval_log:.4f}"],
+    },
+)
 
 # Interpretation (BP Test, Log Model): The LM statistic is 4.2232, and the p-value is 0.2383.
 # We fail to reject the null hypothesis of homoskedasticity at conventional levels (e.g., 5% or 10%).
@@ -357,12 +402,17 @@ X_wh_log = pd.DataFrame(
     },
 )
 # Use the het_breuschpagan function with the new design matrix X_wh_log
-print("--- White Test (Log Model) ---")
+# --- White Test (Log Model) ---
 result_white_log = sm.stats.diagnostic.het_breuschpagan(results_log.resid, X_wh_log)
 white_statistic_log = result_white_log[0]
 white_pval_log = result_white_log[1]
-print(f"White LM statistic: {white_statistic_log:.4f}")
-print(f"White LM p-value:   {white_pval_log:.4f}\n")
+# Display White test results (log model)
+pd.DataFrame(
+    {
+        "Metric": ["White LM statistic", "White LM p-value"],
+        "Value": [f"{white_statistic_log:.4f}", f"{white_pval_log:.4f}"],
+    },
+)
 
 # Interpretation (White Test, Log Model): The White test LM statistic is 3.4473, and the
 # p-value is 0.1784. Unlike the BP test, the White test does not reject the null hypothesis
@@ -402,7 +452,7 @@ reg_ols = smf.ols(
 results_ols = reg_ols.fit(cov_type="HC0")  # Use robust SEs
 
 # Display OLS results
-print("--- OLS Results with Robust (HC0) SEs (Singles Only) ---")
+# --- OLS Results with Robust (HC0) SEs (Singles Only) ---
 table_ols = pd.DataFrame(
     {
         "b": round(results_ols.params, 4),
@@ -411,7 +461,7 @@ table_ols = pd.DataFrame(
         "pval": round(results_ols.pvalues, 4),
     },
 )
-print(f"OLS Robust Estimates:\n{table_ols}\n")
+table_ols  # Display OLS with robust SEs
 
 # %%
 # --- WLS Estimation (Assuming Var = sigma^2 * inc) ---
@@ -428,7 +478,7 @@ reg_wls = smf.wls(
 results_wls = reg_wls.fit()
 
 # Display WLS results
-print("--- WLS Results (Weights = 1/inc) ---")
+# --- WLS Results (Weights = 1/inc) ---
 table_wls = pd.DataFrame(
     {
         "b": round(results_wls.params, 4),  # WLS Coefficients
@@ -437,7 +487,7 @@ table_wls = pd.DataFrame(
         "pval": round(results_wls.pvalues, 4),  # WLS p-values
     },
 )
-print(f"WLS Estimates:\n{table_wls}\n")
+table_wls  # Display WLS estimates
 
 # Interpretation (OLS vs WLS):
 # Comparing WLS to OLS (robust), the coefficient estimates differ somewhat (e.g., 'inc' coeff
@@ -463,7 +513,7 @@ reg_wls = smf.wls(
 
 # --- WLS Results with Default (Non-Robust) SEs ---
 results_wls_default = reg_wls.fit()
-print("--- WLS Results with Default (Non-Robust) Standard Errors ---")
+# --- WLS Results with Default (Non-Robust) Standard Errors ---
 table_default_wls = pd.DataFrame(
     {
         "b": round(results_wls_default.params, 4),
@@ -472,13 +522,13 @@ table_default_wls = pd.DataFrame(
         "pval": round(results_wls_default.pvalues, 4),
     },
 )
-print(f"Default WLS SEs:\n{table_default_wls}\n")
+table_default_wls  # Display Default WLS SEs
 
 # %%
 # --- WLS Results with Robust (HC3) Standard Errors ---
 # Fit the WLS model but request robust standard errors.
 results_wls_robust = reg_wls.fit(cov_type="HC3")
-print("--- WLS Results with Robust (HC3) Standard Errors ---")
+# --- WLS Results with Robust (HC3) Standard Errors ---
 table_robust_wls = pd.DataFrame(
     {
         "b": round(
@@ -490,7 +540,7 @@ table_robust_wls = pd.DataFrame(
         "pval": round(results_wls_robust.pvalues, 4),  # Robust p-values
     },
 )
-print(f"Robust WLS SEs:\n{table_robust_wls}\n")
+table_robust_wls  # Display Robust WLS SEs
 
 # Interpretation (Default WLS SE vs Robust WLS SE):
 # Comparing the robust WLS SEs to the default WLS SEs, we see some differences, though
@@ -523,7 +573,7 @@ reg_ols_smoke = smf.ols(
     data=smoke,
 )
 results_ols_smoke = reg_ols_smoke.fit()
-print("--- OLS Results (Cigarette Demand) ---")
+# --- OLS Results (Cigarette Demand) ---
 table_ols_smoke = pd.DataFrame(
     {
         "b": round(results_ols_smoke.params, 4),
@@ -532,7 +582,7 @@ table_ols_smoke = pd.DataFrame(
         "pval": round(results_ols_smoke.pvalues, 4),
     },
 )
-print(f"OLS Estimates:\n{table_ols_smoke}\n")
+table_ols_smoke  # Display OLS estimates
 
 # %%
 # --- Test for Heteroskedasticity (BP Test) ---
@@ -541,12 +591,17 @@ y_smoke, X_smoke = pt.dmatrices(
     data=smoke,
     return_type="dataframe",
 )
-print("--- Breusch-Pagan Test (Cigarette Demand) ---")
+# --- Breusch-Pagan Test (Cigarette Demand) ---
 result_bp_smoke = sm.stats.diagnostic.het_breuschpagan(results_ols_smoke.resid, X_smoke)
 bp_statistic_smoke = result_bp_smoke[0]
 bp_pval_smoke = result_bp_smoke[1]
-print(f"BP LM statistic: {bp_statistic_smoke:.4f}")
-print(f"BP LM p-value:   {bp_pval_smoke:.4f}\n")
+# Display BP test results for smoking model
+pd.DataFrame(
+    {
+        "Metric": ["BP LM statistic", "BP LM p-value"],
+        "Value": [f"{bp_statistic_smoke:.4f}", f"{bp_pval_smoke:.4f}"],
+    },
+)
 
 # Interpretation (BP Test): The p-value is 0.0000 (very small), strongly rejecting
 # the null of homoskedasticity. FGLS is likely warranted for efficiency.
@@ -568,7 +623,7 @@ reg_varfunc = smf.ols(
     missing="drop",  # Drop rows where logu2 might be invalid
 )
 results_varfunc = reg_varfunc.fit()
-print("--- Variance Function Estimation Results (log(u^2) regressed on X) ---")
+# --- Variance Function Estimation Results (log(u^2) regressed on X) ---
 table_varfunc = pd.DataFrame(
     {
         "b": round(results_varfunc.params, 4),
@@ -577,7 +632,7 @@ table_varfunc = pd.DataFrame(
         "pval": round(results_varfunc.pvalues, 4),
     },
 )
-print(f"Variance Function Estimates:\n{table_varfunc}\n")
+table_varfunc  # Display variance function estimates
 
 # Interpretation (Variance Function): This regression tells us which variables are
 # significantly related to the log error variance. For instance, log(income) (coefficient 0.2915),
@@ -602,7 +657,7 @@ reg_fgls_wls = smf.wls(
     missing="drop",  # Ensure consistent sample with variance estimation
 )
 results_fgls_wls = reg_fgls_wls.fit()
-print("--- FGLS (WLS with Estimated Weights) Results ---")
+# --- FGLS (WLS with Estimated Weights) Results ---
 table_fgls_wls = pd.DataFrame(
     {
         "b": round(results_fgls_wls.params, 4),
@@ -611,7 +666,7 @@ table_fgls_wls = pd.DataFrame(
         "pval": round(results_fgls_wls.pvalues, 4),
     },
 )
-print(f"FGLS Estimates:\n{table_fgls_wls}\n")
+table_fgls_wls  # Display FGLS estimates
 
 # Interpretation (FGLS vs OLS):
 # Comparing the FGLS estimates to the original OLS estimates:

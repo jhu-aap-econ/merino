@@ -138,12 +138,23 @@ manual_results = pd.DataFrame(
         ],
     },
 )
-print("Manual OLS Calculation Results:")
-print(f"Sample covariance: {covariance_roe_salary:.2f}")
-print(f"Sample variance of ROE: {variance_roe:.2f}")
-print(
-    f"Slope calculation: {covariance_roe_salary:.2f} / {variance_roe:.2f} = {slope_estimate:.2f}\n",
+# Display calculation details
+calc_details = pd.DataFrame(
+    {
+        "Calculation": [
+            "Sample covariance",
+            "Sample variance of ROE",
+            "Slope calculation",
+        ],
+        "Value": [
+            f"{covariance_roe_salary:.2f}",
+            f"{variance_roe:.2f}",
+            f"{covariance_roe_salary:.2f} / {variance_roe:.2f} = {slope_estimate:.2f}",
+        ],
+    },
 )
+
+display(calc_details)
 manual_results[["Parameter", "Formatted", "Interpretation"]]
 
 # %% [markdown]
@@ -172,10 +183,14 @@ statsmodels_results = pd.DataFrame(
 )
 
 # Verify manual calculations match statsmodels
-print("Statsmodels OLS Results:")
-print(f"R-squared: {fitted_results.rsquared:.4f}")
-print(f"Number of observations: {fitted_results.nobs:.0f}\n")
-print("Parameter Estimates:")
+model_stats = pd.DataFrame(
+    {
+        "Metric": ["R-squared", "Number of observations"],
+        "Value": [f"{fitted_results.rsquared:.4f}", f"{fitted_results.nobs:.0f}"],
+    },
+)
+
+display(model_stats)
 statsmodels_results.round(4)
 
 
@@ -226,7 +241,7 @@ def plot_regression(
         y=y,
         ci=95 if add_ci else None,  # 95% confidence interval for mean prediction
         ax=ax,
-        scatter_kws={"alpha": 0.6, "edgecolor": "white", "linewidth": 0.5},
+        scatter_kws={"alpha": 0.6, "edgecolor": "white", "linewidths": 0.5},
         line_kws={"linewidth": 2},
     )
 
@@ -261,7 +276,13 @@ def plot_regression(
 
 # %%
 # Create enhanced regression plot for CEO Salary vs ROE
-plot_regression("roe", "salary", ceosal1, results, "CEO Salary vs Return on Equity")
+plot_regression(
+    "roe",
+    "salary",
+    ceosal1,
+    fitted_results,
+    "CEO Salary vs Return on Equity",
+)
 
 # %% [markdown]
 # Running this code will generate a scatter plot with 'roe' on the x-axis and 'salary' on the y-axis, along with the OLS regression line and its 95% confidence interval. The plot also displays the estimated regression equation and the R-squared value.

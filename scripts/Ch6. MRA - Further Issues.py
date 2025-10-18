@@ -17,8 +17,6 @@
 # # 6. Multiple Regression Analysis: Further Issues
 #
 # This notebook delves into further issues in multiple regression analysis, expanding on the foundational concepts. We will explore various aspects of model specification, including the use of different functional forms and interaction terms, as well as prediction and its associated uncertainties.  We will use the `statsmodels` library in Python to implement these techniques and the `wooldridge` package for example datasets from Wooldridge's "Introductory Econometrics."
-#
-#
 
 # %%
 import matplotlib.pyplot as plt
@@ -26,6 +24,7 @@ import numpy as np
 import pandas as pd
 import statsmodels.formula.api as smf
 import wooldridge as wool
+
 
 # %% [markdown]
 # ## 6.1 Model Formulae
@@ -46,46 +45,45 @@ import wooldridge as wool
 # - `faminc` is family income.
 #
 # We might want to express birth weight in pounds instead of ounces or cigarettes in packs per day instead of individual cigarettes. Let's see how this can be done and how it affects the coefficients.
-
-# %%
-bwght = wool.data("bwght")
-
-# regress and report coefficients:
-reg = smf.ols(formula="bwght ~ cigs + faminc", data=bwght)
-results = reg.fit()
-
-# weight in pounds, manual way:
-bwght["bwght_lbs"] = bwght["bwght"] / 16  # 1 pound = 16 ounces
-reg_lbs = smf.ols(formula="bwght_lbs ~ cigs + faminc", data=bwght)
-results_lbs = reg_lbs.fit()
-
-# weight in pounds, direct way:
-reg_lbs2 = smf.ols(
-    formula="I(bwght/16) ~ cigs + faminc",
-    data=bwght,
-)  # Use I() to perform arithmetic within formula
-results_lbs2 = reg_lbs2.fit()
-
-# packs of cigarettes:
-reg_packs = smf.ols(
-    formula="bwght ~ I(cigs/20) + faminc",
-    data=bwght,
-)  # Assuming 20 cigarettes per pack
-results_packs = reg_packs.fit()
-
-# compare results:
-table = pd.DataFrame(
-    {
-        "b": round(results.params, 4),
-        "b_lbs": round(results_lbs.params, 4),
-        "b_lbs2": round(results_lbs2.params, 4),
-        "b_packs": round(results_packs.params, 4),
-    },
-)
-print(f"table: \n{table}\n")
-
-
-# %% [markdown]
+#
+# ```
+# bwght = wool.data("bwght")
+#
+# # regress and report coefficients:
+# reg = smf.ols(formula="bwght ~ cigs + faminc", data=bwght)
+# results = reg.fit()
+#
+# # weight in pounds, manual way:
+# bwght["bwght_lbs"] = bwght["bwght"] / 16  # 1 pound = 16 ounces
+# reg_lbs = smf.ols(formula="bwght_lbs ~ cigs + faminc", data=bwght)
+# results_lbs = reg_lbs.fit()
+#
+# # weight in pounds, direct way:
+# reg_lbs2 = smf.ols(
+#     formula="I(bwght/16) ~ cigs + faminc",
+#     data=bwght,
+# )  # Use I() to perform arithmetic within formula
+# results_lbs2 = reg_lbs2.fit()
+#
+# # packs of cigarettes:
+# reg_packs = smf.ols(
+#     formula="bwght ~ I(cigs/20) + faminc",
+#     data=bwght,
+# )  # Assuming 20 cigarettes per pack
+# results_packs = reg_packs.fit()
+#
+# # compare results:
+# table = pd.DataFrame(
+#     {
+#         "b": round(results.params, 4),
+#         "b_lbs": round(results_lbs.params, 4),
+#         "b_lbs2": round(results_lbs2.params, 4),
+#         "b_packs": round(results_packs.params, 4),
+#     },
+# )
+# table
+# ```
+#
 # **Interpretation of Results:**
 #
 # - **`b` (bwght):** This column shows the coefficients when birth weight is in ounces and cigarettes are in individual units.  For example, the coefficient for `cigs` is approximately -0.4638, meaning that, holding family income constant, each additional cigarette smoked per day is associated with a decrease in birth weight of about 0.46 ounces.
@@ -147,7 +145,7 @@ table = pd.DataFrame(
         "pval": round(results.pvalues, 4),
     },
 )
-print(f"table: \n{table}\n")
+table
 
 # %% [markdown]
 # **Interpretation of Beta Coefficients:**
@@ -194,7 +192,7 @@ table = pd.DataFrame(
         "pval": round(results.pvalues, 4),
     },
 )
-print(f"table: \n{table}\n")
+table
 
 # %% [markdown]
 # **Interpretation of Log-Log Model Coefficients:**
@@ -233,9 +231,24 @@ print(f"table: \n{table}\n")
 # Load housing price data for quadratic specification
 hprice2 = wool.data("hprice2")
 
-print(f"Dataset shape: {hprice2.shape}")
-print(
-    f"Room statistics: mean={hprice2['rooms'].mean():.2f}, min={hprice2['rooms'].min()}, max={hprice2['rooms'].max()}",
+# Dataset information
+pd.DataFrame(
+    {
+        "Metric": ["Number of observations", "Number of variables"],
+        "Value": [hprice2.shape[0], hprice2.shape[1]],
+    },
+)
+
+# Room statistics
+pd.DataFrame(
+    {
+        "Statistic": ["Mean", "Min", "Max"],
+        "Value": [
+            f"{hprice2['rooms'].mean():.2f}",
+            hprice2["rooms"].min(),
+            hprice2["rooms"].max(),
+        ],
+    },
 )
 
 # Specify quadratic model to capture nonlinear effects
@@ -260,13 +273,16 @@ coefficients_table = pd.DataFrame(
     },
 )
 
-print("\nQUADRATIC MODEL RESULTS")
-print("=" * 60)
-print("Dependent Variable: log(price)")
-print("-" * 60)
-print(coefficients_table)
-print(f"\nR-squared: {quadratic_results.rsquared:.4f}")
-print(f"Number of observations: {int(quadratic_results.nobs)}")
+# QUADRATIC MODEL RESULTS
+# Dependent Variable: log(price)
+coefficients_table
+# Model statistics
+pd.DataFrame(
+    {
+        "Metric": ["R-squared", "Number of observations"],
+        "Value": [f"{quadratic_results.rsquared:.4f}", int(quadratic_results.nobs)],
+    },
+)
 
 # %% [markdown]
 # **Interpretation of Quadratic Term:**
@@ -314,8 +330,13 @@ ftest = results.f_test(hypotheses)  # Perform the F-test
 fstat = ftest.statistic
 fpval = ftest.pvalue
 
-print(f"F-statistic: {fstat}\n")
-print(f"P-value: {fpval}\n")
+# F-test results
+pd.DataFrame(
+    {
+        "Metric": ["F-statistic", "p-value"],
+        "Value": [f"{fstat:.4f}", f"{fpval:.4f}"],
+    },
+)
 
 # %% [markdown]
 # **Interpretation of F-test:**
@@ -353,13 +374,23 @@ attend = wool.data("attend")
 n = attend.shape[0]
 
 # Examine key variables
-print(f"Dataset info: {n} observations")
-print(
-    f"Attendance rate: mean={attend['atndrte'].mean():.1f}%, std={attend['atndrte'].std():.1f}%",
+# Dataset information
+pd.DataFrame(
+    {
+        "Metric": ["Number of observations"],
+        "Value": [n],
+    },
 )
-print(
-    f"Prior GPA: mean={attend['priGPA'].mean():.2f}, std={attend['priGPA'].std():.2f}\n",
+
+# Summary statistics
+summary_stats = pd.DataFrame(
+    {
+        "Variable": ["Attendance rate", "Prior GPA"],
+        "Mean": [f"{attend['atndrte'].mean():.1f}%", f"{attend['priGPA'].mean():.2f}"],
+        "Std Dev": [f"{attend['atndrte'].std():.1f}%", f"{attend['priGPA'].std():.2f}"],
+    },
 )
+summary_stats
 
 # Specify model with interaction and quadratic terms
 # atndrte*priGPA creates main effects + interaction automatically
@@ -388,13 +419,19 @@ results_table = pd.DataFrame(
     },
 )
 
-print("INTERACTION MODEL RESULTS")
-print("=" * 60)
-print("Dependent Variable: stndfnl (Standardized Final Exam Score)")
-print("-" * 60)
-print(results_table)
-print(f"\nR-squared: {interaction_results.rsquared:.4f}")
-print(f"Adjusted R-squared: {interaction_results.rsquared_adj:.4f}\n")
+# INTERACTION MODEL RESULTS
+# Dependent Variable: stndfnl (Standardized Final Exam Score)
+results_table
+# Model statistics with interaction
+pd.DataFrame(
+    {
+        "Metric": ["R-squared", "Adjusted R-squared"],
+        "Value": [
+            f"{interaction_results.rsquared:.4f}",
+            f"{interaction_results.rsquared_adj:.4f}",
+        ],
+    },
+)
 
 # %% [markdown]
 # **Interpretation of Interaction Term:**
@@ -418,18 +455,31 @@ partial_effect_at_mean = (
     coefficients["atndrte"] + mean_priGPA * coefficients["atndrte:priGPA"]
 )
 
-print("PARTIAL EFFECT ANALYSIS")
-print("-" * 40)
-print(f"Partial effect of attendance at mean GPA ({mean_priGPA:.2f}):")
-print(
-    f"  Effect = {coefficients['atndrte']:.4f} + {mean_priGPA:.2f} × {coefficients['atndrte:priGPA']:.4f}",
+# PARTIAL EFFECT ANALYSIS
+# Partial effect calculation
+pd.DataFrame(
+    {
+        "Component": [
+            "Base effect of attendance",
+            "Interaction at mean GPA",
+            "Total partial effect",
+        ],
+        "Value": [
+            f"{coefficients['atndrte']:.4f}",
+            f"{mean_priGPA:.2f} × {coefficients['atndrte:priGPA']:.4f}",
+            f"{partial_effect_at_mean:.4f}",
+        ],
+    },
 )
-print(f"  = {partial_effect_at_mean:.4f}")
-print("\nInterpretation: For a student with average prior GPA,")
-print("a 1 percentage point increase in attendance rate is associated")
-print(
-    f"with a {partial_effect_at_mean:.3f} point increase in standardized exam score.\n",
+pd.DataFrame(
+    {
+        "GPA Level": [f"At mean GPA ({mean_priGPA:.2f})"],
+        "Partial Effect of Attendance": [f"{partial_effect_at_mean:.4f}"],
+    },
 )
+# \nInterpretation: For a student with average prior GPA,
+# Interpretation: a 1 percentage point increase in attendance rate is associated
+# with a change in standardized exam score shown above.
 
 # %% [markdown]
 # The estimated partial effect of attendance at `priGPA = 2.59` is approximately 0.466. This means that for a student with an average prior GPA, a one percentage point increase in attendance rate is associated with an increase of about 0.466 points in the standardized final exam score.
@@ -444,13 +494,22 @@ print(
 
 # %%
 # F test for partial effect at priGPA=2.59:
-hypotheses = "atndrte + 2.59 * atndrte:priGPA = 0"
-ftest = results.f_test(hypotheses)
+# We need to create the linear combination manually
+# Partial effect = β_atndrte + 2.59 * β_interaction
+R = np.zeros((1, len(interaction_results.params)))
+R[0, interaction_results.params.index.get_loc("atndrte")] = 1
+R[0, interaction_results.params.index.get_loc("atndrte:priGPA")] = 2.59
+ftest = interaction_results.f_test(R)
 fstat = ftest.statistic
 fpval = ftest.pvalue
 
-print(f"F-statistic: {fstat}\n")
-print(f"P-value: {fpval}\n")
+# F-test results
+pd.DataFrame(
+    {
+        "Metric": ["F-statistic", "p-value"],
+        "Value": [f"{fstat:.4f}", f"{fpval:.4f}"],
+    },
+)
 
 # %% [markdown]
 # **Interpretation of Test:**
@@ -487,7 +546,7 @@ table = pd.DataFrame(
         "pval": round(results.pvalues, 4),
     },
 )
-print(f"table: \n{table}\n")
+table
 
 # %% [markdown]
 # Suppose we want to predict the college GPA (`colgpa`) for a new student with the following characteristics: SAT score (`sat`) = 1200, high school percentile (`hsperc`) = 30, and high school size (`hsize`) = 5 (in hundreds). First, we create a Pandas DataFrame with these values:
@@ -498,7 +557,8 @@ cvalues1 = pd.DataFrame(
     {"sat": [1200], "hsperc": [30], "hsize": [5]},
     index=["newPerson1"],
 )
-print(f"cvalues1: \n{cvalues1}\n")
+# Prediction for Caitlin
+cvalues1
 
 # %% [markdown]
 # To get the point prediction, we use the `predict()` method of the regression results object:
@@ -506,7 +566,8 @@ print(f"cvalues1: \n{cvalues1}\n")
 # %%
 # point estimate of prediction (cvalues1):
 colgpa_pred1 = results.predict(cvalues1)
-print(f"colgpa_pred1: \n{colgpa_pred1}\n")
+# Predicted colGPA for Caitlin
+colgpa_pred1
 
 # %% [markdown]
 # The point prediction for college GPA for this student is approximately 2.70.
@@ -519,12 +580,14 @@ cvalues2 = pd.DataFrame(
     {"sat": [1200, 900, 1400], "hsperc": [30, 20, 5], "hsize": [5, 3, 1]},
     index=["newPerson1", "newPerson2", "newPerson3"],
 )
-print(f"cvalues2: \n{cvalues2}\n")
+# Prediction for Jeff
+cvalues2
 
 # %%
 # point estimate of prediction (cvalues2):
 colgpa_pred2 = results.predict(cvalues2)
-print(f"colgpa_pred2: \n{colgpa_pred2}\n")
+# Predicted colGPA for Jeff
+colgpa_pred2
 
 # %% [markdown]
 # ### Example 6.5: Confidence Interval for Predicted College GPA
@@ -547,7 +610,8 @@ cvalues2 = pd.DataFrame(
 colgpa_PICI_95 = results.get_prediction(cvalues2).summary_frame(
     alpha=0.05,
 )  # alpha=0.05 for 95% intervals
-print(f"colgpa_PICI_95: \n{colgpa_PICI_95}\n")
+# 95% Prediction Interval
+colgpa_PICI_95
 
 # %% [markdown]
 # **Interpretation of 95% Intervals:**
@@ -564,7 +628,8 @@ print(f"colgpa_PICI_95: \n{colgpa_PICI_95}\n")
 colgpa_PICI_99 = results.get_prediction(cvalues2).summary_frame(
     alpha=0.01,
 )  # alpha=0.01 for 99% intervals
-print(f"colgpa_PICI_99: \n{colgpa_PICI_99}\n")
+# 99% Prediction Interval
+colgpa_PICI_99
 
 # %% [markdown]
 # As expected, the 99% confidence and prediction intervals are wider than the 95% intervals, reflecting the higher level of confidence.
@@ -597,7 +662,8 @@ X = pd.DataFrame(
         "stratio": stratio_mean,
     },
 )
-print(f"X: \n{X}\n")
+# Design matrix for log(price) prediction
+X
 
 # %% [markdown]
 # We create a DataFrame `X` where `rooms` varies from 4 to 8 (a reasonable range for house rooms), and `nox`, `dist`, and `stratio` are held at their sample means.  Then, we calculate the predicted values and confidence intervals for these values of `rooms`.
@@ -608,7 +674,8 @@ lpr_PICI = results.get_prediction(X).summary_frame(alpha=0.05)
 lpr_CI = lpr_PICI[
     ["mean", "mean_ci_lower", "mean_ci_upper"]
 ]  # Extract mean and CI bounds
-print(f"lpr_CI: \n{lpr_CI}\n")
+# Confidence interval for log(price)
+lpr_CI
 
 # %% [markdown]
 # Finally, we plot the predicted log price and its confidence interval against the number of rooms.

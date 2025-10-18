@@ -105,8 +105,8 @@ table1 = pd.DataFrame(
         "pval": round(results1.pvalues, 4),
     },
 )
-print("--- Regression 1: ret ~ ret_lag1 ---")
-print(f"table1: \n{table1}\n")
+# --- Regression 1: ret ~ ret_lag1 ---
+table1  # Display regression results
 
 # Interpretation (Model 1):
 # The coefficient on the first lag (ret_lag1) is 0.0589. While small, it is not statistically
@@ -123,8 +123,8 @@ table2 = pd.DataFrame(
         "pval": round(results2.pvalues, 4),
     },
 )
-print("--- Regression 2: ret ~ ret_lag1 + ret_lag2 ---")
-print(f"table2: \n{table2}\n")
+# --- Regression 2: ret ~ ret_lag1 + ret_lag2 ---
+table2  # Display regression results
 
 # Interpretation (Model 2):
 # Adding the second lag (ret_lag2), we see its coefficient (-0.0381) is not statistically
@@ -141,8 +141,8 @@ table3 = pd.DataFrame(
         "pval": round(results3.pvalues, 4),
     },
 )
-print("--- Regression 3: ret ~ ret_lag1 + ret_lag2 + ret_lag3 ---")
-print(f"table3: \n{table3}\n")
+# --- Regression 3: ret ~ ret_lag1 + ret_lag2 + ret_lag3 ---
+table3  # Display regression results
 
 # Interpretation (Model 3):
 # With three lags, none of the individual lag coefficients are statistically significant
@@ -344,8 +344,9 @@ fertil3["pe_diff1"] = fertil3["pe"].diff()
 
 # Display the first few rows showing the original variables and their differences
 # Note that the first row of the differenced variables will be NaN (Not a Number).
-print("First few rows with differenced variables:")
-print(f"{fertil3[['gfr', 'pe', 'gfr_diff1', 'pe_diff1']].head()}\n")
+# First few rows with differenced variables:
+# Display first few rows with differenced variables
+fertil3[["gfr", "pe", "gfr_diff1", "pe_diff1"]].head()
 
 # %% [markdown]
 # Now, we regress the first difference of `gfr` on the first difference of `pe`. `statsmodels` automatically drops rows with NaN values, so the first observation is excluded.
@@ -367,8 +368,8 @@ table1 = pd.DataFrame(
         "pval": round(results1.pvalues, 4),
     },
 )
-print("--- Regression in First Differences: Delta(gfr) ~ Delta(pe) ---")
-print(f"table1: \n{table1}\n")
+# --- Regression in First Differences: Delta(gfr) ~ Delta(pe) ---
+table1  # Display regression results
 
 # Interpretation (Differenced Model):
 # The coefficient on Delta(pe) (pe_diff1) is -0.0427 and is not statistically significant (p=0.137).
@@ -403,9 +404,9 @@ table2 = pd.DataFrame(
         "pval": round(results2.pvalues, 4),
     },
 )
-print("--- Regression with Lagged First Differences ---")
-print("Dependent Variable: Delta(gfr)")
-print(f"table2: \n{table2}\n")
+# --- Regression with Lagged First Differences ---
+# Dependent Variable: Delta(gfr)
+table2  # Display regression results
 
 # Interpretation (Lagged Differences):
 # - The contemporaneous effect (pe_diff1) is -0.0362 (p=0.181), not significant.

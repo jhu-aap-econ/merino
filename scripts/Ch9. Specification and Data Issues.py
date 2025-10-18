@@ -62,7 +62,15 @@ from scipy import stats  # For generating random numbers
 
 # Load housing price data
 hprice1 = wool.data("hprice1")
-print(f"Dataset: {hprice1.shape[0]} houses, {hprice1.shape[1]} variables")
+
+# Dataset info
+data_info = pd.DataFrame(
+    {
+        "Metric": ["Number of houses", "Number of variables"],
+        "Value": [hprice1.shape[0], hprice1.shape[1]],
+    },
+)
+data_info
 
 # Step 1: Estimate the baseline linear model
 # This is our null hypothesis specification
@@ -72,22 +80,37 @@ baseline_model = smf.ols(
 )
 baseline_results = baseline_model.fit()
 
-print("\nBASELINE MODEL SUMMARY")
-print("-" * 50)
-print("Dependent variable: price (house price in $1000s)")
-print(f"R-squared: {baseline_results.rsquared:.4f}")
-print(f"Adjusted R-squared: {baseline_results.rsquared_adj:.4f}\n")
+# Baseline model summary
+baseline_summary = pd.DataFrame(
+    {
+        "Metric": ["Dependent variable", "R-squared", "Adjusted R-squared"],
+        "Value": [
+            "price (house price in $1000s)",
+            f"{baseline_results.rsquared:.4f}",
+            f"{baseline_results.rsquared_adj:.4f}",
+        ],
+    },
+)
+baseline_summary
 
 # Step 2: Generate polynomial terms from fitted values
 # Theory: If model is misspecified, powers of ŷ capture omitted terms
 hprice1["fitted_sq"] = baseline_results.fittedvalues**2  # ŷ²
 hprice1["fitted_cub"] = baseline_results.fittedvalues**3  # ŷ³
 
-print("RESET Test Construction:")
-print("  Original predictors: lotsize, sqrft, bdrms")
-print("  Added test terms: fitted², fitted³")
-print("  H₀: Coefficients on fitted² and fitted³ = 0 (no misspecification)")
-print("  H₁: At least one polynomial term ≠ 0 (misspecification present)\n")
+# RESET test construction details
+reset_info = pd.DataFrame(
+    {
+        "Component": ["Original predictors", "Added test terms", "H₀", "H₁"],
+        "Description": [
+            "lotsize, sqrft, bdrms",
+            "fitted², fitted³",
+            "Coefficients on fitted² and fitted³ = 0 (no misspecification)",
+            "At least one polynomial term ≠ 0 (misspecification present)",
+        ],
+    },
+)
+reset_info
 
 # Step 3: Estimate augmented regression with polynomial terms
 augmented_reset = smf.ols(
@@ -108,25 +131,26 @@ reset_table = pd.DataFrame(
     },
 )
 
-print("RESET AUXILIARY REGRESSION RESULTS")
-print("=" * 70)
-print(reset_table.to_string(index=False))
-print("-" * 70)
-print(
-    "Note: Focus on test terms (fitted_sq, fitted_cub) for misspecification detection"
-)
+# Display RESET auxiliary regression results
+display(reset_table)
 
 # %%
 # 4. Perform an F-test for the joint significance of the added terms
 # H0: Coefficients on fitted_sq and fitted_cub are both zero.
 hypotheses = ["fitted_sq = 0", "fitted_cub = 0"]
-ftest_man = results_reset.f_test(hypotheses)
+ftest_man = augmented_results.f_test(hypotheses)
 fstat_man = ftest_man.statistic  # Extract F-statistic value
 fpval_man = ftest_man.pvalue
 
-print("--- RESET Test (Manual F-Test) ---")
-print(f"RESET F-statistic (manual): {fstat_man:.4f}")
-print(f"RESET p-value (manual):     {fpval_man:.4f}\n")
+# RESET Test (Manual F-Test)
+reset_manual = pd.DataFrame(
+    {
+        "Method": ["Manual F-Test"],
+        "F-statistic": [f"{fstat_man:.4f}"],
+        "p-value": [f"{fpval_man:.4f}"],
+    },
+)
+reset_manual
 
 # Interpretation (Manual RESET): The F-statistic is 4.6682 and the p-value is 0.0120.
 # Since the p-value is less than 0.05, we reject the null hypothesis.
@@ -146,13 +170,18 @@ results = reg.fit()
 
 # Perform automated RESET test using statsmodels.stats.outliers_influence
 # Pass the results object and specify the maximum degree of the fitted values to include (degree=3 means ^2 and ^3)
-print("--- RESET Test (Automated) ---")
+# --- RESET Test (Automated) ---
 reset_output = smo.reset_ramsey(res=results, degree=3)
 fstat_auto = reset_output.statistic
 fpval_auto = reset_output.pvalue
 
-print(f"RESET F-statistic (auto): {fstat_auto:.4f}")
-print(f"RESET p-value (auto):     {fpval_auto:.4f}\n")
+# RESET Test Results (Automated)
+pd.DataFrame(
+    {
+        "Metric": ["RESET F-statistic", "RESET p-value"],
+        "Value": [f"{fstat_auto:.4f}", f"{fpval_auto:.4f}"],
+    },
+)
 
 # Interpretation (Automated RESET): The automated test yields the same F-statistic (4.6682)
 # and p-value (0.0120), confirming the rejection of the null hypothesis and indicating
@@ -200,10 +229,11 @@ results3 = reg3.fit()
 # Test Model 1 vs Comprehensive Model:
 # H0: Coefficients on np.log(lotsize) and np.log(sqrft) are zero (i.e., Model 1 is adequate)
 # This tests if Model 2's unique terms add significant explanatory power to Model 1.
-print("--- Testing Model 1 (Levels) vs Comprehensive Model ---")
+# --- Testing Model 1 (Levels) vs Comprehensive Model ---
 # anova_lm performs an F-test comparing the restricted model (results1) to the unrestricted (results3)
 anovaResults1 = sm.stats.anova_lm(results1, results3)
-print(f"F-test (Model 1 vs Comprehensive):\n{anovaResults1}\n")
+# F-test (Model 1 vs Comprehensive)
+anovaResults1
 # Look at the p-value (Pr(>F)) in the second row.
 
 # Interpretation (Model 1 vs Comprehensive): The p-value is 0.000753.
@@ -215,9 +245,10 @@ print(f"F-test (Model 1 vs Comprehensive):\n{anovaResults1}\n")
 # Test Model 2 vs Comprehensive Model:
 # H0: Coefficients on lotsize and sqrft are zero (i.e., Model 2 is adequate)
 # This tests if Model 1's unique terms add significant explanatory power to Model 2.
-print("--- Testing Model 2 (Logs) vs Comprehensive Model ---")
+# --- Testing Model 2 (Logs) vs Comprehensive Model ---
 anovaResults2 = sm.stats.anova_lm(results2, results3)
-print(f"F-test (Model 2 vs Comprehensive):\n{anovaResults2}\n")
+# F-test (Model 2 vs Comprehensive)
+anovaResults2
 # Look at the p-value (Pr(>F)) in the second row.
 
 # Interpretation (Model 2 vs Comprehensive): The p-value is 0.001494.
@@ -322,9 +353,14 @@ for i in range(r):
 # Analyze the simulation results: Average estimated beta1 across repetitions
 b1_mean = np.mean(b1)
 b1_me_mean = np.mean(b1_me)
-print("--- Simulation Results: Measurement Error in y ---")
-print(f"Average beta1 estimate (No ME):   {b1_mean:.4f}")
-print(f"Average beta1 estimate (ME in y): {b1_me_mean:.4f}\n")
+# --- Simulation Results: Measurement Error in y ---
+# Measurement error effect on estimates
+pd.DataFrame(
+    {
+        "Model": ["No Measurement Error", "Measurement Error in y"],
+        "Average β₁": [f"{b1_mean:.4f}", f"{b1_me_mean:.4f}"],
+    },
+)
 
 # Interpretation (Bias): Both average estimates are very close to the true value (0.5).
 # This confirms that classical measurement error in the dependent variable does not
@@ -334,8 +370,13 @@ print(f"Average beta1 estimate (ME in y): {b1_me_mean:.4f}\n")
 # Analyze the simulation results: Variance of the estimated beta1 across repetitions
 b1_var = np.var(b1, ddof=1)  # Use ddof=1 for sample variance
 b1_me_var = np.var(b1_me, ddof=1)
-print(f"Variance of beta1 estimate (No ME):   {b1_var:.6f}")
-print(f"Variance of beta1 estimate (ME in y): {b1_me_var:.6f}\n")
+# Variance comparison
+pd.DataFrame(
+    {
+        "Model": ["No Measurement Error", "Measurement Error in y"],
+        "Variance of β₁": [f"{b1_var:.6f}", f"{b1_me_var:.6f}"],
+    },
+)
 
 # Interpretation (Variance): The variance of the beta1 estimate is larger when there is
 # measurement error in y (0.002044) compared to when there is no measurement error (0.001034).
@@ -392,9 +433,14 @@ for i in range(r):
 # Analyze the simulation results: Average estimated beta1
 b1_mean = np.mean(b1)
 b1_me_mean = np.mean(b1_me)
-print("--- Simulation Results: Measurement Error in x ---")
-print(f"Average beta1 estimate (No ME):  {b1_mean:.4f}")
-print(f"Average beta1 estimate (ME in x): {b1_me_mean:.4f}\n")
+# --- Simulation Results: Measurement Error in x ---
+# Measurement error in x: effect on estimates
+pd.DataFrame(
+    {
+        "Model": ["No Measurement Error", "Measurement Error in x"],
+        "Average β₁": [f"{b1_mean:.4f}", f"{b1_me_mean:.4f}"],
+    },
+)
 
 # Interpretation (Bias): The average estimate without ME is close to the true value (0.5).
 # However, the average estimate with ME in x (0.2445) is substantially smaller than 0.5.
@@ -407,8 +453,13 @@ print(f"Average beta1 estimate (ME in x): {b1_me_mean:.4f}\n")
 # Analyze the simulation results: Variance of the estimated beta1
 b1_var = np.var(b1, ddof=1)
 b1_me_var = np.var(b1_me, ddof=1)
-print(f"Variance of beta1 estimate (No ME):  {b1_var:.6f}")
-print(f"Variance of beta1 estimate (ME in x): {b1_me_var:.6f}\n")
+# Variance comparison for measurement error in x
+pd.DataFrame(
+    {
+        "Model": ["No Measurement Error", "Measurement Error in x"],
+        "Variance of β₁": [f"{b1_var:.6f}", f"{b1_me_var:.6f}"],
+    },
+)
 
 # Interpretation (Variance): Interestingly, the variance of the estimate with ME in x (0.000544)
 # is smaller than the variance without ME (0.001034). While the estimate is biased,
@@ -437,8 +488,9 @@ isnanx = np.isnan(x)  # Detect NaN values
 results_np_handling = pd.DataFrame(
     {"x": x, "log(x)": logx, "1/x": invx, "Normal CDF": ncdf, "Is NaN?": isnanx},
 )
-print("--- NumPy Handling of NaN/Inf ---")
-print(f"Results:\n{results_np_handling}\n")
+# --- NumPy Handling of NaN/Inf ---
+# Comparison of NaN Handling Methods
+results_np_handling
 
 # %% [markdown]
 # Now, let's examine missing data in a real dataset (`lawsch85`).
@@ -449,7 +501,13 @@ print(f"Results:\n{results_np_handling}\n")
 
 # Load law school dataset
 lawsch85 = wool.data("lawsch85")
-print(f"Dataset dimensions: {lawsch85.shape} (schools × variables)")
+# Dataset dimensions
+pd.DataFrame(
+    {
+        "Dimension": ["Schools (rows)", "Variables (columns)"],
+        "Count": [lawsch85.shape[0], lawsch85.shape[1]],
+    },
+)
 
 # Extract LSAT scores to analyze missingness pattern
 lsat_scores = lawsch85["LSAT"]  # Law School Admission Test scores
@@ -467,19 +525,19 @@ missing_preview = pd.DataFrame(
         "Data_Status": [
             "MISSING" if m else "Present" for m in lsat_missing.iloc[observation_range]
         ],
-    }
+    },
 )
 
-print("\nMISSING DATA DETECTION EXAMPLE")
-print("=" * 50)
-print("Preview of schools 120-129:")
-print(missing_preview.to_string(index=False))
-print("\nNote: NaN indicates missing LSAT scores for some schools")
+# MISSING DATA DETECTION EXAMPLE
+# Preview of schools 120-129:
+missing_preview
+# Note: NaN indicates missing LSAT scores for some schools
 
 # %%
 # Calculate frequencies of missing vs. non-missing LSAT scores
-freq_missLSAT = pd.crosstab(missLSAT, columns="count")
-print(f"Frequency of Missing LSAT:\n{freq_missLSAT}\n")
+freq_missLSAT = pd.crosstab(lsat_missing, columns="count")
+# Frequency of Missing LSAT
+freq_missLSAT
 # Shows 7 schools have missing LSAT scores.
 
 # %%
@@ -488,8 +546,9 @@ miss_all = lawsch85.isna()  # Creates a boolean DataFrame of the same shape
 colsums = miss_all.sum(
     axis=0,
 )  # Sum boolean columns (True=1, False=0) to count missings per variable
-print("--- Missing Counts per Variable ---")
-print(f"Missing values per column:\n{colsums}\n")
+# --- Missing Counts per Variable ---
+# Missing values per column
+colsums.to_frame("Missing Count")
 # Shows several variables have missing values.
 
 # %%
@@ -497,8 +556,9 @@ print(f"Missing values per column:\n{colsums}\n")
 # Sum missings across rows (axis=1). If sum is 0, the case is complete.
 complete_cases = miss_all.sum(axis=1) == 0
 freq_complete_cases = pd.crosstab(complete_cases, columns="count")
-print("--- Frequency of Complete Cases ---")
-print(f"Complete cases (row sum of missings == 0):\n{freq_complete_cases}\n")
+# --- Frequency of Complete Cases ---
+# Complete cases distribution
+freq_complete_cases
 # Shows 131 out of 156 observations are complete cases (have no missing values).
 # The remaining 25 observations have at least one missing value.
 
@@ -515,9 +575,14 @@ x_np = np.array(lawsch85["LSAT"])  # Convert pandas Series to NumPy array
 x_np_bar1 = np.mean(x_np)
 # np.nanmean() calculates mean ignoring NaN values
 x_np_bar2 = np.nanmean(x_np)
-print("--- NumPy Mean Calculation with NaNs ---")
-print(f"np.mean(LSAT): {x_np_bar1:.4f}")
-print(f"np.nanmean(LSAT): {x_np_bar2:.4f}\n")
+# --- NumPy Mean Calculation with NaNs ---
+# NumPy mean comparison
+pd.DataFrame(
+    {
+        "Method": ["np.mean(LSAT)", "np.nanmean(LSAT)"],
+        "Result": [f"{x_np_bar1:.4f}", f"{x_np_bar2:.4f}"],
+    },
+)
 
 # %%
 # --- Missing value handling in pandas ---
@@ -526,16 +591,27 @@ x_pd = lawsch85["LSAT"]  # Keep as pandas Series
 x_pd_bar1 = x_pd.mean()  # Equivalent to np.nanmean()
 # We can explicitly use np.nanmean on pandas Series too
 x_pd_bar2 = np.nanmean(x_pd)
-print("--- pandas Mean Calculation with NaNs ---")
-print(f"pandas .mean() LSAT: {x_pd_bar1:.4f}")
-print(f"np.nanmean() LSAT:  {x_pd_bar2:.4f}\n")
+# --- pandas Mean Calculation with NaNs ---
+# Pandas mean comparison
+pd.DataFrame(
+    {
+        "Method": ["pandas .mean()", "np.nanmean()"],
+        "LSAT": [f"{x_pd_bar1:.4f}", f"{x_pd_bar2:.4f}"],
+    },
+)
 
 # %% [markdown]
 # How does `statsmodels` handle missing data during regression?
 
 # %%
 # Get the dimensions of the full dataset
-print(f"Original shape of lawsch85 data: {lawsch85.shape} (rows, columns)\n")
+# Original dataset shape
+pd.DataFrame(
+    {
+        "Dimension": ["Original shape"],
+        "Value": [f"{lawsch85.shape} (rows, columns)"],
+    },
+)
 
 # %%
 # --- Regression with statsmodels and Missing Data ---
@@ -545,8 +621,14 @@ reg = smf.ols(formula="np.log(salary) ~ LSAT + cost + age", data=lawsch85)
 results = reg.fit()
 
 # Check the number of observations used in the regression
-print("--- Statsmodels Regression with Missing Data ---")
-print(f"Number of observations used in regression (results.nobs): {results.nobs}\n")
+# --- Statsmodels Regression with Missing Data ---
+# Regression observations
+pd.DataFrame(
+    {
+        "Metric": ["Observations used in regression"],
+        "Count": [int(results.nobs)],
+    },
+)
 
 # Interpretation: The original dataset had 156 observations. The regression only used 131.
 # This confirms that statsmodels performed listwise deletion, dropping the 25 observations
@@ -575,9 +657,14 @@ studres = infl.resid_studentized_external  # Externally studentized residuals
 # Find the maximum and minimum studentized residuals
 studres_max = np.max(studres)
 studres_min = np.min(studres)
-print("--- Outlier Detection using Studentized Residuals ---")
-print(f"Maximum studentized residual: {studres_max:.4f}")
-print(f"Minimum studentized residual: {studres_min:.4f}\n")
+# --- Outlier Detection using Studentized Residuals ---
+# Studentized residuals summary
+pd.DataFrame(
+    {
+        "Metric": ["Maximum studentized residual", "Minimum studentized residual"],
+        "Value": [f"{studres_max:.4f}", f"{studres_min:.4f}"],
+    },
+)
 
 # Interpretation: The maximum value (4.5550) and minimum value (-1.8180) are both relatively
 # large in absolute terms, especially the maximum (roughly 4.5 standard deviations from zero).
@@ -643,7 +730,7 @@ rdchem = wool.data("rdchem")
 reg_ols = smf.ols(formula="rdintens ~ I(sales/1000) + profmarg", data=rdchem)
 results_ols = reg_ols.fit()
 
-print("--- OLS Estimation Results ---")
+# --- OLS Estimation Results ---
 table_ols = pd.DataFrame(
     {
         "b": round(results_ols.params, 4),
@@ -652,7 +739,8 @@ table_ols = pd.DataFrame(
         "pval": round(results_ols.pvalues, 4),
     },
 )
-print(f"OLS Estimates:\n{table_ols}\n")
+# OLS Estimates
+table_ols
 
 # %%
 # --- LAD Regression (Quantile Regression at the Median) ---
@@ -661,7 +749,7 @@ reg_lad = smf.quantreg(formula="rdintens ~ I(sales/1000) + profmarg", data=rdche
 results_lad = reg_lad.fit(q=0.5)  # Fit for the median
 
 # Display LAD results (statsmodels calculates SEs using appropriate methods for quantile regression)
-print("--- LAD (Median Regression) Estimation Results ---")
+# --- LAD (Median Regression) Estimation Results ---
 table_lad = pd.DataFrame(
     {
         "b": round(results_lad.params, 4),  # LAD Coefficients
@@ -670,7 +758,8 @@ table_lad = pd.DataFrame(
         "pval": round(results_lad.pvalues, 4),  # LAD p-values
     },
 )
-print(f"LAD Estimates:\n{table_lad}\n")
+# LAD Estimates
+table_lad
 
 # Interpretation (OLS vs LAD):
 # - The coefficient on sales/1000 is 0.0534 (OLS) vs 0.0186 (LAD).

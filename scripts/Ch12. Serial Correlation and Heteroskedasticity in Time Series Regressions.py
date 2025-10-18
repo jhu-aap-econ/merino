@@ -61,52 +61,54 @@ import wooldridge as wool  # Access to Wooldridge textbook datasets
 # We test for AR(1) serial correlation in the residuals of two Phillips curve models estimated using data up to 1996:
 # 1.  **Static Phillips Curve:** Inflation (`inf`) regressed on unemployment (`unem`).
 # 2.  **Expectations-Augmented Phillips Curve:** Change in inflation (`inf_diff1`) regressed on unemployment (`unem`).
-
-# %%
-# Load the Phillips curve data
-phillips = wool.data("phillips")
-T = len(phillips)
-
-# Define a yearly time series index starting in 1948
-date_range = pd.date_range(start="1948", periods=T, freq="YE")
-phillips.index = date_range.year
-
-# --- Test for Static Phillips Curve ---
-
-# Define subset of data up to 1996
-yt96 = phillips["year"] <= 1996
-
-# 1. Estimate the static Phillips curve model
-# Use Q() for 'inf' just in case, although not strictly needed here
-reg_s = smf.ols(formula='Q("inf") ~ unem', data=phillips, subset=yt96)
-results_s = reg_s.fit()
-
-# 2. Obtain residuals and create lagged residuals
-phillips["resid_s"] = results_s.resid
-phillips["resid_s_lag1"] = phillips["resid_s"].shift(1)
-
-# 3. Regress residuals on lagged residuals (using the same subset of data, note NaNs are handled)
-# The intercept in this regression should be statistically indistinguishable from zero if the original model included one.
-reg_test_s = smf.ols(formula="resid_s ~ resid_s_lag1", data=phillips, subset=yt96)
-results_test_s = reg_test_s.fit()
-
-# Print the results of the residual regression
-print("--- Test for AR(1) Serial Correlation (Static Phillips Curve) ---")
-table_s = pd.DataFrame(
-    {
-        "b": round(results_test_s.params, 4),
-        "se": round(results_test_s.bse, 4),
-        "t": round(results_test_s.tvalues, 4),
-        "pval": round(results_test_s.pvalues, 4),
-    },
-)
-print(f"Regression: resid_s ~ resid_s_lag1 \n{table_s}\n")
-
-# Interpretation (Static Phillips Curve):
-# The coefficient on the lagged residual (resid_s_lag1) is 0.5730, and it is highly
-# statistically significant (p-value = 0.0000). This provides strong evidence of positive
-# AR(1) serial correlation in the errors of the static Phillips curve model.
-# OLS standard errors for the original regression are likely invalid.
+#
+# ```
+# # Load the Phillips curve data
+# phillips = wool.data("phillips")
+# T = len(phillips)
+#
+# # Define a yearly time series index starting in 1948
+# date_range = pd.date_range(start="1948", periods=T, freq="YE")
+# phillips.index = date_range.year
+#
+# # --- Test for Static Phillips Curve ---
+#
+# # Define subset of data up to 1996
+# yt96 = phillips["year"] <= 1996
+#
+# # 1. Estimate the static Phillips curve model
+# # Use Q() for 'inf' just in case, although not strictly needed here
+# reg_s = smf.ols(formula='Q("inf") ~ unem', data=phillips, subset=yt96)
+# results_s = reg_s.fit()
+#
+# # 2. Obtain residuals and create lagged residuals
+# phillips["resid_s"] = results_s.resid
+# phillips["resid_s_lag1"] = phillips["resid_s"].shift(1)
+#
+# # 3. Regress residuals on lagged residuals (using the same subset of data, note NaNs are handled)
+# # The intercept in this regression should be statistically indistinguishable from zero if the original model included one.
+# reg_test_s = smf.ols(formula="resid_s ~ resid_s_lag1", data=phillips, subset=yt96)
+# results_test_s = reg_test_s.fit()
+#
+# # Print the results of the residual regression
+# # --- Test for AR(1) Serial Correlation (Static Phillips Curve) ---
+# table_s = pd.DataFrame(
+#     {
+#         "b": round(results_test_s.params, 4),
+#         "se": round(results_test_s.bse, 4),
+#         "t": round(results_test_s.tvalues, 4),
+#         "pval": round(results_test_s.pvalues, 4),
+#     },
+# )
+# # Regression: resid_s ~ resid_s_lag1
+# table_s
+#
+# # Interpretation (Static Phillips Curve):
+# # The coefficient on the lagged residual (resid_s_lag1) is 0.5730, and it is highly
+# # statistically significant (p-value = 0.0000). This provides strong evidence of positive
+# # AR(1) serial correlation in the errors of the static Phillips curve model.
+# # OLS standard errors for the original regression are likely invalid.
+# ```
 
 # %%
 # --- Test for Expectations-Augmented Phillips Curve ---
@@ -131,10 +133,7 @@ phillips["resid_ea_lag1"] = phillips["resid_ea"].shift(1)
 reg_test_ea = smf.ols(formula="resid_ea ~ resid_ea_lag1", data=phillips, subset=yt96)
 results_test_ea = reg_test_ea.fit()
 
-# Print the results of the residual regression
-print(
-    "--- Test for AR(1) Serial Correlation (Expectations-Augmented Phillips Curve) ---",
-)
+# Test for AR(1) Serial Correlation (Expectations-Augmented Phillips Curve)
 table_ea = pd.DataFrame(
     {
         "b": round(results_test_ea.params, 4),
@@ -143,7 +142,8 @@ table_ea = pd.DataFrame(
         "pval": round(results_test_ea.pvalues, 4),
     },
 )
-print(f"Regression: resid_ea ~ resid_ea_lag1 \n{table_ea}\n")
+# Regression: resid_ea ~ resid_ea_lag1
+table_ea
 
 # Interpretation (Expectations-Augmented Phillips Curve):
 # The coefficient on the lagged residual (resid_ea_lag1) is -0.0356, which is much smaller
@@ -186,13 +186,18 @@ results = reg.fit()
 # --- Breusch-Godfrey Test using statsmodels built-in function ---
 # This is the recommended way. It automatically performs steps 2 & 3.
 # We test up to nlags=3.
-print("--- Breusch-Godfrey Test (Automated) ---")
+# --- Breusch-Godfrey Test (Automated) ---
 # Returns: LM statistic, LM p-value, F statistic, F p-value
 bg_result = sm.stats.diagnostic.acorr_breusch_godfrey(results, nlags=3)
 fstat_auto = bg_result[2]
 fpval_auto = bg_result[3]
-print(f"BG Test F-statistic (lags=3): {fstat_auto:.4f}")
-print(f"BG Test F p-value: {fpval_auto:.4f}\n")
+# Breusch-Godfrey Test Results
+pd.DataFrame(
+    {
+        "Metric": ["BG Test F-statistic (lags=3)", "BG Test F p-value"],
+        "Value": [f"{fstat_auto:.4f}", f"{fpval_auto:.4f}"],
+    },
+)
 
 # Interpretation (Automated BG Test):
 # The F-statistic is large (5.1247) and the p-value is very small (0.0023).
@@ -224,9 +229,14 @@ hypotheses = ["resid_lag1 = 0", "resid_lag2 = 0", "resid_lag3 = 0"]
 ftest_manual = results_manual_bg.f_test(hypotheses)
 fstat_manual = ftest_manual.statistic  # Extract F-stat value
 fpval_manual = ftest_manual.pvalue
-print("--- Breusch-Godfrey Test (Manual) ---")
-print(f"Manual BG F-statistic (lags=3): {fstat_manual:.4f}")
-print(f"Manual BG F p-value: {fpval_manual:.4f}\n")
+# --- Breusch-Godfrey Test (Manual) ---
+# Manual Breusch-Godfrey Test Results
+pd.DataFrame(
+    {
+        "Metric": ["Manual BG F-statistic (lags=3)", "Manual BG F p-value"],
+        "Value": [f"{fstat_manual:.4f}", f"{fpval_manual:.4f}"],
+    },
+)
 
 # Interpretation (Manual BG Test):
 # The manually calculated F-statistic and p-value match the automated results,
@@ -268,9 +278,14 @@ results_ea = reg_ea.fit()
 DW_s = sm.stats.stattools.durbin_watson(results_s.resid)
 DW_ea = sm.stats.stattools.durbin_watson(results_ea.resid)
 
-print("--- Durbin-Watson Statistics ---")
-print(f"DW statistic (Static Phillips Curve): {DW_s:.4f}")
-print(f"DW statistic (Expectations-Augmented Phillips Curve): {DW_ea:.4f}\n")
+# --- Durbin-Watson Statistics ---
+# Durbin-Watson Statistics
+pd.DataFrame(
+    {
+        "Model": ["Static Phillips Curve", "Expectations-Augmented Phillips Curve"],
+        "DW Statistic": [f"{DW_s:.4f}", f"{DW_ea:.4f}"],
+    },
+)
 
 # Interpretation:
 # - Static model: DW = 0.8027. This is far below 2, indicating strong positive serial correlation, consistent with our earlier AR(1) test.
@@ -320,13 +335,16 @@ reg_glsar = sm.GLSAR(y, X)
 # maxiter specifies the maximum number of iterations for rho to converge.
 # GLSAR's iterative_fit implements Cochrane-Orcutt (dropping first obs).
 # Use fit for Prais-Winsten (keeps first obs with transformation).
-print("--- Cochrane-Orcutt Estimation Results ---")
+# --- Cochrane-Orcutt Estimation Results ---
 CORC_results = reg_glsar.iterative_fit(maxiter=100)
 
 # 4. Display results: estimated rho and FGLS coefficients/standard errors
-print(
-    f"Estimated AR(1) coefficient (rho): {reg_glsar.rho[0]:.4f}\n",
-)  # rho is estimated during iteration
+pd.DataFrame(
+    {
+        "Parameter": ["Estimated AR(1) coefficient (rho)"],
+        "Value": [f"{reg_glsar.rho[0]:.4f}"],
+    },
+)
 table_corc = pd.DataFrame(
     {
         "b_CORC": round(CORC_results.params, 4),
@@ -336,7 +354,8 @@ table_corc = pd.DataFrame(
 # Add t-stats and p-values manually if needed:
 table_corc["t_CORC"] = round(CORC_results.tvalues, 4)
 table_corc["pval_CORC"] = round(CORC_results.pvalues, 4)
-print(f"Cochrane-Orcutt FGLS Estimates:\n{table_corc}\n")
+# Cochrane-Orcutt FGLS Estimates
+table_corc
 
 # Interpretation:
 # - The estimated AR(1) coefficient rho is 0.2959, indicating positive serial correlation, consistent with the BG test.
@@ -381,7 +400,7 @@ reg = smf.ols(
 
 # --- OLS Results with Standard (Non-Robust) SEs ---
 results_regu = reg.fit()
-print("--- OLS Results with Standard Standard Errors ---")
+# --- OLS Results with Standard Standard Errors ---
 table_regu = pd.DataFrame(
     {
         "b": round(results_regu.params, 4),
@@ -390,7 +409,8 @@ table_regu = pd.DataFrame(
         "pval": round(results_regu.pvalues, 4),
     },
 )
-print(f"Standard OLS Estimates:\n{table_regu}\n")
+# Standard OLS Estimates
+table_regu
 
 # Interpretation (Standard OLS):
 # The coefficient on log(mincov) is -0.2123 and highly significant (p = 0.0000),
@@ -405,7 +425,7 @@ print(f"Standard OLS Estimates:\n{table_regu}\n")
 # The choice of maxlags can influence the results. Here, 2 is used following the textbook example.
 results_hac = reg.fit(cov_type="HAC", cov_kwds={"maxlags": 2})
 
-print("--- OLS Results with HAC (Newey-West) Standard Errors (maxlags=2) ---")
+# --- OLS Results with HAC (Newey-West) Standard Errors (maxlags=2) ---
 # Note: The coefficients 'b' are identical to standard OLS. Only SEs, t-stats, p-values change.
 table_hac = pd.DataFrame(
     {
@@ -415,7 +435,8 @@ table_hac = pd.DataFrame(
         "pval": round(results_hac.pvalues, 4),  # Robust p-values
     },
 )
-print(f"OLS Estimates with HAC SEs:\n{table_hac}\n")
+# OLS Estimates with HAC SEs
+table_hac
 
 # Interpretation (HAC OLS):
 # - The coefficient estimates are identical to standard OLS, as expected.
@@ -468,7 +489,7 @@ ARCH_test_reg = smf.ols(formula="resid_sq ~ resid_sq_lag1", data=nyse)
 results_ARCH_test = ARCH_test_reg.fit()
 
 # 4. Examine the coefficient on the lagged squared residual
-print("--- Test for ARCH(1) Effects in NYSE Returns ---")
+# --- Test for ARCH(1) Effects in NYSE Returns ---
 table_arch = pd.DataFrame(
     {
         "b": round(results_ARCH_test.params, 4),
@@ -477,7 +498,8 @@ table_arch = pd.DataFrame(
         "pval": round(results_ARCH_test.pvalues, 4),
     },
 )
-print(f"Regression: resid_sq ~ resid_sq_lag1\n{table_arch}\n")
+# Regression: resid_sq ~ resid_sq_lag1
+table_arch
 
 # Interpretation (ARCH Test):
 # - The coefficient on the lagged squared residual (resid_sq_lag1) is 0.3371.

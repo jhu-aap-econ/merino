@@ -20,6 +20,7 @@
 
 # %%
 import numpy as np
+import pandas as pd
 import statsmodels.formula.api as smf
 import wooldridge as wool
 from scipy import stats
@@ -135,22 +136,38 @@ degrees_freedom = 137  # Will be n - k - 1 from our regression
 # Two-sided critical values: P(|t| > c) = α
 critical_values_t = stats.t.ppf(1 - significance_levels / 2, degrees_freedom)
 
-print("Critical Values for Two-Sided t-Tests:")
-print(f"  Significance level α = {significance_levels[0]:.0%}:")
-print(f"    Critical value = ±{critical_values_t[0]:.3f}")
-print(f"    Reject H₀ if |t-stat| > {critical_values_t[0]:.3f}")
-print(f"  Significance level α = {significance_levels[1]:.0%}:")
-print(f"    Critical value = ±{critical_values_t[1]:.3f}")
-print(f"    Reject H₀ if |t-stat| > {critical_values_t[1]:.3f}\n")
+# Display critical values
+crit_val_df = pd.DataFrame(
+    {
+        "Significance Level": [
+            f"{significance_levels[0]:.0%}",
+            f"{significance_levels[1]:.0%}",
+        ],
+        "Critical Value": [
+            f"±{critical_values_t[0]:.3f}",
+            f"±{critical_values_t[1]:.3f}",
+        ],
+        "Reject H₀ if": [
+            f"|t-stat| > {critical_values_t[0]:.3f}",
+            f"|t-stat| > {critical_values_t[1]:.3f}",
+        ],
+    },
+)
+crit_val_df
 
 # %% [markdown]
 # This code calculates the critical values from the $t$ distribution for significance levels of 5% and 1% with 137 degrees of freedom (which we will see is approximately the degrees of freedom in our regression). These are the thresholds against which we'll compare our calculated $t$-statistics.
 
 # %%
 # CV for alpha=5% and 1% using the normal approximation:
+alpha = np.array([0.05, 0.01])
 cv_n = stats.norm.ppf(1 - alpha / 2)  # Two-sided critical values
-print(
-    f"Critical values from standard normal distribution:\nFor alpha={alpha[0] * 100}%: +/-{cv_n[0]:.3f}\nFor alpha={alpha[1] * 100}%: +/-{cv_n[1]:.3f}\n",
+# Critical values from standard normal distribution
+pd.DataFrame(
+    {
+        "Alpha": [f"{alpha[0] * 100}%", f"{alpha[1] * 100}%"],
+        "Critical Values": [f"±{cv_n[0]:.3f}", f"±{cv_n[1]:.3f}"],
+    },
 )
 
 # %% [markdown]
@@ -162,7 +179,15 @@ gpa1 = wool.data("gpa1")
 # store and display results:
 reg = smf.ols(formula="colGPA ~ hsGPA + ACT + skipped", data=gpa1)
 results = reg.fit()
-print(f"Regression summary:\n{results.summary()}\n")
+# Display regression results
+pd.DataFrame(
+    {
+        "b": results.params.round(4),
+        "se": results.bse.round(4),
+        "t": results.tvalues.round(4),
+        "pval": results.pvalues.round(4),
+    },
+)
 
 # %% [markdown]
 # This code runs the OLS regression of `colGPA` on `hsGPA`, `ACT`, and `skipped` using the `gpa1` dataset from the `wooldridge` package. The `results.summary()` provides a comprehensive output of the regression results, including estimated coefficients, standard errors, t-statistics, p-values, and other relevant statistics.
@@ -179,16 +204,16 @@ standard_errors = results.bse  # SE(β̂)
 # Formula: t = (β̂ⱼ - 0) / SE(β̂ⱼ)
 t_statistics = coefficient_estimates / standard_errors
 
-print("Manual Hypothesis Testing Calculations:")
-print("-" * 50)
-for var, coef, se, t_stat in zip(
-    coefficient_estimates.index,
-    coefficient_estimates.values,
-    standard_errors.values,
-    t_statistics.values,
-    strict=False,
-):
-    print(f"{var:10s}: β̂ = {coef:7.4f}, SE = {se:7.4f}, t = {t_stat:7.3f}")
+# Manual Hypothesis Testing Calculations:
+manual_test_results = pd.DataFrame(
+    {
+        "Variable": coefficient_estimates.index,
+        "β̂": coefficient_estimates.values,
+        "SE": standard_errors.values,
+        "t-statistic": t_statistics.values,
+    },
+)
+display(manual_test_results)
 
 # Calculate two-sided p-values
 # p-value = P(|T| > |t_obs|) = 2 * P(T < -|t_obs|) where T ~ t(df)
@@ -197,13 +222,27 @@ p_values = 2 * stats.t.cdf(
     results.df_resid,  # degrees of freedom = n - k - 1
 )
 
-print(f"\nDegrees of freedom: {results.df_resid}")
-print("\nCalculated p-values:")
-for var, p_val in zip(p_values.index, p_values.values, strict=False):
-    significance = (
-        "***" if p_val < 0.01 else "**" if p_val < 0.05 else "*" if p_val < 0.10 else ""
-    )
-    print(f"  {var:10s}: p = {p_val:.4f} {significance}")
+# Degrees of freedom
+dof_info = pd.DataFrame(
+    {
+        "Metric": ["Degrees of freedom"],
+        "Value": [int(results.df_resid)],
+    },
+)
+display(dof_info)
+# \nCalculated p-values:
+# Create DataFrame with p-values and significance levels
+p_val_results = pd.DataFrame(
+    {
+        "Variable": coefficient_estimates.index,
+        "p-value": p_values,
+        "Significance": [
+            "***" if p < 0.01 else "**" if p < 0.05 else "*" if p < 0.10 else ""
+            for p in p_values
+        ],
+    },
+)
+display(p_val_results)
 
 # %% [markdown]
 # This section manually calculates the $t$ statistics and p-values using the formulas we discussed. It extracts the estimated coefficients (`b`) and standard errors (`se`) from the regression results. Then, it calculates the $t$ statistic by dividing each coefficient by its standard error. Finally, it computes the two-sided p-value using the CDF of the $t$ distribution with the correct degrees of freedom (`results.df_resid`).  The calculated values should match those reported in the `results.summary()`, confirming our understanding of how these values are derived.
@@ -234,8 +273,12 @@ for var, p_val in zip(p_values.index, p_values.values, strict=False):
 # CV for alpha=5% and 1% using the t distribution with 522 d.f.:
 alpha = np.array([0.05, 0.01])
 cv_t = stats.t.ppf(1 - alpha / 2, 522)  # Two-sided critical values
-print(
-    f"Critical values from t-distribution (df=522):\nFor alpha={alpha[0] * 100}%: +/-{cv_t[0]:.3f}\nFor alpha={alpha[1] * 100}%: +/-{cv_t[1]:.3f}\n",
+# Critical values from t-distribution (df=522)
+pd.DataFrame(
+    {
+        "Alpha": [f"{alpha[0] * 100}%", f"{alpha[1] * 100}%"],
+        "Critical Values (t-dist, df=522)": [f"±{cv_t[0]:.3f}", f"±{cv_t[1]:.3f}"],
+    },
 )
 
 # %% [markdown]
@@ -243,9 +286,14 @@ print(
 
 # %%
 # CV for alpha=5% and 1% using the normal approximation:
+alpha = np.array([0.05, 0.01])
 cv_n = stats.norm.ppf(1 - alpha / 2)  # Two-sided critical values
-print(
-    f"Critical values from standard normal distribution:\nFor alpha={alpha[0] * 100}%: +/-{cv_n[0]:.3f}\nFor alpha={alpha[1] * 100}%: +/-{cv_n[1]:.3f}\n",
+# Critical values from standard normal distribution
+pd.DataFrame(
+    {
+        "Alpha": [f"{alpha[0] * 100}%", f"{alpha[1] * 100}%"],
+        "Critical Values": [f"±{cv_n[0]:.3f}", f"±{cv_n[1]:.3f}"],
+    },
 )
 
 # %% [markdown]
@@ -256,7 +304,15 @@ wage1 = wool.data("wage1")
 
 reg = smf.ols(formula="np.log(wage) ~ educ + exper + tenure", data=wage1)
 results = reg.fit()
-print(f"Regression summary:\n{results.summary()}\n")
+# Display regression results
+pd.DataFrame(
+    {
+        "b": results.params.round(4),
+        "se": results.bse.round(4),
+        "t": results.tvalues.round(4),
+        "pval": results.pvalues.round(4),
+    },
+)
 
 # %% [markdown]
 # This code runs the regression of $\log(\text{wage})$ on `educ`, `exper`, and `tenure` using the `wage1` dataset.
@@ -297,7 +353,15 @@ rdchem = wool.data("rdchem")
 # OLS regression:
 reg = smf.ols(formula="np.log(rd) ~ np.log(sales) + profmarg", data=rdchem)
 results = reg.fit()
-print(f"Regression summary:\n{results.summary()}\n")
+# Display regression results
+pd.DataFrame(
+    {
+        "b": results.params.round(4),
+        "se": results.bse.round(4),
+        "t": results.tvalues.round(4),
+        "pval": results.pvalues.round(4),
+    },
+)
 
 # %% [markdown]
 # This code runs the OLS regression of $\log(\text{rd})$ on $\log(\text{sales})$ and `profmarg` using the `rdchem` dataset.
@@ -305,7 +369,8 @@ print(f"Regression summary:\n{results.summary()}\n")
 # %%
 # 95% CI:
 CI95 = results.conf_int(0.05)  # alpha = 0.05 for 95% CI
-print(f"95% Confidence Intervals:\n{CI95}\n")
+# Display 95% Confidence Intervals
+CI95
 
 # %% [markdown]
 # This code uses the `conf_int()` method of the regression results object to calculate the 95% confidence intervals for all coefficients.
@@ -313,7 +378,8 @@ print(f"95% Confidence Intervals:\n{CI95}\n")
 # %%
 # 99% CI:
 CI99 = results.conf_int(0.01)  # alpha = 0.01 for 99% CI
-print(f"99% Confidence Intervals:\n{CI99}\n")
+# Display 99% Confidence Intervals
+CI99
 
 # %% [markdown]
 # Similarly, this calculates the 99% confidence intervals.
@@ -384,7 +450,13 @@ reg_ur = smf.ols(
 )
 fit_ur = reg_ur.fit()
 r2_ur = fit_ur.rsquared
-print(f"R-squared of unrestricted model (r2_ur): {r2_ur:.4f}\n")
+# R-squared of unrestricted model
+pd.DataFrame(
+    {
+        "Model": ["Unrestricted"],
+        "R-squared": [f"{r2_ur:.4f}"],
+    },
+)
 
 # %% [markdown]
 # This code estimates the unrestricted model and extracts the R-squared value.
@@ -394,7 +466,13 @@ print(f"R-squared of unrestricted model (r2_ur): {r2_ur:.4f}\n")
 reg_r = smf.ols(formula="np.log(salary) ~ years + gamesyr", data=mlb1)
 fit_r = reg_r.fit()
 r2_r = fit_r.rsquared
-print(f"R-squared of restricted model (r2_r): {r2_r:.4f}\n")
+# R-squared of restricted model
+pd.DataFrame(
+    {
+        "Model": ["Restricted"],
+        "R-squared": [f"{r2_r:.4f}"],
+    },
+)
 
 # %% [markdown]
 # This code estimates the restricted model (by omitting `bavg`, `hrunsyr`, and `rbisyr`) and extracts its R-squared. As expected, the R-squared of the restricted model is lower than that of the unrestricted model because we have removed variables.
@@ -404,7 +482,13 @@ print(f"R-squared of restricted model (r2_r): {r2_r:.4f}\n")
 k = 5  # Number of independent variables in unrestricted model
 q = 3  # Number of restrictions
 fstat = (r2_ur - r2_r) / (1 - r2_ur) * (n - k - 1) / q
-print(f"Calculated F statistic: {fstat:.3f}\n")
+# Calculated F statistic
+pd.DataFrame(
+    {
+        "Statistic": ["F-statistic"],
+        "Value": [f"{fstat:.3f}"],
+    },
+)
 
 # %% [markdown]
 # This code calculates the $F$ statistic using the formula based on R-squared values.
@@ -412,8 +496,14 @@ print(f"Calculated F statistic: {fstat:.3f}\n")
 # %%
 # CV for alpha=1% using the F distribution with 3 and 347 d.f.:
 cv = stats.f.ppf(1 - 0.01, q, n - k - 1)  # Degrees of freedom (q, n-k-1)
-print(
-    f"Critical value from F-distribution (df=({q}, {n - k - 1})) for alpha=1%: {cv:.3f}\n",
+# Critical value from F-distribution
+pd.DataFrame(
+    {
+        "Distribution": ["F-distribution"],
+        "df": [f"({q}, {n - k - 1})"],
+        "Alpha": ["1%"],
+        "Critical Value": [f"{cv:.3f}"],
+    },
 )
 
 # %% [markdown]
@@ -422,7 +512,13 @@ print(
 # %%
 # p value = 1-cdf of the appropriate F distribution:
 fpval = 1 - stats.f.cdf(fstat, q, n - k - 1)
-print(f"Calculated p-value: {fpval:.4f}\n")
+# Calculated p-value
+pd.DataFrame(
+    {
+        "Statistic": ["p-value"],
+        "Value": [f"{fpval:.4f}"],
+    },
+)
 
 # %% [markdown]
 # This calculates the p-value for the $F$ test using the CDF of the $F$ distribution.
@@ -449,8 +545,13 @@ ftest = results.f_test(hypotheses)  # Perform F-test using statsmodels
 fstat = ftest.statistic
 fpval = ftest.pvalue
 
-print(f"F statistic from automated test: {fstat:.3f}\n")
-print(f"P-value from automated test: {fpval:.4f}\n")
+# Automated test results
+pd.DataFrame(
+    {
+        "Statistic": ["F-statistic", "p-value"],
+        "Value": [f"{fstat:.3f}", f"{fpval:.4f}"],
+    },
+)
 
 # %% [markdown]
 # This code demonstrates how to perform the same $F$ test using the `f_test()` method in `statsmodels`, which provides a more convenient way to conduct $F$ tests for linear restrictions. The results should be identical to our manual calculation, which they are (within rounding).
@@ -474,8 +575,13 @@ ftest = results.f_test(hypotheses)  # Perform F-test
 fstat = ftest.statistic
 fpval = ftest.pvalue
 
-print(f"F statistic for complex hypotheses: {fstat:.3f}\n")
-print(f"P-value for complex hypotheses: {fpval:.4f}\n")
+# Complex hypotheses test results
+pd.DataFrame(
+    {
+        "Statistic": ["F-statistic", "p-value"],
+        "Value": [f"{fstat:.3f}", f"{fpval:.4f}"],
+    },
+)
 
 # %% [markdown]
 # This final example shows the flexibility of the `f_test()` method. Here, we test a different joint hypothesis: $H_0: \beta_{bavg} = 0 \text{ and } \beta_{hrunsyr} = 2\beta_{rbisyr}$. This is a more complex linear restriction involving a relationship between two coefficients. The `f_test()` method easily handles such hypotheses, demonstrating its power and convenience for testing various linear restrictions in multiple regression models.

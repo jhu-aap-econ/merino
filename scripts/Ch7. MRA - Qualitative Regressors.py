@@ -48,56 +48,62 @@ import wooldridge as wool
 # ### Example 7.1: Hourly Wage Equation
 #
 # In this example, we will investigate how gender affects hourly wages, controlling for education, experience, and tenure. We will use the `wage1` dataset from the `wooldridge` package. The dataset includes information on wages, education, experience, tenure, and gender (female=1 if female, 0 if male).
-
-# %%
-# Load wage dataset for dummy variable analysis
-wage1 = wool.data("wage1")
-
-# Examine the gender variable
-print("GENDER DISTRIBUTION IN DATASET")
-print("-" * 40)
-print(f"Total observations: {len(wage1)}")
-print(
-    f"Males (female=0): {(wage1['female'] == 0).sum()} ({(wage1['female'] == 0).mean():.1%})",
-)
-print(
-    f"Females (female=1): {(wage1['female'] == 1).sum()} ({(wage1['female'] == 1).mean():.1%})\n",
-)
-
-# Estimate model with dummy variable for gender
-dummy_model = smf.ols(
-    formula="wage ~ female + educ + exper + tenure",
-    data=wage1,
-)
-dummy_results = dummy_model.fit()
-
-# Create enhanced results table with interpretations
-results_table = pd.DataFrame(
-    {
-        "Coefficient": dummy_results.params.round(4),
-        "Std_Error": dummy_results.bse.round(4),
-        "t_statistic": dummy_results.tvalues.round(3),
-        "p_value": dummy_results.pvalues.round(4),
-        "Interpretation": [
-            "Baseline wage ($/hr) for males with zero education/experience",
-            "Gender wage gap: females earn $1.81/hr less than males",
-            "Return to education: $0.57/hr per year of schooling",
-            "Return to experience: $0.03/hr per year",
-            "Return to tenure: $0.14/hr per year with current employer",
-        ],
-    },
-)
-
-print("REGRESSION RESULTS: WAGE EQUATION WITH GENDER DUMMY")
-print("=" * 60)
-print("Dependent Variable: wage (hourly wage in dollars)")
-print("Reference Category: male (female=0)")
-print("-" * 60)
-print(results_table.to_string(index=False))
-print(f"\nR-squared: {dummy_results.rsquared:.4f}")
-print(f"Number of observations: {int(dummy_results.nobs)}")
-
-# %% [markdown]
+#
+# ```
+# # Load wage dataset for dummy variable analysis
+# wage1 = wool.data("wage1")
+#
+# # Examine the gender variable
+# # GENDER DISTRIBUTION IN DATASET
+# # Dataset size
+# pd.DataFrame({
+#     "Metric": ["Total observations"],
+#     "Value": [len(wage1)]
+# })
+#
+# # Gender distribution details
+# gender_dist = pd.DataFrame({
+#     "Gender": ["Males (female=0)", "Females (female=1)"],
+#     "Count": [(wage1['female'] == 0).sum(), (wage1['female'] == 1).sum()],
+#     "Percentage": [f"{(wage1['female'] == 0).mean():.1%}", f"{(wage1['female'] == 1).mean():.1%}"]
+# })
+# gender_dist
+#
+# # Estimate model with dummy variable for gender
+# dummy_model = smf.ols(
+#     formula="wage ~ female + educ + exper + tenure",
+#     data=wage1,
+# )
+# dummy_results = dummy_model.fit()
+#
+# # Create enhanced results table with interpretations
+# results_table = pd.DataFrame(
+#     {
+#         "Coefficient": dummy_results.params.round(4),
+#         "Std_Error": dummy_results.bse.round(4),
+#         "t_statistic": dummy_results.tvalues.round(3),
+#         "p_value": dummy_results.pvalues.round(4),
+#         "Interpretation": [
+#             "Baseline wage ($/hr) for males with zero education/experience",
+#             "Gender wage gap: females earn $1.81/hr less than males",
+#             "Return to education: $0.57/hr per year of schooling",
+#             "Return to experience: $0.03/hr per year",
+#             "Return to tenure: $0.14/hr per year with current employer",
+#         ],
+#     },
+# )
+#
+# # REGRESSION RESULTS: WAGE EQUATION WITH GENDER DUMMY
+# # Dependent Variable: wage (hourly wage in dollars)
+# # Reference Category: male (female=0)
+# results_table
+# # Model statistics
+# pd.DataFrame({
+#     "Metric": ["R-squared", "Number of observations"],
+#     "Value": [f"{dummy_results.rsquared:.4f}", int(dummy_results.nobs)]
+# })
+# ```
+#
 # **Explanation:**
 #
 # - `wage ~ female + educ + exper + tenure`: This formula specifies the regression model. We are regressing `wage` (hourly wage) on `female` (dummy variable for gender), `educ` (years of education), `exper` (years of experience), and `tenure` (years with current employer).
@@ -143,7 +149,7 @@ table = pd.DataFrame(
         "pval": round(results.pvalues, 4),
     },
 )
-print(f"table: \n{table}\n")
+table  # Display regression results
 
 # %% [markdown]
 # **Explanation:**
@@ -199,7 +205,7 @@ table = pd.DataFrame(
         "pval": round(results.pvalues, 4),
     },
 )
-print(f"table: \n{table}\n")
+table  # Display regression results
 
 # %% [markdown]
 # **Explanation:**
@@ -228,10 +234,12 @@ CPS1985["oc"] = CPS1985["occupation"]
 
 # table of categories and frequencies for two categorical variables:
 freq_gender = pd.crosstab(CPS1985["gender"], columns="count")
-print(f"freq_gender: \n{freq_gender}\n")
+# Gender distribution
+freq_gender
 
 freq_occupation = pd.crosstab(CPS1985["oc"], columns="count")
-print(f"freq_occupation: \n{freq_occupation}\n")
+# Occupation distribution
+freq_occupation
 
 # %% [markdown]
 # **Explanation:**
@@ -263,7 +271,7 @@ table = pd.DataFrame(
         "pval": round(results.pvalues, 4),
     },
 )
-print(f"table: \n{table}\n")
+table  # Display regression results
 
 # %% [markdown]
 # **Explanation:**
@@ -300,7 +308,8 @@ table_newref = pd.DataFrame(
         "pval": round(results_newref.pvalues, 4),
     },
 )
-print(f"table_newref: \n{table_newref}\n")
+# Results with new reference category
+table_newref
 
 # %% [markdown]
 # **Explanation:**
@@ -341,7 +350,7 @@ table_reg = pd.DataFrame(
         "pval": round(results.pvalues, 4),
     },
 )
-print(f"table_reg: \n{table_reg}\n")
+table_reg  # Display regression results
 
 # %% [markdown]
 # **Explanation:**
@@ -351,7 +360,8 @@ print(f"table_reg: \n{table_reg}\n")
 # %%
 # ANOVA table:
 table_anova = sm.stats.anova_lm(results, typ=2)
-print(f"table_anova: \n{table_anova}\n")
+# ANOVA table
+table_anova
 
 # %% [markdown]
 # **Explanation:**
@@ -406,7 +416,8 @@ lawsch85["rc"] = pd.cut(
 
 # display frequencies:
 freq = pd.crosstab(lawsch85["rc"], columns="count")
-print(f"freq: \n{freq}\n")
+# Marital status distribution
+freq
 
 # %% [markdown]
 # **Explanation:**
@@ -441,7 +452,7 @@ table_reg = pd.DataFrame(
         "pval": round(results.pvalues, 4),
     },
 )
-print(f"table_reg: \n{table_reg}\n")
+table_reg  # Display regression results
 
 # %% [markdown]
 # **Explanation:**
@@ -459,7 +470,8 @@ print(f"table_reg: \n{table_reg}\n")
 # %%
 # ANOVA table:
 table_anova = sm.stats.anova_lm(results, typ=2)
-print(f"table_anova: \n{table_anova}\n")
+# ANOVA table
+table_anova
 
 # %% [markdown]
 # **Explanation & Interpretation:**
@@ -490,7 +502,7 @@ table = pd.DataFrame(
         "pval": round(results.pvalues, 4),
     },
 )
-print(f"table: \n{table}\n")
+table  # Display regression results
 
 # %% [markdown]
 # **Explanation:**
@@ -526,8 +538,13 @@ ftest = results.f_test(hypotheses)
 fstat = ftest.statistic
 fpval = ftest.pvalue
 
-print(f"fstat: {fstat}\n")
-print(f"fpval: {fpval}\n")
+# F-test for interaction terms
+pd.DataFrame(
+    {
+        "Metric": ["F-statistic", "p-value"],
+        "Value": [f"{fstat:.4f}", f"{fpval:.4f}"],
+    },
+)
 
 # %% [markdown]
 # **Explanation:**
@@ -560,7 +577,8 @@ table_m = pd.DataFrame(
         "pval": round(results_m.pvalues, 4),
     },
 )
-print(f"table_m: \n{table_m}\n")
+# Regression results for married individuals
+table_m
 
 # %% [markdown]
 # **Explanation:**
@@ -590,7 +608,8 @@ table_f = pd.DataFrame(
         "pval": round(results_f.pvalues, 4),
     },
 )
-print(f"table_f: \n{table_f}\n")
+# Regression results for females
+table_f
 
 # %% [markdown]
 # **Explanation:**

@@ -67,50 +67,59 @@ import wooldridge as wool  # For accessing Wooldridge textbook datasets
 # ### Example 10.2 Effects of Inflation and Deficits on Interest Rates
 #
 # We'll investigate how the 3-month T-bill interest rate (`i3`) is related to the inflation rate (`inf`) and the federal budget deficit (`def`) using annual data. This is a static model because we assume the interest rate in a given year depends only on inflation and the deficit in that *same* year.
-
-# %%
-# Load the interest rate/inflation/deficit dataset
-intdef = wool.dataWoo("intdef")
-
-print(f"Dataset info: {intdef.shape[0]} years, {intdef.shape[1]} variables")
-print(f"Time span: {intdef.index.min()} to {intdef.index.max()}")
-
-# Estimate static time series model: i3_t = β₀ + β₁*inf_t + β₂*def_t + u_t
-# Static = all variables from same time period (no lags)
-# Q() protects variable names that could be Python keywords or operators
-static_model = smf.ols(
-    formula='i3 ~ Q("inf") + Q("def")',  # i3: 3-month T-bill rate
-    data=intdef,
-)
-
-# Fit model using OLS (appropriate under time series assumptions)
-results = static_model.fit()
-
-# Display the results in a formatted table.
-# We extract coefficients (b), standard errors (se), t-statistics (t), and p-values (pval).
-table = pd.DataFrame(
-    {
-        "b": round(results.params, 4),  # Estimated coefficients
-        "se": round(results.bse, 4),  # Standard errors of the coefficients
-        "t": round(
-            results.tvalues,
-            4,
-        ),  # t-statistics for hypothesis testing (H0: beta = 0)
-        "pval": round(results.pvalues, 4),  # p-values associated with the t-statistics
-    },
-)
-print(f"Regression Results (Dependent Variable: i3): \n{table}\n")
-
-# Interpretation:
-# - The coefficient on 'inf' (inflation) is 0.6059. This suggests that a 1 percentage point increase
-#   in inflation is associated with about a 0.61 percentage point increase in the 3-month T-bill rate,
-#   holding the deficit constant. This effect is statistically significant (p-value < 0.0001).
-# - The coefficient on 'def' (deficit) is 0.5131. This suggests that a 1 percentage point increase
-#   in the deficit (relative to GDP) is associated with about a 0.51 percentage point increase in the
-#   T-bill rate, holding inflation constant. This effect is also statistically significant (p-value = 0.0001).
-# - The intercept (1.7333) represents the predicted T-bill rate when both inflation and deficit are zero.
-
-# %% [markdown]
+#
+# ```
+# # Load the interest rate/inflation/deficit dataset
+# intdef = wool.dataWoo("intdef")
+#
+# # Display dataset information
+# data_info = pd.DataFrame({
+#     "Metric": ["Number of years", "Number of variables", "Time span"],
+#     "Value": [
+#         intdef.shape[0],
+#         intdef.shape[1],
+#         f"{intdef.index.min()} to {intdef.index.max()}"
+#     ]
+# })
+# data_info
+#
+# # Estimate static time series model: i3_t = β₀ + β₁*inf_t + β₂*def_t + u_t
+# # Static = all variables from same time period (no lags)
+# # Q() protects variable names that could be Python keywords or operators
+# static_model = smf.ols(
+#     formula='i3 ~ Q("inf") + Q("def")',  # i3: 3-month T-bill rate
+#     data=intdef,
+# )
+#
+# # Fit model using OLS (appropriate under time series assumptions)
+# results = static_model.fit()
+#
+# # Display the results in a formatted table.
+# # We extract coefficients (b), standard errors (se), t-statistics (t), and p-values (pval).
+# table = pd.DataFrame(
+#     {
+#         "b": round(results.params, 4),  # Estimated coefficients
+#         "se": round(results.bse, 4),  # Standard errors of the coefficients
+#         "t": round(
+#             results.tvalues,
+#             4,
+#         ),  # t-statistics for hypothesis testing (H0: beta = 0)
+#         "pval": round(results.pvalues, 4),  # p-values associated with the t-statistics
+#     },
+# )
+# # Regression Results (Dependent Variable: i3)
+# table
+#
+# # Interpretation:
+# # - The coefficient on 'inf' (inflation) is 0.6059. This suggests that a 1 percentage point increase
+# #   in inflation is associated with about a 0.61 percentage point increase in the 3-month T-bill rate,
+# #   holding the deficit constant. This effect is statistically significant (p-value < 0.0001).
+# # - The coefficient on 'def' (deficit) is 0.5131. This suggests that a 1 percentage point increase
+# #   in the deficit (relative to GDP) is associated with about a 0.51 percentage point increase in the
+# #   T-bill rate, holding inflation constant. This effect is also statistically significant (p-value = 0.0001).
+# # - The intercept (1.7333) represents the predicted T-bill rate when both inflation and deficit are zero.
+# ```
+#
 # ## 10.2 Time Series Data Types in Python
 #
 # Working with time series data often requires specific tools to handle dates and the temporal ordering of observations. `pandas` is the primary library in Python for this. It provides data structures like `DateTimeIndex` which allow for easy manipulation, plotting, and analysis of time series data.
@@ -135,7 +144,7 @@ barium.index = pd.date_range(start="1978-02", periods=T, freq="ME")
 
 # Display the first few observations of the 'chnimp' variable (Chinese imports)
 # Notice the index now shows the dates.
-print(f'barium["chnimp"].head(): \n{barium["chnimp"].head()}\n')
+barium["chnimp"].head()
 
 # %% [markdown]
 # Having a `DateTimeIndex` makes plotting straightforward. `pandas` and `matplotlib` recognize the index and use it for the x-axis automatically.
@@ -206,7 +215,8 @@ table = pd.DataFrame(
         "pval": round(results.pvalues, 4),
     },
 )
-print(f"FDL Model Results (Dependent Variable: gfr): \n{table}\n")
+# FDL Model Results (Dependent Variable: gfr)
+table
 
 # Interpretation:
 # - The coefficient on 'pe' (delta_0) is 0.0727, suggesting a small positive immediate effect, but it's not statistically significant (p=0.56).
@@ -231,8 +241,13 @@ ftest1 = results.f_test(hypotheses1)
 fstat1 = ftest1.statistic  # Extract F-statistic value
 fpval1 = ftest1.pvalue
 
-print(f"F-statistic for joint significance of pe lags: {fstat1:.4f}")
-print(f"P-value for joint significance test: {fpval1:.4f}\n")
+# Joint significance test for pe lags
+pd.DataFrame(
+    {
+        "Metric": ["F-statistic", "p-value"],
+        "Value": [f"{fstat1:.4f}", f"{fpval1:.4f}"],
+    },
+)
 
 # Interpretation:
 # The F-statistic is 3.97 and the p-value is 0.012. Since the p-value is less than 0.05,
@@ -247,7 +262,13 @@ print(f"P-value for joint significance test: {fpval1:.4f}\n")
 # Calculate the Long-Run Propensity (LRP)
 b = results.params
 b_pe_tot = b["pe"] + b["pe_lag1"] + b["pe_lag2"]
-print(f"Estimated Long-Run Propensity (LRP) for pe: {b_pe_tot:.4f}\n")
+# Long-Run Propensity
+pd.DataFrame(
+    {
+        "Metric": ["Estimated LRP for pe"],
+        "Value": [f"{b_pe_tot:.4f}"],
+    },
+)
 
 # Interpretation:
 # The estimated LRP is 0.1007. This suggests that a permanent $1 increase in the real personal exemption
@@ -264,8 +285,14 @@ ftest2 = results.f_test(hypotheses2)
 fstat2 = ftest2.statistic  # Extract F-statistic value
 fpval2 = ftest2.pvalue
 
-print(f"F-statistic for H0: LRP = 0: {fstat2:.4f}")
-print(f"P-value for LRP test: {fpval2:.4f}\n")
+# LRP significance test
+pd.DataFrame(
+    {
+        "Test": ["H0: LRP = 0"],
+        "F-statistic": [f"{fstat2:.4f}"],
+        "p-value": [f"{fpval2:.4f}"],
+    },
+)
 
 # Interpretation:
 # The F-statistic is 11.42 and the p-value is 0.001. We reject the null hypothesis
@@ -304,9 +331,10 @@ table_wot = pd.DataFrame(
         "pval": round(results_wot.pvalues, 4),
     },
 )
-print("--- Regression Results WITHOUT Trend ---")
-print("Dependent Variable: np.log(invpc)")
-print(f"table_wot: \n{table_wot}\n")
+# --- Regression Results WITHOUT Trend ---
+# Dependent Variable: np.log(invpc)
+# Model without time trend
+table_wot
 
 # Interpretation (without trend):
 # The estimated elasticity of investment with respect to price is 1.2409.
@@ -331,9 +359,10 @@ table_wt = pd.DataFrame(
         "pval": round(results_wt.pvalues, 4),
     },
 )
-print("--- Regression Results WITH Trend ---")
-print("Dependent Variable: np.log(invpc)")
-print(f"table_wt: \n{table_wt}\n")
+# --- Regression Results WITH Trend ---
+# Dependent Variable: np.log(invpc)
+# Model with linear time trend
+table_wt
 
 # Interpretation (with trend):
 # - The coefficient on log(price) drops dramatically to -0.3810 and is no longer statistically
@@ -384,9 +413,10 @@ table_seas = pd.DataFrame(
         "pval": round(results_seas.pvalues, 4),
     },
 )
-print("Regression Results with Monthly Dummies (Dependent Variable: np.log(chnimp)):")
-print("(Base month: January)")
-print(f"table: \n{table_seas}\n")
+# Regression Results with Monthly Dummies (Dependent Variable: np.log(chnimp)):
+# (Base month: January)
+# Seasonal regression results
+table_seas
 
 # Interpretation:
 # - The coefficients on the economic variables (log(chempi), log(gas), etc.) now represent their effects
@@ -417,10 +447,16 @@ ftest_seas = results_seas.f_test(hypotheses_seas)
 fstat_seas = ftest_seas.statistic
 fpval_seas = ftest_seas.pvalue
 
-print("--- Joint Test for Seasonality ---")
-print("H0: All monthly dummy coefficients are zero")
-print(f"F-statistic for joint significance of seasonal dummies: {fstat_seas:.4f}")
-print(f"P-value for seasonality test: {fpval_seas:.4f}\n")
+# --- Joint Test for Seasonality ---
+# H0: All monthly dummy coefficients are zero
+# Seasonality test results
+pd.DataFrame(
+    {
+        "Test": ["Joint significance of seasonal dummies"],
+        "F-statistic": [f"{fstat_seas:.4f}"],
+        "p-value": [f"{fpval_seas:.4f}"],
+    },
+)
 
 # Interpretation of Seasonality Test:
 # The F-statistic is 0.86 and the p-value is 0.59.

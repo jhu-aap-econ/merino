@@ -45,12 +45,11 @@
 # - Chapter 4 showed exact inference requires normality (MLR.6) for finite samples
 # - This chapter demonstrates that normality is **not necessary** for large-sample inference
 # - These results justify the robustness claims made in Chapter 4 about t-tests with $n \geq 30$
-#
-#
 
 # %%
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
 import wooldridge as woo
@@ -83,11 +82,24 @@ true_slope = 0.5  # β₁ = 0.5
 x_std_dev = 1.0  # σₓ: Standard deviation of x
 x_mean = 4.0  # μₓ: Mean of x
 
-print("SIMULATION 1: OLS WITH NORMAL ERRORS")
-print("-" * 40)
-print(f"DGP: y = {true_intercept} + {true_slope}*x + u")
-print(f"X ~ N({x_mean}, {x_std_dev}²), u ~ N(0, 1)")
-print(f"Replications: {num_replications:,}\n")
+# SIMULATION 1: OLS WITH NORMAL ERRORS
+sim_info = pd.DataFrame(
+    {
+        "Parameter": [
+            "Data Generating Process",
+            "X Distribution",
+            "Error Distribution",
+            "Replications",
+        ],
+        "Value": [
+            f"y = {true_intercept} + {true_slope}*x + u",
+            f"X ~ N({x_mean}, {x_std_dev}²)",
+            "u ~ N(0, 1)",
+            f"{num_replications:,}",
+        ],
+    },
+)
+display(sim_info)
 
 # Create visualization grid for results
 fig, axes = plt.subplots(2, 2, figsize=(12, 12))
@@ -446,7 +458,13 @@ crime1 = woo.dataWoo("crime1")
 reg_r = smf.ols(formula="narr86 ~ pcnv + ptime86 + qemp86", data=crime1)
 fit_r = reg_r.fit()
 r2_r = fit_r.rsquared
-print(f"R-squared of Restricted Model (r2_r): {r2_r:.4f}\n")
+# Display R-squared of Restricted Model
+pd.DataFrame(
+    {
+        "Model": ["Restricted"],
+        "R-squared": [f"{r2_r:.4f}"],
+    },
+)
 
 # %%
 # 2. Obtain residuals from the restricted model and add them to the DataFrame
@@ -459,25 +477,51 @@ reg_LM = smf.ols(
 )
 fit_LM = reg_LM.fit()
 r2_LM = fit_LM.rsquared
-print(f"R-squared of LM Regression (r2_LM): {r2_LM:.4f}\n")
+# Display R-squared of LM Regression
+pd.DataFrame(
+    {
+        "Model": ["LM Auxiliary"],
+        "R-squared": [f"{r2_LM:.4f}"],
+    },
+)
 
 # %%
 # 4. Calculate the LM test statistic: LM = n * R^2_utilde
 LM = r2_LM * fit_LM.nobs
-print(f"LM Test Statistic: {LM:.3f}\n")
+# Display LM Test Statistic
+pd.DataFrame(
+    {
+        "Statistic": ["LM Test"],
+        "Value": [f"{LM:.3f}"],
+    },
+)
 
 # %%
 # 5. Determine the critical value from the chi-squared distribution with q=2 degrees of freedom at alpha=10% significance level
 # For a test at 10% significance level, alpha = 0.10.
 # We want to find the chi-squared value such that the area to the right is 0.10.
 cv = stats.chi2.ppf(1 - 0.10, 2)  # ppf is the percent point function (inverse of CDF)
-print(f"Critical Value (Chi-squared with 2 df, alpha=0.10): {cv:.3f}\n")
+# Display Critical Value
+pd.DataFrame(
+    {
+        "Test": ["Chi-squared critical value"],
+        "df": [2],
+        "Alpha": [0.10],
+        "Value": [f"{cv:.3f}"],
+    },
+)
 
 # %%
 # 6. Calculate the p-value for the LM test
 # The p-value is the probability of observing a test statistic as extreme as, or more extreme than, the one calculated, under the null hypothesis.
 pval = 1 - stats.chi2.cdf(LM, 2)  # cdf is the cumulative distribution function
-print(f"P-value for LM Test: {pval:.4f}\n")
+# Display P-value for LM Test
+pd.DataFrame(
+    {
+        "Test": ["LM Test"],
+        "p-value": [f"{pval:.4f}"],
+    },
+)
 
 # %%
 # 7. Compare the LM test to the F-test for the same hypothesis using the unrestricted model directly.
@@ -492,8 +536,13 @@ hypotheses = ["avgsen = 0", "tottime = 0"]
 ftest = results.f_test(hypotheses)
 fstat = ftest.statistic
 fpval = ftest.pvalue
-print(f"F-statistic: {fstat:.3f}\n")
-print(f"P-value for F-test: {fpval:.4f}\n")
+# Display F-test results
+pd.DataFrame(
+    {
+        "Statistic": ["F-statistic", "p-value"],
+        "Value": [f"{fstat:.3f}", f"{fpval:.4f}"],
+    },
+)
 
 # %% [markdown]
 # **Interpretation of Example 5.3:**
