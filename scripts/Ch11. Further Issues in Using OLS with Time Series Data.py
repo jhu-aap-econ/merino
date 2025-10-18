@@ -36,12 +36,30 @@ from scipy import (
 # %% [markdown]
 # ## 11.1 Asymptotics with Time Series
 #
-# The properties of OLS estimators (like consistency and asymptotic normality) rely on certain assumptions about the underlying time series processes. In time series, the assumption of random sampling is replaced by assumptions about the **stationarity** and **weak dependence** of the series.
+# The properties of OLS estimators (like consistency and asymptotic normality) rely on certain assumptions about the underlying time series processes. In time series, the assumption of random sampling (MLR.2/SLR.2) is replaced by assumptions about the **stationarity** and **weak dependence** of the series.
 #
-# *   **Stationarity:** A time series is stationary if its probability distribution is stable over time (i.e., mean, variance, and autocorrelation structure are constant).
-# *   **Weak Dependence:** A time series is weakly dependent if the correlation between observations diminishes sufficiently quickly as the time distance between them increases.
+# **Key Time Series Assumptions:**
 #
-# Under appropriate stationarity and weak dependence conditions, OLS estimators are generally consistent and asymptotically normally distributed, allowing for standard inference (t-tests, F-tests) even with dependent data, provided the sample size is large enough.
+# *   **Stationarity (TS.1'):** A time series $\{x_t\}$ is (covariance) stationary if:
+#     1. $E(x_t) = \mu$ for all $t$ (constant mean)
+#     2. $\text{Var}(x_t) = \sigma^2$ for all $t$ (constant variance)
+#     3. $\text{Cov}(x_t, x_{t-h})$ depends only on $h$, not on $t$ (autocovariances depend only on the time gap)
+#     
+#     Stationarity ensures the time series process is "stable" over time, with no trends or time-varying volatility. This replaces the cross-sectional random sampling assumption.
+#
+# *   **Weak Dependence (TS.2'):** A time series is weakly dependent if the correlation between observations diminishes sufficiently quickly as the time distance between them increases. Formally, $\text{Corr}(x_t, x_{t+h}) \to 0$ as $h \to \infty$ at a sufficiently fast rate.
+#     
+#     Weak dependence ensures that observations far apart in time are nearly independent. This is crucial for applying versions of the Law of Large Numbers and Central Limit Theorem to time series data.
+#
+# *   **Zero Conditional Mean (TS.3'):** $E(u_t|x_{t}, x_{t-1}, x_{t-2}, \ldots) = 0$ for all $t$.
+#     
+#     This is the time series analog of MLR.4. It requires the error to be uncorrelated with current and all past values of regressors, but allows for correlation between $u_t$ and future $x$ values (weaker than strict exogeneity).
+#
+# **Asymptotic Properties:** Under appropriate stationarity, weak dependence, and zero conditional mean conditions (along with homoscedasticity for standard errors), OLS estimators in time series regressions are:
+# - **Consistent:** $\hat{\beta}_j \xrightarrow{p} \beta_j$ as $T \to \infty$
+# - **Asymptotically Normal:** $\sqrt{T}(\hat{\beta}_j - \beta_j) \xrightarrow{d} N(0, \sigma^2_{\beta_j})$ as $T \to \infty$
+#
+# This allows for standard inference (t-tests, F-tests) with dependent time series data, provided the sample size $T$ is large enough. When serial correlation is present, standard errors must be corrected (see Chapter 12).
 #
 # ### Example 11.4: Efficient Markets Hypothesis (EMH)
 #

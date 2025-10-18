@@ -29,7 +29,20 @@ import wooldridge as wool
 
 ## 7.1 Linear Regression with Dummy Variables as Regressors
 
-Dummy variables are binary variables that take on the value 1 or 0 to indicate the presence or absence of a specific attribute or category. In regression analysis, they are used to include qualitative information in a quantitative framework.
+Dummy variables (also called indicator variables or binary variables) take on the value 1 or 0 to indicate the presence or absence of a specific attribute or category. In regression analysis, they are used to include qualitative information in a quantitative framework.
+
+**Key Concepts:**
+
+1. **Reference Category (Base Category):** When including a dummy variable, one category is always omitted and serves as the **reference category** or **base category**. All coefficient interpretations are relative to this reference group.
+
+2. **Interpretation:** The coefficient on a dummy variable represents the difference in the expected value of the dependent variable between the category indicated by the dummy (when dummy=1) and the reference category (when dummy=0), holding all other variables constant.
+
+3. **Dummy Variable Trap:** For a categorical variable with $g$ categories, we include only $g-1$ dummy variables in the regression. Including all $g$ dummies would cause perfect multicollinearity (violating MLR.3) because the dummies would sum to the constant term.
+
+**Example:** If we have a gender variable with categories "male" and "female", we create one dummy variable:
+- `female = 1` if female, `female = 0` if male
+- **Reference category:** male (when `female = 0`)
+- **Coefficient interpretation:** $\beta_{female}$ represents the expected difference in $y$ between females and males, holding other variables constant. If $\beta_{female} = -1.81$ in a wage equation, this means females earn \$1.81 less per hour than males (the reference group), on average, ceteris paribus.
 
 ### Example 7.1: Hourly Wage Equation
 
@@ -62,8 +75,9 @@ print(f"table: \n{table}\n")
 
 **Interpretation of Results:**
 
-- **Intercept (const):** The estimated intercept is -1.5679. This is the predicted wage for a male (female=0) with zero years of education, experience, and tenure. While not practically meaningful in this context (as education, experience, and tenure are rarely zero), it's a necessary part of the regression model.
-- **female:** The coefficient for `female` is -1.8109. This suggests that, holding education, experience, and tenure constant, women earn, on average, \$1.81 less per hour than men in this dataset. The negative coefficient indicates a wage gap between women and men.
+- **Intercept (const):** The estimated intercept is -1.5679 (dollars per hour). This is the predicted wage for the **reference group** (male, since `female=0`) with zero years of education, experience, and tenure. While not practically meaningful in this context (as education, experience, and tenure are rarely zero simultaneously), it's a necessary part of the regression model that establishes the baseline.
+  
+- **female:** The coefficient for `female` is -1.8109 (dollars per hour). **Reference category interpretation:** Holding education, experience, and tenure constant, women (`female=1`) earn, on average, \$1.81 less per hour than **men** (`female=0`, the reference category) in this dataset. The negative coefficient indicates a wage gap between women and men, with women being the lower-earning group relative to the male baseline.
 - **educ:** The coefficient for `educ` is 0.5715. This means that, holding other factors constant, each additional year of education is associated with an increase in hourly wage of approximately \$0.57.
 - **exper:** The coefficient for `exper` is 0.0254. For each additional year of experience, hourly wage is predicted to increase by about \$0.025, holding other factors constant.
 - **tenure:** The coefficient for `tenure` is 0.1410. For each additional year of tenure with the current employer, hourly wage is predicted to increase by about \$0.14, holding other factors constant.
@@ -107,12 +121,25 @@ print(f"table: \n{table}\n")
   - `married*female`: This includes the main effects of `married` and `female` as well as their interaction term (`married:female`). The interaction term allows us to see if the effect of being female differs depending on marital status (or vice versa).
   - `I(exper**2)` and `I(tenure**2)`: We use `I(...)` to include squared terms of `exper` and `tenure` in the formula. This allows for a quadratic relationship between experience/tenure and log wage, capturing potential diminishing returns to experience and tenure.
 
-**Interpretation of Results:**
+**Interpretation of Results (with Interaction Terms):**
 
-- **Intercept (const):** The intercept is 0.3214. This is the predicted log wage for a single (married=0), male (female=0) with zero education, experience, and tenure.
-- **married:** The coefficient for `married` is 0.2127. This suggests that married men (the reference group for the interaction) earn approximately 21.27% more than single men, holding other factors constant. (For small coefficients, the percentage change is approximately 100 times the coefficient).
-- **female:** The coefficient for `female` is -0.1104. This is the wage difference between single women (female=1, married=0) and single men (female=0, married=0). Single women earn approximately 11.04% less than single men, holding other factors constant.
-- **married:female:** The interaction term `married:female` has a coefficient of -0.3006. This is the _additional_ effect of being female when married, compared to being female and single. To find the wage difference between married women and married men, we need to combine the coefficients for `female` and `married:female`: -0.1104 + (-0.3006) = -0.4110. So, married women earn approximately 41.10% less than married men, holding other factors constant.
+When interpreting interaction terms involving dummy variables, we must be careful to identify the reference category at each step:
+
+- **Intercept (const):** The intercept is 0.3214. This is the predicted log wage for the **baseline reference group**: single males (married=0, female=0) with zero education, experience, and tenure.
+
+- **married:** The coefficient for `married` is 0.2127. **Interpretation:** Married males earn approximately $100 \times 0.2127 \approx 21.3\%$ more than **single males** (the reference group), holding other factors constant. (For small coefficients $|\beta| < 0.1$, the percentage change is approximately $100\beta$; for larger coefficients, use $100[\exp(\beta)-1]$, which here gives $100[\exp(0.2127)-1] \approx 23.7\%$).
+
+- **female:** The coefficient for `female` is -0.1104. **Interpretation:** Single females (female=1, married=0) earn approximately $11.0\%$ less than **single males** (female=0, married=0, the reference group), holding other factors constant.
+
+- **married:female:** The interaction term `married:female` has a coefficient of -0.3006. **Interpretation:** This captures the **additional** effect of being married for females, beyond the main effects. To find the total wage difference between married females and married males:
+  - Effect of female when married = $\beta_{female} + \beta_{married:female} = -0.1104 + (-0.3006) = -0.4110$
+  - Married females earn approximately $100 \times (-0.4110) \approx 41.1\%$ less than **married males**, holding other factors constant.
+  
+**Summary of all four groups relative to baseline (single males):**
+- Single males (reference): 0% (baseline)
+- Married males: $+21.3\%$ (coefficient on `married`)
+- Single females: $-11.0\%$ (coefficient on `female`)
+- Married females: $-11.0\% + 21.3\% - 30.1\% = -19.8\%$ (sum of all three dummy coefficients)
 - **educ, exper, I(exper**2), tenure, I(tenure**2):** These coefficients represent the effects of education, experience, and tenure on log wage, controlling for gender and marital status. For example, the coefficient for `educ` (0.0789) suggests that each additional year of education is associated with approximately a 7.89% increase in hourly wage, holding other factors constant. The negative coefficient on `I(exper**2)` suggests diminishing returns to experience.
 
 - **P-values:** Most variables, including the interaction term `married:female`, are statistically significant at conventional levels, indicating that marital status and gender, both individually and in interaction, play a significant role in explaining wage variations.

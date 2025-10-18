@@ -203,13 +203,38 @@ print(f"F-test (Model 2 vs Comprehensive):\n{anovaResults2}\n")
 # %% [markdown]
 # ## 9.2 Measurement Error
 #
-# Measurement error occurs when the variables used in our regression analysis are measured with error, meaning the observed variable differs from the true, underlying variable of interest.
+# Measurement error occurs when the variables used in our regression analysis are measured with error, meaning the observed variable differs from the true, underlying variable of interest. This is common in applied econometrics (e.g., self-reported income, education, or health measures). The consequences depend critically on whether the measurement error is in the dependent or independent variable.
 #
-# *   **Measurement Error in the Dependent Variable ($y$)**:
-#     If $y = y^* + e_0$, where $y^*$ is the true value and $e_0$ is classical measurement error (uncorrelated with $y^*$ and $X$, mean zero), then OLS estimates remain unbiased and consistent. However, the error variance increases ($Var(u+e_0) > Var(u)$), leading to larger standard errors and less precise estimates compared to using the true $y^*$.
+# **Classical Measurement Error Assumptions:**
+# - Mean zero: $E(e) = 0$
+# - Uncorrelated with true value: $\text{Cov}(e, \text{true value}) = 0$
+# - Uncorrelated with other variables and error term: $\text{Cov}(e, X) = 0$, $\text{Cov}(e, u) = 0$
 #
-# *   **Measurement Error in an Independent Variable ($x$)**:
-#     If $x_k = x_k^* + e_k$, where $x_k^*$ is the true value and $e_k$ is classical measurement error (uncorrelated with $x_k^*$, $u$, and other $x$'s, mean zero), then OLS estimates are generally **biased and inconsistent**. Specifically, the coefficient on the mismeasured variable $x_k$ is typically biased towards zero (this is called **attenuation bias**). The coefficients on other variables can also be biased if they are correlated with the mismeasured $x_k$.
+# ### Measurement Error in the Dependent Variable ($y$)
+#
+# **Setup:** Suppose the true model is:
+# $$y^* = \beta_0 + \beta_1 x_1 + \cdots + \beta_k x_k + u$$
+#
+# but we observe $y = y^* + e_0$, where $e_0$ is classical measurement error in $y$.
+#
+# **Consequences:** 
+# - **Unbiasedness preserved:** OLS estimates of $\beta_0, \ldots, \beta_k$ remain **unbiased** and **consistent** because $e_0$ simply becomes part of the composite error term: $y = \beta_0 + \beta_1 x_1 + \cdots + \beta_k x_k + (u + e_0)$.
+# - **Increased variance:** The error variance increases from $\text{Var}(u)$ to $\text{Var}(u + e_0) = \text{Var}(u) + \text{Var}(e_0)$ (assuming $\text{Cov}(u, e_0) = 0$). This leads to **larger standard errors** and **less precise estimates** (wider confidence intervals, lower power).
+# - **No bias, only loss of efficiency**
+#
+# ### Measurement Error in an Independent Variable ($x$)
+#
+# **Setup:** Suppose the true model is:
+# $$y = \beta_0 + \beta_1 x_1^* + \cdots + \beta_k x_k^* + u$$
+#
+# but we observe $x_j = x_j^* + e_j$ for some variable $j$, where $e_j$ is classical measurement error in $x_j$.
+#
+# **Consequences:**
+# - **Bias and inconsistency:** OLS estimates are generally **biased** and **inconsistent** because measurement error in $x_j$ violates the zero conditional mean assumption (MLR.4). The observed $x_j$ is correlated with the composite error term.
+# - **Attenuation bias:** The coefficient on the mismeasured variable $\hat{\beta}_j$ is typically biased **toward zero**. In a simple regression, the bias factor is:
+#   $$E(\hat{\beta}_j) \approx \beta_j \cdot \frac{\text{Var}(x_j^*)}{\text{Var}(x_j^*) + \text{Var}(e_j)} = \beta_j \cdot \frac{\text{Var}(x_j^*)}{\text{Var}(x_j)} < \beta_j \text{ (if } \beta_j > 0\text{)}$$
+# - **Spillover bias:** Coefficients on other variables ($\beta_1, \ldots, \beta_{j-1}, \beta_{j+1}, \ldots, \beta_k$) can also be biased if they are correlated with the mismeasured $x_j$.
+# - **More serious problem:** Measurement error in regressors is more problematic than in the dependent variable because it causes both bias and inconsistency.
 #
 # We use simulations to illustrate these effects.
 #

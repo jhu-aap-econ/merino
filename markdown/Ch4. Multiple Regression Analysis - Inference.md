@@ -24,11 +24,34 @@ import wooldridge as wool
 from scipy import stats
 ```
 
-## 4.1 The $t$ Test
+## 4.1 Assumptions for Statistical Inference
+
+Before discussing hypothesis testing, we must clarify which assumptions are required for valid statistical inference in multiple regression. From Chapter 3, we have the Gauss-Markov assumptions (MLR.1-MLR.5) which guarantee that OLS estimators are BLUE. For statistical inference (hypothesis tests and confidence intervals), we consider two cases:
+
+**Case 1: Exact Inference in Finite Samples (Classical Linear Model)**
+
+For exact inference in small or finite samples using the t-distribution and F-distribution, we need an additional assumption beyond MLR.1-MLR.5:
+
+**MLR.6: Normality of Errors**
+The population error $u$ is conditionally normally distributed:
+$$u|x_1, x_2, \ldots, x_k \sim \text{Normal}(0, \sigma^2)$$
+
+Under the full **Classical Linear Model (CLM)** assumptions **MLR.1-MLR.6**, the OLS estimators have exact normal sampling distributions, and the t-statistics and F-statistics follow exact t and F distributions in finite samples.
+
+**Case 2: Asymptotic Inference in Large Samples**
+
+For asymptotically valid inference in large samples, we need only the Gauss-Markov assumptions **MLR.1-MLR.5** (no normality required). By the Central Limit Theorem (Chapter 5), as $n \to \infty$:
+- The OLS estimators are approximately normally distributed
+- The t-statistics approximately follow the t-distribution (or standard normal for large $n$)
+- The F-statistics approximately follow the F-distribution
+
+**Practical Implication:** With moderate to large sample sizes (typically $n \geq 30$ or more), the t-tests and F-tests are robust to violations of normality, making them widely applicable even when errors are not normally distributed. Throughout this chapter, we assume sufficient conditions for valid inference—either MLR.1-MLR.6 for exact results or MLR.1-MLR.5 with large $n$ for asymptotic results.
+
+## 4.2 The $t$ Test
 
 The $t$ test is a fundamental tool for hypothesis testing about individual regression coefficients in multiple regression models. It allows us to formally examine whether a specific independent variable has a statistically significant effect on the dependent variable, holding other factors constant.
 
-### 4.1.1 General Setup
+### 4.2.1 General Setup
 
 In a multiple regression model, we are often interested in testing hypotheses about a single population parameter, say $\beta_j$. We might want to test if $\beta_j$ is equal to some specific value, $a_j$.  The null hypothesis ($H_0$) typically represents a statement of no effect or a specific hypothesized value, while the alternative hypothesis ($H_1$) represents what we are trying to find evidence for.
 
@@ -53,7 +76,7 @@ $$t = \frac{\hat{\beta}_j - a_j}{se(\hat{\beta}_j)}$$
 
 Under the null hypothesis and under the CLM assumptions, this $t$ statistic follows a $t$ distribution with $n-k-1$ degrees of freedom, where $n$ is the sample size and $k$ is the number of independent variables in the model.
 
-### 4.1.2 Standard Case
+### 4.2.2 Standard Case
 
 The most common hypothesis test is to check if a particular independent variable has no effect on the dependent variable in the population, which corresponds to testing if the coefficient is zero. In this standard case, we set $a_j = 0$.
 
@@ -202,7 +225,7 @@ This code runs the regression of $\log(\text{wage})$ on `educ`, `exper`, and `te
 
 *   **`tenure` (Tenure):** Similarly, the coefficient for `tenure` is 0.0221 and statistically significant (p-value < 0.001), suggesting that longer tenure with the current employer is associated with higher wages, controlling for education and overall experience.
 
-## 4.2 Confidence Intervals
+## 4.3 Confidence Intervals
 
 Confidence intervals provide a range of plausible values for a population parameter, such as a regression coefficient. They give us a measure of the uncertainty associated with our point estimate ($\hat{\beta}_j$). A confidence interval is constructed around the estimated coefficient.
 
@@ -263,7 +286,7 @@ Similarly, this calculates the 99% confidence intervals.
 
 As expected, the 99% confidence intervals are wider than the 95% confidence intervals. This is because to be more confident that we capture the true parameter, we need to consider a wider range of values.
 
-## 4.3 Linear Restrictions: $F$ Tests
+## 4.4 Linear Restrictions: $F$ Tests
 
 The $t$ test is useful for testing hypotheses about a single coefficient. However, we often want to test hypotheses involving **multiple coefficients simultaneously**. For example, we might want to test if several independent variables are jointly insignificant, or if there is a specific linear relationship between multiple coefficients.  For these situations, we use the **$F$ test**.
 

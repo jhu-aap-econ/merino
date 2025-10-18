@@ -18,9 +18,16 @@ jupyter:
 This notebook explores the issue of **heteroskedasticity** in the context of linear regression models estimated using Ordinary Least Squares (OLS). Heteroskedasticity occurs when the variance of the error term, conditional on the explanatory variables, is not constant across observations. This violates one of the Gauss-Markov assumptions required for OLS to be the Best Linear Unbiased Estimator (BLUE).
 
 **Consequences of Heteroskedasticity:**
-1.  OLS coefficient estimates remain unbiased and consistent (under the other standard assumptions).
-2.  However, the usual OLS standard errors and test statistics (t-tests, F-tests) are no longer valid, even in large samples. They are biased, typically leading to incorrect inference (e.g., confidence intervals with incorrect coverage rates, hypothesis tests with incorrect sizes).
-3.  OLS is no longer the most efficient (minimum variance) linear unbiased estimator.
+
+Under assumptions MLR.1-MLR.4 (linearity, random sampling, no perfect collinearity, and zero conditional mean), but with heteroskedasticity (violation of MLR.5):
+
+1.  **Consistency and Unbiasedness:** OLS coefficient estimates $\hat{\beta}_j$ remain **unbiased** and **consistent**. That is, $E(\hat{\beta}_j) = \beta_j$ and $\hat{\beta}_j \xrightarrow{p} \beta_j$ as $n \to \infty$. The point estimates themselves are not affected by heteroskedasticity.
+
+2.  **Invalid Inference:** The usual OLS standard errors, $\widehat{\text{SE}}(\hat{\beta}_j)$, are **biased and inconsistent** estimates of the true standard errors, even in large samples. Consequently, the usual t-statistics, F-statistics, confidence intervals, and p-values are **invalid**. They can be either too small or too large, leading to incorrect inference (e.g., rejecting true null hypotheses too often or failing to reject false null hypotheses).
+
+3.  **Loss of Efficiency:** OLS is no longer BLUE (Best Linear Unbiased Estimator). There exist other linear unbiased estimators (e.g., Weighted Least Squares with correct weights) that have smaller variances than OLS. However, OLS remains consistent, which is often sufficient for large samples.
+
+**Solutions:** Use heteroskedasticity-robust standard errors (e.g., White/HC standard errors) for valid inference with OLS estimates, or use Weighted Least Squares (WLS) if the form of heteroskedasticity can be modeled.
 
 We will cover:
 *   How to obtain valid inference in the presence of heteroskedasticity using **robust standard errors**.

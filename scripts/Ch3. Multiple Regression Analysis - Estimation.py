@@ -69,8 +69,8 @@ import wooldridge as wool
 # * $y$ is the dependent variable (the variable we want to explain).
 # * $x_1, x_2, \ldots, x_k$ are the independent variables (or regressors, explanatory variables) that we believe influence $y$.
 # * $\beta_0$ is the intercept, representing the expected value of $y$ when all independent variables are zero.
-# * $\beta_1, \beta_2, \ldots, \beta_k$ are the partial regression coefficients. Each $\beta_j$ represents the change in $y$ for a one-unit increase in $x_j$, *holding all other independent variables constant*. This is the crucial **ceteris paribus** interpretation in multiple regression.
-# * $u$ is the error term (or disturbance), representing unobserved factors that also affect $y$.
+# * $\beta_1, \beta_2, \ldots, \beta_k$ are the partial regression coefficients (or slope coefficients). Each $\beta_j$ represents the change in $y$ for a one-unit increase in $x_j$, *holding all other independent variables constant*. This is the crucial **ceteris paribus** (other things equal) interpretation in multiple regression.
+# * $u$ is the error term (or disturbance), representing unobserved factors that also affect $y$. As in simple regression (Chapter 2), we assume $E(u|x_1, \ldots, x_k) = 0$, which implies $E(u) = 0$.
 #
 # Let's explore several examples from the textbook to understand how multiple regression is applied in practice.
 #
@@ -469,49 +469,61 @@ b_om  # Display coefficient of ACT in simple regression
 #
 # ### The Five Gauss-Markov Assumptions (MLR.1 - MLR.5)
 #
-# **MLR.1: Linear in Parameters**
+# These assumptions extend the Simple Linear Regression (SLR) assumptions from Chapter 2 to the multiple regression context.
+#
+# **MLR.1: Linear in Parameters** (extends SLR.1)
 # The population model is linear in the parameters:
 # $$y = \beta_0 + \beta_1 x_1 + \beta_2 x_2 + \cdots + \beta_k x_k + u$$
 #
-# This assumption requires that the dependent variable is a linear function of the parameters $\beta_j$, though the relationship can be nonlinear in the variables themselves (e.g., $x_2 = x_1^2$).
+# This assumption requires that the dependent variable is a linear function of the parameters $\beta_j$, though the relationship can be nonlinear in the variables themselves (e.g., $x_2 = x_1^2$, $x_3 = \log(x_1)$). The key is **linearity in parameters**, not necessarily in variables.
 #
-# **MLR.2: Random Sampling**
+# **MLR.2: Random Sampling** (extends SLR.2)
 # We have a random sample of size $n$: $\{(x_{i1}, x_{i2}, \ldots, x_{ik}, y_i): i = 1, 2, \ldots, n\}$ from the population model.
 #
-# This ensures our sample is representative of the population we want to study.
+# This ensures our sample is representative of the population we want to study and that observations are independent across $i$.
 #
-# **MLR.3: No Perfect Collinearity**
+# **MLR.3: No Perfect Collinearity** (extends SLR.3)
 # In the sample (and therefore in the population), none of the independent variables is constant, and there are no exact linear relationships among the independent variables.
 #
-# This assumption ensures that we can obtain unique OLS estimates. Perfect multicollinearity would make it impossible to isolate the individual effects of the explanatory variables.
+# More precisely: (i) each $x_j$ has sample variation ($\widehat{\text{Var}}(x_j) > 0$), and (ii) no $x_j$ can be written as an exact linear combination of the other independent variables. This assumption ensures that we can obtain unique OLS estimates. Perfect multicollinearity would make it impossible to isolate the individual effects of the explanatory variables. Note that **high** (but not perfect) correlation among regressors is allowed, though it increases standard errors.
 #
-# **MLR.4: Zero Conditional Mean**
+# **MLR.4: Zero Conditional Mean** (extends SLR.4)
 # The error term $u$ has an expected value of zero given any values of the independent variables:
 # $$E(u|x_1, x_2, \ldots, x_k) = 0$$
 #
-# This is the most crucial assumption for unbiasedness. It implies that all relevant factors affecting $y$ are either included in the model or are uncorrelated with the included variables.
+# This is the most crucial assumption for **unbiasedness** of OLS estimators. It implies that all factors in $u$ are, on average, unrelated to $x_1, \ldots, x_k$. This assumption implies $E(u) = 0$ and $\text{Cov}(x_j, u) = 0$ for all $j = 1, \ldots, k$. If any $x_j$ is correlated with $u$, OLS estimators will be **biased** and **inconsistent**. Violations typically arise from omitted variables, measurement error in regressors, or simultaneity.
 #
-# **MLR.5: Homoscedasticity**
+# **MLR.5: Homoscedasticity** (extends SLR.5)
 # The error term $u$ has the same variance given any values of the independent variables:
 # $$\text{Var}(u|x_1, x_2, \ldots, x_k) = \sigma^2$$
 #
-# This assumption ensures that the variance of the error term is constant across all combinations of explanatory variables.
+# This assumption ensures that the variance of the error term is constant across all combinations of explanatory variables. This assumption is required for **efficiency** (BLUE property) and for standard OLS standard errors to be valid. Under MLR.1-MLR.4 alone (without homoscedasticity), OLS estimators remain **unbiased** and **consistent**, but they are not BLUE, and standard errors must be corrected (e.g., using robust/heteroscedasticity-consistent standard errors, as discussed in Chapter 8).
 #
 # ### Properties Under the Gauss-Markov Assumptions
 #
 # **Theorem 3.1: Unbiasedness of OLS (MLR.1-MLR.4)**
-# Under assumptions MLR.1 through MLR.4, the OLS estimators are unbiased:
+# Under assumptions **MLR.1 through MLR.4** (linearity, random sampling, no perfect collinearity, and zero conditional mean), the OLS estimators are unbiased:
 # $$E(\hat{\beta}_j) = \beta_j \text{ for } j = 0, 1, 2, \ldots, k$$
 #
+# This means that on average, across repeated random samples from the same population, the OLS estimates equal the true population parameters. Crucially, **homoscedasticity (MLR.5) is not required** for unbiasedness—only the first four assumptions are needed.
+#
 # **Theorem 3.2: Variance of OLS Estimators (MLR.1-MLR.5)**
-# Under assumptions MLR.1 through MLR.5, we can derive the variance-covariance matrix of the OLS estimators, which allows us to calculate standard errors and conduct inference.
+# Under assumptions **MLR.1 through MLR.5** (including homoscedasticity), the variance-covariance matrix of the OLS estimators $\hat{\boldsymbol{\beta}} = (\hat{\beta}_0, \hat{\beta}_1, \ldots, \hat{\beta}_k)'$ conditional on the sample values of $\mathbf{X}$ is:
+# $$\text{Var}(\hat{\boldsymbol{\beta}}|\mathbf{X}) = \sigma^2 (\mathbf{X}'\mathbf{X})^{-1}$$
+#
+# where $\sigma^2 = \text{Var}(u|x_1, \ldots, x_k)$ is the constant conditional variance of the error term. The diagonal elements of this matrix are the variances of individual OLS estimators, and the off-diagonal elements are the covariances. Standard errors are the square roots of the diagonal elements. This result allows us to conduct valid statistical inference (hypothesis tests, confidence intervals) when homoscedasticity holds.
 #
 # ### The Gauss-Markov Theorem
 #
 # **Theorem 3.3: Gauss-Markov Theorem (MLR.1-MLR.5)**
-# Under the Gauss-Markov assumptions MLR.1 through MLR.5, the OLS estimators $\hat{\beta}_0, \hat{\beta}_1, \ldots, \hat{\beta}_k$ are the Best Linear Unbiased Estimators (BLUE) of $\beta_0, \beta_1, \ldots, \beta_k$.
+# Under the Gauss-Markov assumptions **MLR.1 through MLR.5**, the OLS estimators $\hat{\beta}_0, \hat{\beta}_1, \ldots, \hat{\beta}_k$ are the **Best Linear Unbiased Estimators (BLUE)** of $\beta_0, \beta_1, \ldots, \beta_k$.
 #
-# "Best" means that among all linear unbiased estimators, OLS has the smallest variance. This theorem provides the fundamental justification for using OLS in linear regression analysis.
+# "Best" means that among all **linear** unbiased estimators (estimators that are linear functions of $y$), OLS has the smallest variance for each coefficient. More precisely, for any other linear unbiased estimator $\tilde{\beta}_j$ of $\beta_j$, we have $\text{Var}(\hat{\beta}_j) \leq \text{Var}(\tilde{\beta}_j)$. This theorem provides the fundamental justification for using OLS in linear regression analysis under the classical assumptions. 
+#
+# **Important Notes:**
+# - BLUE property requires all five assumptions, including homoscedasticity (MLR.5)
+# - Unbiasedness requires only MLR.1-MLR.4
+# - Consistency requires even weaker conditions than unbiasedness (see Chapter 5 on asymptotics)
 #
 # :::{note} Understanding the Gauss-Markov Assumptions
 # :class: dropdown

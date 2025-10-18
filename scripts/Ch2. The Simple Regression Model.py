@@ -77,13 +77,13 @@ plt.rcParams["axes.labelsize"] = 12  # Larger axis label font
 # - **$x$ (Independent Variable)**: This variable is used to explain the variations in $y$. It's also known as the explanatory variable, regressor, or control variable.
 # - **$\beta_0$ (Intercept)**: This is the value of $y$ when $x$ is zero. It's the point where the regression line crosses the y-axis.
 # - **$\beta_1$ (Slope Coefficient)**: This represents the change in $y$ for a one-unit increase in $x$. It quantifies the effect of $x$ on $y$.
-# - **$u$ (Error Term)**: Also known as the disturbance term, it represents all other factors, besides $x$, that affect $y$. It captures the unexplained variation in $y$. We assume that the error term has an expected value of zero and is uncorrelated with $x$.
+# - **$u$ (Error Term)**: Also known as the disturbance term, it represents all other factors, besides $x$, that affect $y$. It captures the unexplained variation in $y$. We assume that the error term has an expected value of zero conditional on $x$: $E(u|x) = 0$, which implies $E(u) = 0$ and that $u$ is uncorrelated with $x$.
 #
 # Our goal in OLS regression is to estimate the unknown parameters $\beta_0$ and $\beta_1$. The Ordinary Least Squares (OLS) method achieves this by minimizing the sum of the squared residuals. The OLS estimators for $\beta_0$ and $\beta_1$ are given by the following formulas:
 #
-# $$\hat{\beta}_1 = \frac{\text{cov}(x,y)}{\text{var}(x)} = \frac{\sum_{i=1}^n (x_i - \bar{x})(y_i - \bar{y})}{\sum_{i=1}^n (x_i - \bar{x})^2}$$
+# $$\hat{\beta}_1 = \frac{\widehat{\text{Cov}}(x,y)}{\widehat{\text{Var}}(x)} = \frac{\sum_{i=1}^n (x_i - \bar{x})(y_i - \bar{y})}{\sum_{i=1}^n (x_i - \bar{x})^2}$$
 #
-# This formula shows that $\hat{\beta}_1$ is the ratio of the sample covariance between $x$ and $y$ to the sample variance of $x$. It essentially captures the linear association between $x$ and $y$.
+# This formula shows that $\hat{\beta}_1$ is the ratio of the **sample covariance** between $x$ and $y$ to the **sample variance** of $x$. It essentially captures the linear association between $x$ and $y$. The hat notation ($\widehat{\text{Cov}}$ and $\widehat{\text{Var}}$) emphasizes these are sample estimates of the population covariance and variance.
 #
 # $$\hat{\beta}_0 = \bar{y} - \hat{\beta}_1 \bar{x}$$
 #
@@ -498,21 +498,21 @@ properties_data[["Property", "Formatted"]]
 #
 # **Total Sum of Squares (SST)**: This measures the total sample variation in $y$. It is the sum of squared deviations of $y_i$ from its mean $\bar{y}$:
 #
-# $$\text{SST} = \sum_{i=1}^n (y_i - \bar{y})^2 = (n-1) \text{var}(y)$$
+# $$\text{SST} = \sum_{i=1}^n (y_i - \bar{y})^2 = (n-1) \widehat{\text{Var}}(y)$$
 #
-# SST represents the total variability in the dependent variable that we want to explain.
+# where $\widehat{\text{Var}}(y) = \frac{1}{n-1}\sum_{i=1}^n (y_i - \bar{y})^2$ is the sample variance of $y$. SST represents the total variability in the dependent variable that we want to explain.
 #
 # **Explained Sum of Squares (SSE)**: This measures the variation in $\hat{y}$ predicted by our model. It is the sum of squared deviations of the fitted values $\hat{y}_i$ from the mean of $y$, $\bar{y}$:
 #
-# $$\text{SSE} = \sum_{i=1}^n (\hat{y}_i - \bar{y})^2 = (n-1) \text{var}(\hat{y})$$
+# $$\text{SSE} = \sum_{i=1}^n (\hat{y}_i - \bar{y})^2 = (n-1) \widehat{\text{Var}}(\hat{y})$$
 #
-# SSE represents the variability in $y$ that is explained by our model.
+# where $\widehat{\text{Var}}(\hat{y}) = \frac{1}{n-1}\sum_{i=1}^n (\hat{y}_i - \bar{y})^2$ is the sample variance of the fitted values. SSE represents the variability in $y$ that is explained by our model.
 #
 # **Residual Sum of Squares (SSR)**: This measures the variation in the residuals $\hat{u}_i$, which is the unexplained variation in $y$. It is the sum of squared residuals:
 #
-# $$\text{SSR} = \sum_{i=1}^n (\hat{u}_i - 0)^2 = \sum_{i=1}^n \hat{u}_i^2 = (n-1) \text{var}(\hat{u})$$
+# $$\text{SSR} = \sum_{i=1}^n \hat{u}_i^2 = (n-1) \widehat{\text{Var}}(\hat{u})$$
 #
-# Note that the mean of residuals is zero, so we are summing squared deviations from zero here. SSR represents the variability in $y$ that is *not* explained by our model.
+# where $\widehat{\text{Var}}(\hat{u}) = \frac{1}{n-1}\sum_{i=1}^n \hat{u}_i^2$ is the sample variance of residuals. Note that the mean of OLS residuals is always zero ($\bar{\hat{u}} = 0$), so we are summing squared deviations from zero. SSR represents the variability in $y$ that is *not* explained by our model.
 #
 # These three sums of squares are related by the following identity:
 #
@@ -522,7 +522,7 @@ properties_data[["Property", "Formatted"]]
 #
 # Now we can define R-squared:
 #
-# $$R^2 = \frac{\text{SSE}}{\text{SST}} = 1 - \frac{\text{SSR}}{\text{SST}} = \frac{\text{var}(\hat{y})}{\text{var}(y)} = 1 - \frac{\text{var}(\hat{u})}{\text{var}(y)}$$
+# $$R^2 = \frac{\text{SSE}}{\text{SST}} = 1 - \frac{\text{SSR}}{\text{SST}} = \frac{\widehat{\text{Var}}(\hat{y})}{\widehat{\text{Var}}(y)} = 1 - \frac{\widehat{\text{Var}}(\hat{u})}{\widehat{\text{Var}}(y)}$$
 #
 # R-squared is the ratio of the explained variation to the total variation. It ranges from 0 to 1 (or 0% to 100%).
 #
@@ -685,19 +685,19 @@ plot_regression(
 #
 #    $$\log(y) = \beta_0 + \beta_1 x + u$$
 #
-#    In this model, $\beta_1$ is interpreted as the approximate percentage change in $y$ for a one-unit change in $x$. Specifically, a one-unit increase in $x$ is associated with a $100 \cdot \beta_1$ percent change in $y$.
+#    In this model, $\beta_1$ represents the approximate percentage change in $y$ for a one-unit change in $x$. Specifically, a one-unit increase in $x$ is associated with approximately a $100 \cdot \beta_1$ percent change in $y$. This approximation is most accurate when $|\beta_1|$ is small (typically $|\beta_1| < 0.1$). The exact percentage change is $100 \cdot [\exp(\beta_1) - 1]$ percent.
 #
 # 2. **Level-Log Model**: Here, the dependent variable is in level form, and the independent variable is in logarithm form:
 #
 #    $$y = \beta_0 + \beta_1 \log(x) + u$$
 #
-#    In this model, $\beta_1$ represents the change in $y$ for a one-percentage point change in $x$. Specifically, a one-percent increase in $x$ is associated with a change in $y$ of $\beta_1/100$. Or more simply, a 100 percent increase in x is associated with a change in y of $\beta_1$.
+#    In this model, $\beta_1$ represents the approximate change in $y$ for a one-percent increase in $x$. Specifically, a one-percent increase in $x$ (i.e., from $x$ to $1.01x$) is associated with approximately a change in $y$ of $\beta_1/100$ units. Equivalently, a 100 percent increase in $x$ (i.e., doubling from $x$ to $2x$) is associated with a change in $y$ of approximately $\beta_1 \cdot \log(2) \approx 0.69\beta_1$ units.
 #
 # 3. **Log-Log Model**: In this model, both the dependent and independent variables are in logarithm form:
 #
 #    $$\log(y) = \beta_0 + \beta_1 \log(x) + u$$
 #
-#    In the log-log model, $\beta_1$ is interpreted as the elasticity of $y$ with respect to $x$. That is, a one-percent increase in $x$ is associated with a $\beta_1$ percent change in $y$.
+#    In the log-log model, $\beta_1$ is interpreted as the **elasticity** of $y$ with respect to $x$. That is, a one-percent increase in $x$ is associated with approximately a $\beta_1$ percent change in $y$. This interpretation is exact (not an approximation) because $\frac{d \log(y)}{d \log(x)} = \frac{dy/y}{dx/x} = \beta_1$, which is the definition of elasticity.
 #
 # ### Example 2.10: Wage and Education (Log-Level Model)
 #
@@ -998,32 +998,32 @@ plt.tight_layout()
 #
 # 1. **SLR.1: Linear Population Regression Function**: The relationship between $y$ and $x$ in the population is linear:
 #    $$y = \beta_0 + \beta_1 x + u$$
-#    This assumes that the model is correctly specified in terms of linearity.
+#    This assumes that the model is correctly specified in terms of linearity. This is a maintained assumption throughout the analysis.
 #
 # 2. **SLR.2: Random Sampling**: We have a random sample of size $n$, $\{(x_i, y_i): i=1, 2, ..., n\}$, from the population model.
-#    This assumption ensures that our sample is representative of the population we want to study.
+#    This assumption ensures that our sample is representative of the population we want to study and that observations are independent across $i$.
 #
-# 3. **SLR.3: Sample Variation in x**: There is sample variation in the independent variable $x$, i.e., $x_i$ are not all the same value.
-#    If there is no variation in $x$, we cannot estimate the relationship between $x$ and $y$.
+# 3. **SLR.3: Sample Variation in x**: There is sample variation in the independent variable $x$, i.e., $\widehat{\text{Var}}(x) > 0$, meaning not all $x_i$ values are identical.
+#    If there is no variation in $x$, we cannot estimate the relationship between $x$ and $y$ (the slope $\beta_1$ is not identified).
 #
 # 4. **SLR.4: Zero Conditional Mean**: The error term $u$ has an expected value of zero given any value of $x$:
-#    $$\text{E}(u|x) = 0$$
-#    This is a crucial assumption. It implies that the unobserved factors represented by $u$ are, on average, unrelated to $x$. If $x$ and $u$ are correlated, OLS estimators will be biased.
+#    $$E(u|x) = 0$$
+#    This is the most crucial assumption for **unbiasedness** of OLS. It implies that the unobserved factors represented by $u$ are, on average, unrelated to $x$ at all values of $x$. This assumption implies $E(u) = 0$ and $\text{Cov}(x, u) = 0$. If $x$ and $u$ are correlated, OLS estimators will be **biased** and **inconsistent**.
 #
 # 5. **SLR.5: Homoscedasticity**: The error term $u$ has the same variance given any value of $x$:
-#    $$\text{var}(u|x) = \sigma^2$$
-#    This assumption means that the spread of the errors is constant across all values of $x$. If this assumption is violated (heteroscedasticity), OLS estimators are still unbiased, but they are no longer the Best Linear Unbiased Estimators (BLUE), and standard errors will be incorrect.
+#    $$\text{Var}(u|x) = \sigma^2$$
+#    This assumption means that the spread of the errors is constant across all values of $x$. This assumption is required for **efficiency** (BLUE property) and for the standard formulas for OLS standard errors to be valid. If this assumption is violated (heteroscedasticity), OLS estimators remain **unbiased** and **consistent** under SLR.1-SLR.4, but they are no longer the Best Linear Unbiased Estimators (BLUE), and the usual standard errors and test statistics will be incorrect.
 #
 # Under these assumptions, we have important theoretical results about the OLS estimators:
 #
-# - **Theorem 2.1: Unbiasedness of OLS Estimators**: Under assumptions SLR.1-SLR.4, the OLS estimators $\hat{\beta}_0$ and $\hat{\beta}_1$ are unbiased estimators of $\beta_0$ and $\beta_1$, respectively. That is,
-#   $$\text{E}(\hat{\beta}_0) = \beta_0 \quad \text{and} \quad \text{E}(\hat{\beta}_1) = \beta_1$$
-#   Unbiasedness means that on average, across many random samples, the OLS estimates will be equal to the true population parameters.
+# - **Theorem 2.1: Unbiasedness of OLS Estimators**: Under assumptions **SLR.1-SLR.4** (linearity, random sampling, sample variation, and zero conditional mean), the OLS estimators $\hat{\beta}_0$ and $\hat{\beta}_1$ are unbiased estimators of $\beta_0$ and $\beta_1$, respectively. That is,
+#   $$E(\hat{\beta}_0) = \beta_0 \quad \text{and} \quad E(\hat{\beta}_1) = \beta_1$$
+#   Unbiasedness means that on average, across many random samples from the same population, the OLS estimates will equal the true population parameters. Note that **SLR.5 (homoscedasticity) is not required** for unbiasedness.
 #
-# - **Theorem 2.2: Variances of OLS Estimators**: Under assumptions SLR.1-SLR.5, the variances of the OLS estimators are given by:
-#   $$\text{var}(\hat{\beta}_0) = \frac{\sigma^2 \sum_{i=1}^n x_i^2}{n \sum_{i=1}^n (x_i - \bar{x})^2} = \sigma^2 \frac{\frac{1}{n}\sum_{i=1}^n x_i^2}{\text{SST}_x}$$
-#   $$\text{var}(\hat{\beta}_1) = \frac{\sigma^2}{\sum_{i=1}^n (x_i - \bar{x})^2} = \frac{\sigma^2}{\text{SST}_x}$$
-#   where $\text{SST}_x = \sum_{i=1}^n (x_i - \bar{x})^2$ is the total sum of squares for $x$.
+# - **Theorem 2.2: Variances of OLS Estimators**: Under assumptions **SLR.1-SLR.5** (including homoscedasticity), the variances of the OLS estimators conditional on the sample values of $x$ are given by:
+#   $$\text{Var}(\hat{\beta}_0|x_1, \ldots, x_n) = \frac{\sigma^2 \sum_{i=1}^n x_i^2}{n \sum_{i=1}^n (x_i - \bar{x})^2} = \sigma^2 \frac{\frac{1}{n}\sum_{i=1}^n x_i^2}{\text{SST}_x}$$
+#   $$\text{Var}(\hat{\beta}_1|x_1, \ldots, x_n) = \frac{\sigma^2}{\sum_{i=1}^n (x_i - \bar{x})^2} = \frac{\sigma^2}{\text{SST}_x}$$
+#   where $\text{SST}_x = \sum_{i=1}^n (x_i - \bar{x})^2$ is the total sum of squares for $x$, and $\sigma^2 = \text{Var}(u|x)$ is the (constant) conditional variance of the error term. These formulas show that the variance of $\hat{\beta}_1$ decreases as the sample size $n$ increases and as the variation in $x$ (measured by $\text{SST}_x$) increases.
 #
 # To make these variance formulas practically useful, we need to estimate the error variance $\sigma^2$. An unbiased estimator of $\sigma^2$ is the **standard error of regression (SER)**, denoted as $\hat{\sigma}^2$:
 #

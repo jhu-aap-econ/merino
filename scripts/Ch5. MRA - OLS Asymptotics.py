@@ -16,7 +16,29 @@
 # %% [markdown]
 # # 5. Multiple Regression Analysis: OLS Asymptotics
 #
-# This notebook explores the asymptotic properties of Ordinary Least Squares (OLS) estimators in multiple regression analysis. Asymptotic theory is crucial because it describes the behavior of estimators as the sample size grows infinitely large. In practice, we often rely on these asymptotic properties to make inferences when sample sizes are reasonably large. We will use simulations to visualize these concepts and then apply the Lagrange Multiplier (LM) test to a real-world example.
+# This notebook explores the asymptotic properties of Ordinary Least Squares (OLS) estimators in multiple regression analysis. Asymptotic theory is crucial because it describes the behavior of estimators as the sample size grows infinitely large ($n \to \infty$). In practice, we often rely on these asymptotic properties to make inferences when sample sizes are reasonably large.
+#
+# ## Asymptotic Properties of OLS
+#
+# Under the Gauss-Markov assumptions **MLR.1-MLR.4** (from Chapter 3: linearity, random sampling, no perfect collinearity, and zero conditional mean), OLS estimators have the following asymptotic properties:
+#
+# **1. Consistency:** $\hat{\beta}_j \xrightarrow{p} \beta_j$ as $n \to \infty$ for all $j = 0, 1, \ldots, k$
+#
+# The OLS estimators converge in probability to the true parameter values as the sample size grows large. Consistency is a weaker property than unbiasedness—it only requires that the estimator approaches the true value asymptotically. Notably, consistency does **not** require normality (MLR.6) or homoscedasticity (MLR.5).
+#
+# **2. Asymptotic Normality:** $\sqrt{n}(\hat{\beta}_j - \beta_j) \xrightarrow{d} N(0, \sigma^2_{\beta_j})$ as $n \to \infty$
+#
+# By the **Central Limit Theorem (CLT)**, the sampling distribution of $\hat{\beta}_j$ approaches a normal distribution as $n \to \infty$, even when the errors are **not** normally distributed. This requires:
+# - MLR.1-MLR.4 (especially zero conditional mean)
+# - Finite fourth moments of the errors: $E(u^4) < \infty$ (mild regularity condition)
+# - **No normality assumption required**
+#
+# **Practical Implications:**
+# - With large samples ($n \geq 30$ typically), t-tests and F-tests are approximately valid even without normal errors (MLR.6)
+# - Consistency means OLS remains reliable in large samples even under violations of MLR.5 (heteroskedasticity)
+# - Asymptotic inference requires only MLR.1-MLR.4 plus regularity conditions, making it more robust than finite-sample inference
+#
+# We will use simulations to visualize these concepts and then apply the Lagrange Multiplier (LM) test to a real-world example.
 #
 #
 

@@ -169,9 +169,9 @@ Logarithmic transformations are frequently used in regression analysis for sever
 
 Common log transformations include:
 
-- **Log-level model:**  $\log(y) = \beta_0 + \beta_1 x_1 + \beta_2 x_2 + u$.  Here, a unit change in $x_1$ is associated with a $100 \cdot \beta_1 \%$ change in $y$ (approximately, for small $\beta_1$).
-- **Level-log model:** $y = \beta_0 + \beta_1 \log(x_1) + \beta_2 x_2 + u$.  Here, a 1% change in $x_1$ is associated with a $\beta_1 / 100$ unit change in $y$.
-- **Log-log model:** $\log(y) = \beta_0 + \beta_1 \log(x_1) + \beta_2 \log(x_2) + u$. Here, a 1% change in $x_1$ is associated with a $\beta_1 \%$ change in $y$ (approximately). $\beta_1$ is interpreted as an elasticity.
+- **Log-level model:**  $\log(y) = \beta_0 + \beta_1 x_1 + \beta_2 x_2 + u$.  Here, a one-unit change in $x_1$ is associated with approximately a $100 \cdot \beta_1$ percent change in $y$. This approximation is accurate when $|\beta_1|$ is small (typically $|\beta_1| < 0.1$); the exact percentage change is $100 \cdot [\exp(\beta_1) - 1]$ percent.
+- **Level-log model:** $y = \beta_0 + \beta_1 \log(x_1) + \beta_2 x_2 + u$.  Here, a 1% increase in $x_1$ is associated with approximately a $\beta_1 / 100$ unit change in $y$. More precisely, the change in $y$ from increasing $x_1$ by factor $c$ (e.g., $c=1.01$ for 1%) is $\beta_1 \cdot \log(c)$.
+- **Log-log model:** $\log(y) = \beta_0 + \beta_1 \log(x_1) + \beta_2 \log(x_2) + u$. Here, a 1% change in $x_1$ is associated with a $\beta_1$ percent change in $y$. The coefficient $\beta_1$ is the **elasticity** of $y$ with respect to $x_1$, and this interpretation is exact, not an approximation.
 
 Let's consider a log-log model for housing prices:
 

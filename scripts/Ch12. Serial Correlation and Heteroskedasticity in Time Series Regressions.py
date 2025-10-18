@@ -18,8 +18,11 @@
 #
 # This notebook explores two important complications that can arise when applying OLS to time series data: **serial correlation** (also known as autocorrelation) and **heteroskedasticity** in the error terms.
 #
-# *   **Serial Correlation:** Occurs when the error terms in different time periods are correlated ($Corr(u_t, u_s) \neq 0$ for $t \neq s$). This violates the OLS assumption of no serial correlation. While OLS coefficient estimates might still be unbiased and consistent under certain conditions (contemporaneous exogeneity), the standard errors calculated by OLS are incorrect (usually biased downwards), leading to invalid t-statistics, p-values, and confidence intervals.
-# *   **Heteroskedasticity:** Occurs when the variance of the error term is not constant across time ($Var(u_t)$ depends on $t$). This also leads to incorrect OLS standard errors and invalid inference, although the coefficient estimates may remain unbiased and consistent.
+# *   **Serial Correlation (Autocorrelation):** Occurs when the error terms in different time periods are correlated, i.e., $\text{Corr}(u_t, u_s) \neq 0$ for $t \neq s$. This violates the time series assumption of serially uncorrelated errors. Under the time series zero conditional mean assumption TS.3' from Chapter 11 (contemporaneous exogeneity: $E(u_t|x_t, x_{t-1}, \ldots) = 0$), OLS coefficient estimates remain **unbiased** and **consistent**. However, the standard errors calculated by standard OLS formulas are **incorrect** (typically biased downwards), leading to invalid t-statistics, p-values, and confidence intervals.
+#
+# *   **Heteroskedasticity:** Occurs when the variance of the error term is not constant across time, i.e., $\text{Var}(u_t|x_t, x_{t-1}, \ldots)$ depends on $t$. As discussed in Chapter 8 for cross-sectional data, heteroskedasticity leads to incorrect OLS standard errors and invalid inference under standard formulas, although coefficient estimates remain unbiased and consistent under the zero conditional mean assumption.
+#
+# **Combined Effects:** In time series data, it is common to have both serial correlation and heteroskedasticity simultaneously. Standard OLS inference is invalid under either or both violations. We need methods that account for both issues simultaneously.
 #
 # We will cover methods for testing for these issues and discuss strategies for obtaining valid inference, either by using Feasible Generalized Least Squares (FGLS) or by correcting the OLS standard errors.
 #
@@ -343,6 +346,12 @@ print(f"Cochrane-Orcutt FGLS Estimates:\n{table_corc}\n")
 # An alternative to FGLS is to stick with the OLS coefficient estimates (which are consistent under weaker assumptions than needed for FGLS efficiency) but compute **robust standard errors** that account for serial correlation (and potentially heteroskedasticity).
 #
 # These are often called **HAC (Heteroskedasticity and Autocorrelation Consistent)** standard errors, with the **Newey-West** estimator being the most common. This approach corrects the standard errors, t-statistics, and p-values after OLS estimation.
+#
+# **Relationship to Chapter 8:** HAC standard errors generalize the heteroskedasticity-robust (HC) standard errors from Chapter 8 to also account for serial correlation:
+# - **HC standard errors (Chapter 8):** Robust to heteroskedasticity but assume no serial correlation ($\text{Cov}(u_t, u_s) = 0$ for $t \neq s$)
+# - **HAC standard errors (Chapter 12):** Robust to both heteroskedasticity **and** serial correlation (autocorrelation)
+# - When serial correlation is absent, HAC standard errors reduce to HC standard errors
+# - HC standard errors (e.g., HC0, HC1, HC3) are appropriate for cross-sectional data; HAC standard errors (e.g., Newey-West) are appropriate for time series data
 #
 # A key choice is the **maximum lag (`maxlags`)** to include when estimating the variance-covariance matrix of the OLS estimator. This determines how many lags of the autocorrelation structure are accounted for. Rules of thumb exist (e.g., related to $T^{1/4}$), or it can be chosen based on where the sample autocorrelation function seems to die out.
 #
