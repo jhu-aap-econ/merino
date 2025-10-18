@@ -331,27 +331,60 @@ gpa1 = wool.data("gpa1")
 n = len(gpa1)
 k = 2  # Number of independent variables (hsGPA and ACT)
 
-# extract y:
+# Extract dependent variable (college GPA)
 y = gpa1["colGPA"]
+print(f"Dependent variable shape: {y.shape}")
 
-# extract X & add a column of ones:
-X = pd.DataFrame({"const": 1, "hsGPA": gpa1["hsGPA"], "ACT": gpa1["ACT"]})
+# Method 1: Manual construction of design matrix X
+# Design matrix X = [1, hsGPA, ACT] for each observation
+X = pd.DataFrame(
+    {
+        "const": 1,  # Intercept column (β₀)
+        "hsGPA": gpa1["hsGPA"],  # High school GPA (β₁)
+        "ACT": gpa1["ACT"],  # ACT test score (β₂)
+    },
+)
 
-# alternative with patsy (more streamlined for formula-based design matrices):
-y2, X2 = pt.dmatrices("colGPA ~ hsGPA + ACT", data=gpa1, return_type="dataframe")
+# Method 2: Using patsy for automatic formula-based design matrix
+# More convenient for complex models with interactions/polynomials
+y2, X2 = pt.dmatrices(
+    "colGPA ~ hsGPA + ACT",  # R-style formula
+    data=gpa1,
+    return_type="dataframe",
+)
 
-# display first few rows of X:
+# Display design matrix structure
+print(f"Design matrix X dimensions: {X.shape} = (n × k+1)")
+print("First 5 rows of design matrix:")
 X.head()
 
 # %% [markdown]
 # The code above constructs the $X$ matrix and $y$ vector from the `gpa1` data.  The `patsy` library provides a convenient way to create design matrices directly from formulas, which is often more efficient for complex models.
 
 # %%
-# parameter estimates using matrix formula:
-X = np.array(X)  # Convert pandas DataFrame to numpy array for matrix operations
-y = np.array(y).reshape(n, 1)  # Reshape y to be a column vector (n x 1)
-b = np.linalg.inv(X.T @ X) @ X.T @ y  # Matrix formula for OLS estimator
-b  # Display estimated coefficients
+# Calculate OLS estimates using the matrix formula: β̂ = (X'X)⁻¹X'y
+
+# Step 1: Convert to numpy arrays for matrix operations
+X_array = np.array(X)  # Design matrix as numpy array (n × k+1)
+y_array = np.array(y).reshape(n, 1)  # Dependent variable as column vector (n × 1)
+
+# Step 2: Calculate intermediate matrices for clarity
+XtX = X_array.T @ X_array  # X'X matrix (k+1 × k+1)
+print(f"X'X matrix shape: {XtX.shape}")
+print(f"X'X is symmetric: {np.allclose(XtX, XtX.T)}")
+
+Xty = X_array.T @ y_array  # X'y vector (k+1 × 1)
+print(f"X'y vector shape: {Xty.shape}\n")
+
+# Step 3: Apply OLS formula
+XtX_inverse = np.linalg.inv(XtX)  # (X'X)⁻¹
+beta_estimates = XtX_inverse @ Xty  # β̂ = (X'X)⁻¹X'y
+
+# Display results
+print("OLS coefficient estimates (β̂):")
+for i, name in enumerate(["Intercept", "hsGPA", "ACT"]):
+    print(f"  {name}: {beta_estimates[i, 0]:.4f}")
+beta_estimates
 
 # %% [markdown]
 # This code performs the matrix operations to calculate $\hat{\beta}$. The result `b` should match the coefficients we obtained from `statsmodels` earlier.
@@ -362,9 +395,11 @@ b  # Display estimated coefficients
 #
 # And the estimator for the error variance $\sigma^2$:
 #
-# $$\hat{\sigma}^2 = \frac{1}{n-k-1} \hat{u}'\hat{u}$$
+# $$\hat{\sigma}^2 = \frac{1}{n-k-1} \hat{u}'\hat{u} = \frac{\text{SSR}}{n-k-1}$$
 #
 # The denominator $(n-k-1)$ represents the degrees of freedom in multiple regression, where $n$ is the sample size and $(k+1)$ is the number of parameters estimated (including the intercept).  The square root of $\hat{\sigma}^2$ is the Standard Error of the Regression (SER).
+#
+# **Key Insight:** The division by $n-k-1$ (not $n$) corrects for the degrees of freedom lost in estimating $k+1$ parameters, making $\hat{\sigma}^2$ an unbiased estimator of $\sigma^2$ under MLR.1-MLR.5.
 
 # %%
 # residuals, estimated variance of u and SER:
@@ -393,7 +428,10 @@ se  # Display standard errors
 #
 # A key advantage of multiple regression is its ability to provide **ceteris paribus** interpretations of the coefficients.  "Ceteris paribus" is Latin for "other things being equal" or "holding other factors constant." In the context of multiple regression, the coefficient on a particular independent variable represents the effect of that variable on the dependent variable *while holding all other included independent variables constant*.
 #
-# However, if we **omit** a relevant variable from our regression model, and this omitted variable is correlated with the included independent variables, we can encounter **omitted variable bias**. This means that the estimated coefficients on the included variables will be biased and inconsistent, and they will no longer have the desired ceteris paribus interpretation with respect to the omitted variable.
+# However, if we **omit** a relevant variable from our regression model, and this omitted variable is correlated with the included independent variables, we can encounter **omitted variable bias** (OVB). This means that the estimated coefficients on the included variables will be biased and inconsistent, and they will no longer have the desired ceteris paribus interpretation with respect to the omitted variable.
+#
+# **Why Omitted Variable Bias Violates MLR.4:**
+# When we omit a relevant variable $x_k$, it becomes part of the error term: $u' = u + \beta_k x_k$. If the omitted $x_k$ is correlated with any included $x_j$, then $E(u'|x_1, \ldots, x_{k-1}) \neq 0$, violating the zero conditional mean assumption. This makes OLS biased and inconsistent.
 #
 # Let's revisit the college GPA example to illustrate omitted variable bias. Suppose the "true" model is:
 #
@@ -520,6 +558,12 @@ b_om  # Display coefficient of ACT in simple regression
 #
 # "Best" means that among all **linear** unbiased estimators (estimators that are linear functions of $y$), OLS has the smallest variance for each coefficient. More precisely, for any other linear unbiased estimator $\tilde{\beta}_j$ of $\beta_j$, we have $\text{Var}(\hat{\beta}_j) \leq \text{Var}(\tilde{\beta}_j)$. This theorem provides the fundamental justification for using OLS in linear regression analysis under the classical assumptions. 
 #
+# **Intuition Behind the Gauss-Markov Theorem:**
+# The OLS estimator achieves minimum variance among linear unbiased estimators because:
+# 1. **Orthogonality principle:** OLS residuals are orthogonal to all regressors, ensuring no systematic patterns remain
+# 2. **Efficient use of information:** OLS optimally weights observations based on the variation in $X$
+# 3. **Homoscedasticity crucial:** Equal error variances allow equal weighting; with heteroscedasticity, weighted least squares (WLS) would be more efficient
+#
 # **Important Notes:**
 # - BLUE property requires all five assumptions, including homoscedasticity (MLR.5)
 # - Unbiasedness requires only MLR.1-MLR.4
@@ -578,12 +622,22 @@ SER = np.sqrt(
     results.mse_resid,
 )  # mse_resid is Mean Squared Error of Residuals (estimated sigma^2)
 
-# Regress hsGPA on ACT to calculate R-squared for VIF of hsGPA:
-reg_hsGPA = smf.ols(formula="hsGPA ~ ACT", data=gpa1)
-results_hsGPA = reg_hsGPA.fit()
-R2_hsGPA = results_hsGPA.rsquared  # R-squared from this auxiliary regression
-VIF_hsGPA = 1 / (1 - R2_hsGPA)  # Calculate VIF for hsGPA
-VIF_hsGPA  # Display VIF for hsGPA
+# Calculate VIF for hsGPA to assess multicollinearity
+# VIF measures how much the variance of β̂_hsGPA is inflated due to correlation with ACT
+
+# Step 1: Auxiliary regression - regress hsGPA on other predictors (just ACT here)
+auxiliary_regression = smf.ols(formula="hsGPA ~ ACT", data=gpa1)
+auxiliary_results = auxiliary_regression.fit()
+R2_auxiliary = auxiliary_results.rsquared  # R² from auxiliary regression
+
+# Step 2: Calculate VIF using formula: VIF = 1 / (1 - R²)
+VIF_hsGPA = 1 / (1 - R2_auxiliary)
+
+print("VIF Calculation for hsGPA:")
+print(f"  R² from auxiliary regression: {R2_auxiliary:.4f}")
+print(f"  VIF = 1/(1-{R2_auxiliary:.4f}) = {VIF_hsGPA:.2f}")
+print(f"  Interpretation: Variance of β̂_hsGPA is inflated by factor of {VIF_hsGPA:.2f}")
+VIF_hsGPA
 
 # %% [markdown]
 # The VIF for `hsGPA` (and similarly for `ACT`) will quantify the extent to which the variance of its estimated coefficient is inflated due to its correlation with the other independent variable (`ACT`).

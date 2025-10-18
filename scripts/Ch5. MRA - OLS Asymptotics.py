@@ -40,6 +40,12 @@
 #
 # We will use simulations to visualize these concepts and then apply the Lagrange Multiplier (LM) test to a real-world example.
 #
+# **Connection to Previous Chapters:**
+# - Chapters 2-3 established finite-sample properties under Gauss-Markov assumptions
+# - Chapter 4 showed exact inference requires normality (MLR.6) for finite samples
+# - This chapter demonstrates that normality is **not necessary** for large-sample inference
+# - These results justify the robustness claims made in Chapter 4 about t-tests with $n \geq 30$
+#
 #
 
 # %%
@@ -60,86 +66,114 @@ from scipy import stats
 # This simulation demonstrates the behavior of the OLS estimator when the error terms are normally distributed.  Under the classical linear model assumptions, including normally distributed errors, the OLS estimators are not only BLUE (Best Linear Unbiased Estimator) but also have desirable properties even in small samples. Asymptotically, the OLS estimator is consistent and normally distributed. We will visualize how the distribution of the estimated coefficient $\hat{\beta}_1$ approaches a normal distribution as the sample size $n$ increases.
 
 # %%
-# set the random seed for reproducibility:
+# Monte Carlo Simulation Setup: OLS with Normal Errors
+# Demonstrates convergence to normality as sample size increases
+
+# Set random seed for reproducible results
 np.random.seed(1234567)
 
-# set sample sizes to be investigated:
-n = [5, 10, 100, 1000]
-# set number of simulations (replications):
-r = 10000
+# Configure simulation parameters
+sample_sizes = [5, 10, 100, 1000]  # n: Small to large samples
+num_replications = 10000  # r: Number of Monte Carlo iterations
 
-# set true population parameters:
-beta0 = 1  # true intercept
-beta1 = 0.5  # true slope coefficient
-sx = 1  # standard deviation of x
-ex = 4  # expected value of x
+# Define true population parameters (Data Generating Process)
+# True model: y = β₀ + β₁x + u, where u ~ N(0, 1)
+true_intercept = 1.0  # β₀ = 1
+true_slope = 0.5  # β₁ = 0.5
+x_std_dev = 1.0  # σₓ: Standard deviation of x
+x_mean = 4.0  # μₓ: Mean of x
 
-# Create a 2x2 subplot to display density plots for each sample size
-fig, axs = plt.subplots(2, 2, figsize=(12, 12))
-axs = axs.ravel()  # Flatten the 2x2 array of axes for easier indexing
+print("SIMULATION 1: OLS WITH NORMAL ERRORS")
+print("-" * 40)
+print(f"DGP: y = {true_intercept} + {true_slope}*x + u")
+print(f"X ~ N({x_mean}, {x_std_dev}²), u ~ N(0, 1)")
+print(f"Replications: {num_replications:,}\n")
 
-# Loop through each sample size in the list 'n'
-for idx, j in enumerate(n):
-    # draw a sample of x, which is fixed across all replications for a given n to isolate the effect of random errors:
-    x = stats.norm.rvs(ex, sx, size=j)
-    # draw a sample of error terms 'u' from a standard normal distribution.
-    # We generate r samples of size j to perform r replications for each sample size n.
-    u = stats.norm.rvs(0, 1, size=(r, j))
+# Create visualization grid for results
+fig, axes = plt.subplots(2, 2, figsize=(12, 12))
+axes = axes.ravel()  # Flatten for easier iteration
 
-    # Compute the dependent variable 'y' for all replications at once using the true model: y = beta0 + beta1*x + u
-    y = beta0 + beta1 * x + u
+# Run simulation for each sample size
+for idx, n in enumerate(sample_sizes):
+    # Step 1: Generate fixed x values for this sample size
+    # X is held constant across replications to isolate error term effects
+    x_values = stats.norm.rvs(x_mean, x_std_dev, size=n)
 
-    # Create the design matrix X. For each replication, X is the same as 'x' is fixed.
-    # It includes a column of ones for the intercept and the 'x' values.
-    X = np.column_stack((np.ones(j), x))
+    # Step 2: Generate error terms for all replications
+    # Shape: (num_replications, n) - each row is one replication
+    error_terms = stats.norm.rvs(0, 1, size=(num_replications, n))
 
-    # Compute (X'X)^(-1)X' which is needed to calculate OLS estimator (beta_hat = (X'X)^(-1)X'y).
-    # This part is constant for all replications since X is fixed.
-    XX_inv = np.linalg.inv(X.T @ X)
-    XTX_inv_XT = XX_inv @ X.T
+    # Step 3: Generate y values using true DGP
+    # y = β₀ + β₁*x + u for each replication
+    y_values = true_intercept + true_slope * x_values + error_terms
 
-    # Estimate beta (including beta0 and beta1) for all 'r' replications at once.
-    # 'y.T' transposes 'y' so that matrix multiplication is performed correctly.
-    # 'b' will be a 2xr matrix where each column represents the estimated coefficients [beta0_hat, beta1_hat] for each replication.
-    b = XTX_inv_XT @ y.T
-    b1 = b[1, :]  # Extract all estimated beta1 coefficients from the 2nd row of 'b'.
+    # Step 4: Construct design matrix X (same for all replications)
+    # X = [1, x] where first column is for intercept
+    X_matrix = np.column_stack((np.ones(n), x_values))
 
-    # Estimate the probability density function (PDF) of the simulated b1 estimates using Kernel Density Estimation (KDE).
-    kde = sm.nonparametric.KDEUnivariate(b1)
-    kde.fit()  # Fit the KDE model
+    # Step 5: Pre-compute matrix operations for efficiency
+    # (X'X)^(-1)X' is constant across replications since X is fixed
+    XtX_inv = np.linalg.inv(X_matrix.T @ X_matrix)
+    XtX_inv_Xt = XtX_inv @ X_matrix.T
 
-    # Theoretical normal density to compare with the simulated distribution.
-    # Calculate the variance-covariance matrix of beta_hat: V(beta_hat) = sigma^2 * (X'X)^(-1). Here sigma^2 is assumed to be 1 (variance of u).
-    Vbhat = XX_inv  # Since sigma^2 = 1, Vbhat simplifies to (X'X)^(-1)
-    se = np.sqrt(
-        np.diagonal(Vbhat),
-    )  # Standard errors are the square roots of the diagonal elements of Vbhat. se[1] is SE(beta1_hat)
+    # Step 6: Estimate coefficients for all replications at once
+    # β̂ = (X'X)^(-1)X'y for each replication
+    # Result: 2 × num_replications matrix (each column = one replication)
+    all_coefficients = XtX_inv_Xt @ y_values.T
+    slope_estimates = all_coefficients[1, :]  # Extract β̂₁ (second row)
 
-    # Generate x-values for plotting the theoretical normal distribution.
-    x_range = np.linspace(min(b1), max(b1), 1000)
-    # Calculate the PDF of a normal distribution with mean beta1 (true value) and standard deviation se[1] (theoretical SE of beta1_hat).
-    y = stats.norm.pdf(x_range, beta1, se[1])
+    # Step 7: Calculate theoretical standard error for comparison
+    # Under CLM assumptions: Var(β̂) = σ²(X'X)^(-1), where σ² = 1
+    variance_matrix = XtX_inv  # Since σ² = 1
+    theoretical_se = np.sqrt(variance_matrix[1, 1])  # SE(β̂₁)
 
-    # Plotting the simulated density of b1 (from KDE) and the theoretical normal density.
-    axs[idx].plot(
+    # Step 8: Estimate empirical density using kernel density estimation
+    kde = sm.nonparametric.KDEUnivariate(slope_estimates)
+    kde.fit()
+
+    # Step 9: Generate theoretical normal distribution for comparison
+    x_range = np.linspace(min(slope_estimates), max(slope_estimates), 1000)
+    theoretical_density = stats.norm.pdf(x_range, true_slope, theoretical_se)
+
+    # Step 10: Plot empirical vs theoretical distributions
+    axes[idx].plot(
         kde.support,
         kde.density,
         color="black",
-        label="Simulated Density of b1",
-    )  # Plot KDE estimate of simulated b1
-    axs[idx].plot(
-        x_range,
-        y,
-        linestyle="--",
-        color="black",
-        label="Theoretical Normal Distribution",  # Plot theoretical normal distribution
+        linewidth=2,
+        label="Empirical Density (KDE)",
     )
-    axs[idx].set_ylabel("Density")  # Label for y-axis
-    axs[idx].set_xlabel(r"$\hat{\beta}_1$")  # Label for x-axis
-    axs[idx].legend()  # Show legend
-    axs[idx].set_title(f"Sample Size n = {j}")  # Set subplot title with sample size
+    axes[idx].plot(
+        x_range,
+        theoretical_density,
+        linestyle="--",
+        color="red",
+        linewidth=1.5,
+        label="Theoretical Normal",
+    )
 
-plt.tight_layout()  # Adjust subplot parameters for a tight layout
+    # Add visualization details
+    axes[idx].set_ylabel("Density")
+    axes[idx].set_xlabel(r"$\hat{\beta}_1$ (Slope Estimate)")
+    axes[idx].legend(loc="best", fontsize=9)
+    axes[idx].set_title(f"Sample Size n = {n}")
+    axes[idx].grid(True, alpha=0.3)
+
+    # Add statistics annotation
+    mean_est = np.mean(slope_estimates)
+    std_est = np.std(slope_estimates)
+    axes[idx].text(
+        0.05,
+        0.95,
+        f"Mean: {mean_est:.4f}\nStd: {std_est:.4f}",
+        transform=axes[idx].transAxes,
+        verticalalignment="top",
+        fontsize=8,
+        bbox=dict(boxstyle="round", facecolor="wheat", alpha=0.5),
+    )
+
+plt.suptitle("Convergence to Normality: OLS with Normal Errors", fontsize=14)
+plt.tight_layout()
 plt.show()  # Display the plot
 
 # %% [markdown]

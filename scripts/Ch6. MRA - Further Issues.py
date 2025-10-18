@@ -230,29 +230,54 @@ print(f"table: \n{table}\n")
 # $$\log(\text{price}) = \beta_0 + \beta_1 \log(\text{nox}) + \beta_2 \log(\text{dist}) + \beta_3 \text{rooms} + \beta_4 \text{rooms}^2 + \beta_5 \text{stratio} + u$$
 
 # %%
+# Load housing price data for quadratic specification
 hprice2 = wool.data("hprice2")
 
-reg = smf.ols(
-    formula="np.log(price) ~ np.log(nox)+np.log(dist)+rooms+I(rooms**2)+stratio",  # Use I(rooms**2) to include the squared term
+print(f"Dataset shape: {hprice2.shape}")
+print(
+    f"Room statistics: mean={hprice2['rooms'].mean():.2f}, min={hprice2['rooms'].min()}, max={hprice2['rooms'].max()}",
+)
+
+# Specify quadratic model to capture nonlinear effects
+# I() protects arithmetic operations in formula notation
+quadratic_model = smf.ols(
+    formula="np.log(price) ~ np.log(nox) + np.log(dist) + rooms + I(rooms**2) + stratio",
     data=hprice2,
 )
-results = reg.fit()
+quadratic_results = quadratic_model.fit()
 
-# print regression table:
-table = pd.DataFrame(
+# Display results with enhanced formatting
+coefficients_table = pd.DataFrame(
     {
-        "b": round(results.params, 4),
-        "se": round(results.bse, 4),
-        "t": round(results.tvalues, 4),
-        "pval": round(results.pvalues, 4),
+        "Coefficient": quadratic_results.params.round(4),
+        "Std_Error": quadratic_results.bse.round(4),
+        "t_statistic": quadratic_results.tvalues.round(4),
+        "p_value": quadratic_results.pvalues.round(4),
+        "Sig": [
+            "***" if p < 0.01 else "**" if p < 0.05 else "*" if p < 0.1 else ""
+            for p in quadratic_results.pvalues
+        ],
     },
 )
-print(f"table: \n{table}\n")
+
+print("\nQUADRATIC MODEL RESULTS")
+print("=" * 60)
+print("Dependent Variable: log(price)")
+print("-" * 60)
+print(coefficients_table)
+print(f"\nR-squared: {quadratic_results.rsquared:.4f}")
+print(f"Number of observations: {int(quadratic_results.nobs)}")
 
 # %% [markdown]
 # **Interpretation of Quadratic Term:**
 #
 # - **`rooms` coefficient (-0.5451) and `I(rooms**2)` coefficient (0.0623):** The negative coefficient on `rooms` and the positive coefficient on `rooms**2` suggest a U-shaped relationship between `rooms` and $\log(\text{price})$.  Initially, as the number of rooms increases, housing price decreases at a decreasing rate. However, beyond a certain point, further increases in rooms lead to increases in price.
+#
+# **Precise Calculations for Quadratic Effects:**
+# - Turning point: $\text{rooms}^* = -(-0.5451)/(2 \times 0.0623) = 4.38$ rooms
+# - Marginal effect at mean (6.28 rooms): $-0.5451 + 2(0.0623)(6.28) = 0.237$ log points per room
+# - Since dependent variable is log(price), a one-room increase at the mean raises price by approximately 23.7%
+# - Units: The coefficients have units of (log dollars)/(room) and (log dollars)/(room²)
 #
 # **Finding the Turning Point for Rooms:**
 #
@@ -323,25 +348,53 @@ print(f"P-value: {fpval}\n")
 # $$\text{stndfnl} = \beta_0 + \beta_1 \text{atndrte} + \beta_2 \text{priGPA} + \beta_3 \text{ACT} + \beta_4 \text{priGPA}^2 + \beta_5 \text{ACT}^2 + \beta_6 \text{atndrte} \cdot \text{priGPA} + u$$
 
 # %%
+# Load student attendance data
 attend = wool.data("attend")
 n = attend.shape[0]
 
-reg = smf.ols(
-    formula="stndfnl ~ atndrte*priGPA + ACT + I(priGPA**2) + I(ACT**2)",  # Use atndrte*priGPA to include both main effects and interaction
+# Examine key variables
+print(f"Dataset info: {n} observations")
+print(
+    f"Attendance rate: mean={attend['atndrte'].mean():.1f}%, std={attend['atndrte'].std():.1f}%",
+)
+print(
+    f"Prior GPA: mean={attend['priGPA'].mean():.2f}, std={attend['priGPA'].std():.2f}\n",
+)
+
+# Specify model with interaction and quadratic terms
+# atndrte*priGPA creates main effects + interaction automatically
+interaction_model = smf.ols(
+    formula="stndfnl ~ atndrte*priGPA + ACT + I(priGPA**2) + I(ACT**2)",
     data=attend,
 )
-results = reg.fit()
+interaction_results = interaction_model.fit()
 
-# print regression table:
-table = pd.DataFrame(
+# Create comprehensive results table
+results_table = pd.DataFrame(
     {
-        "b": round(results.params, 4),
-        "se": round(results.bse, 4),
-        "t": round(results.tvalues, 4),
-        "pval": round(results.pvalues, 4),
+        "Coefficient": interaction_results.params.round(4),
+        "Std_Error": interaction_results.bse.round(4),
+        "t_statistic": interaction_results.tvalues.round(4),
+        "p_value": interaction_results.pvalues.round(4),
+        "Variable_Type": [
+            "Intercept",
+            "Main Effect",  # atndrte
+            "Main Effect",  # priGPA
+            "Control",  # ACT
+            "Quadratic",  # priGPA²
+            "Quadratic",  # ACT²
+            "Interaction",  # atndrte×priGPA
+        ],
     },
 )
-print(f"table: \n{table}\n")
+
+print("INTERACTION MODEL RESULTS")
+print("=" * 60)
+print("Dependent Variable: stndfnl (Standardized Final Exam Score)")
+print("-" * 60)
+print(results_table)
+print(f"\nR-squared: {interaction_results.rsquared:.4f}")
+print(f"Adjusted R-squared: {interaction_results.rsquared_adj:.4f}\n")
 
 # %% [markdown]
 # **Interpretation of Interaction Term:**
@@ -353,10 +406,30 @@ print(f"table: \n{table}\n")
 # Let's calculate the estimated partial effect of attendance rate on `stndfnl` for a student with a prior GPA of 2.59 (the sample average of `priGPA`):
 
 # %%
-# estimate for partial effect at priGPA=2.59:
-b = results.params
-partial_effect = b["atndrte"] + 2.59 * b["atndrte:priGPA"]
-print(f"partial_effect: {partial_effect}\n")
+# Calculate partial effect of attendance at specific GPA values
+# ∂stndfnl/∂atndrte = β₁ + β₆*priGPA
+
+# Extract coefficients
+coefficients = interaction_results.params
+mean_priGPA = attend["priGPA"].mean()  # Sample average GPA
+
+# Calculate partial effect at mean GPA
+partial_effect_at_mean = (
+    coefficients["atndrte"] + mean_priGPA * coefficients["atndrte:priGPA"]
+)
+
+print("PARTIAL EFFECT ANALYSIS")
+print("-" * 40)
+print(f"Partial effect of attendance at mean GPA ({mean_priGPA:.2f}):")
+print(
+    f"  Effect = {coefficients['atndrte']:.4f} + {mean_priGPA:.2f} × {coefficients['atndrte:priGPA']:.4f}",
+)
+print(f"  = {partial_effect_at_mean:.4f}")
+print("\nInterpretation: For a student with average prior GPA,")
+print("a 1 percentage point increase in attendance rate is associated")
+print(
+    f"with a {partial_effect_at_mean:.3f} point increase in standardized exam score.\n",
+)
 
 # %% [markdown]
 # The estimated partial effect of attendance at `priGPA = 2.59` is approximately 0.466. This means that for a student with an average prior GPA, a one percentage point increase in attendance rate is associated with an increase of about 0.466 points in the standardized final exam score.

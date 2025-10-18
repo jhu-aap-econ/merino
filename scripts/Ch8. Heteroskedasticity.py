@@ -245,18 +245,42 @@ y, X = pt.dmatrices(
     data=hprice1,
     return_type="dataframe",
 )
-# Pass the residuals and X to the function.
-# Returns: LM statistic, LM p-value, F statistic (alternative form), F p-value
-print("--- Breusch-Pagan Test (Levels Model) ---")
-result_bp_lm = sm.stats.diagnostic.het_breuschpagan(results.resid, X)
-bp_lm_statistic = result_bp_lm[0]
-bp_lm_pval = result_bp_lm[1]
-print(f"BP LM statistic: {bp_lm_statistic:.4f}")
-print(f"BP LM p-value:   {bp_lm_pval:.4f}\n")
+# Perform Breusch-Pagan test for heteroskedasticity
+# H₀: Var(u|X) = σ² (homoskedasticity)
+# H₁: Var(u|X) depends on X (heteroskedasticity)
+print("\n" + "=" * 60)
+print("BREUSCH-PAGAN TEST FOR HETEROSKEDASTICITY")
+print("=" * 60)
 
-# Interpretation (BP LM Test): The LM statistic is 14.0924, and the p-value is 0.0028.
-# Since p < 0.05, we reject the null hypothesis of homoskedasticity at the 5% level.
-# There is significant evidence that the error variance depends on the explanatory variables.
+# Run the test using statsmodels built-in function
+bp_test_results = sm.stats.diagnostic.het_breuschpagan(
+    results.resid,  # OLS residuals
+    X,  # Design matrix (predictors)
+)
+
+# Extract test statistics
+bp_lm_statistic = bp_test_results[0]  # Lagrange Multiplier test statistic
+bp_lm_pvalue = bp_test_results[1]  # p-value for LM test
+bp_f_statistic = bp_test_results[2]  # F-statistic version
+bp_f_pvalue = bp_test_results[3]  # p-value for F-test
+
+# Display results with interpretation
+print(f"LM Test Statistic:    {bp_lm_statistic:8.4f}")
+print(f"LM Test p-value:      {bp_lm_pvalue:8.4f}")
+print(f"F Test Statistic:     {bp_f_statistic:8.4f}")
+print(f"F Test p-value:       {bp_f_pvalue:8.4f}")
+print("-" * 60)
+
+# Interpretation
+significance_level = 0.05
+if bp_lm_pvalue < significance_level:
+    print(f"Decision: REJECT H₀ at {significance_level:.0%} level")
+    print("Conclusion: Evidence of heteroskedasticity detected")
+    print("Recommendation: Use robust standard errors for valid inference")
+else:
+    print(f"Decision: FAIL TO REJECT H₀ at {significance_level:.0%} level")
+    print("Conclusion: No significant evidence of heteroskedasticity")
+    print("Recommendation: OLS standard errors are likely valid")
 
 # %%
 # --- Breusch-Pagan Test (F version) calculated manually ---

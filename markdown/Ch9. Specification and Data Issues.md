@@ -36,7 +36,13 @@ from scipy import stats  # For generating random numbers
 
 ## 9.1 Functional Form Misspecification
 
-One of the critical OLS assumptions is that the model is correctly specified, meaning the relationship between the dependent and independent variables is accurately represented (e.g., linear relationship assumed when it's truly non-linear). Using an incorrect functional form can lead to biased and inconsistent coefficient estimates.
+One of the critical OLS assumptions is that the model is correctly specified, meaning the relationship between the dependent and independent variables is accurately represented (e.g., linear relationship assumed when it's truly non-linear). Using an incorrect functional form can lead to biased and inconsistent coefficient estimates. This relates to assumption MLR.1 from Chapter 3 (correct specification of the population regression function).
+
+**Consequences of Functional Form Misspecification:**
+- **Biased estimates:** Omitted nonlinear terms act like omitted variables (Chapter 3, Section 3.4)
+- **Invalid inference:** Standard errors and test statistics assume correct specification
+- **Poor predictions:** Especially problematic for extrapolation beyond sample range
+- **Incorrect marginal effects:** Misinterpreting how changes in $x$ affect $y$
 
 ### RESET Test
 
@@ -51,38 +57,64 @@ The idea is that if the original model is missing important non-linear terms (li
 We apply the RESET test to the housing price model from Example 8.4 (`price ~ lotsize + sqrft + bdrms`).
 
 ```python
+# RESET Test Implementation: Detecting Functional Form Misspecification
+# The test adds powers of fitted values to detect omitted nonlinearities
+
 # Load housing price data
 hprice1 = wool.data("hprice1")
+print(f"Dataset: {hprice1.shape[0]} houses, {hprice1.shape[1]} variables")
 
-# 1. Estimate the original OLS model
-reg = smf.ols(formula="price ~ lotsize + sqrft + bdrms", data=hprice1)
-results = reg.fit()
+# Step 1: Estimate the baseline linear model
+# This is our null hypothesis specification
+baseline_model = smf.ols(
+    formula="price ~ lotsize + sqrft + bdrms",
+    data=hprice1,
+)
+baseline_results = baseline_model.fit()
 
-# 2. Create powers of the fitted values
-# Typically, squares (degree=2) or squares and cubes (degree=3) are used.
-hprice1["fitted_sq"] = results.fittedvalues**2
-hprice1["fitted_cub"] = results.fittedvalues**3
+print("\nBASELINE MODEL SUMMARY")
+print("-" * 50)
+print("Dependent variable: price (house price in $1000s)")
+print(f"R-squared: {baseline_results.rsquared:.4f}")
+print(f"Adjusted R-squared: {baseline_results.rsquared_adj:.4f}\n")
 
-# 3. Estimate the auxiliary regression including powers of fitted values
-reg_reset = smf.ols(
+# Step 2: Generate polynomial terms from fitted values
+# Theory: If model is misspecified, powers of ŷ capture omitted terms
+hprice1["fitted_sq"] = baseline_results.fittedvalues**2  # ŷ²
+hprice1["fitted_cub"] = baseline_results.fittedvalues**3  # ŷ³
+
+print("RESET Test Construction:")
+print("  Original predictors: lotsize, sqrft, bdrms")
+print("  Added test terms: fitted², fitted³")
+print("  H₀: Coefficients on fitted² and fitted³ = 0 (no misspecification)")
+print("  H₁: At least one polynomial term ≠ 0 (misspecification present)\n")
+
+# Step 3: Estimate augmented regression with polynomial terms
+augmented_reset = smf.ols(
     formula="price ~ lotsize + sqrft + bdrms + fitted_sq + fitted_cub",
     data=hprice1,
 )
-results_reset = reg_reset.fit()
+augmented_results = augmented_reset.fit()
 
-# Display the results of the auxiliary regression (for inspection)
-print("--- RESET Auxiliary Regression Results ---")
-table_reset = pd.DataFrame(
+# Display auxiliary regression results with interpretation
+reset_table = pd.DataFrame(
     {
-        "b": round(results_reset.params, 4),
-        "se": round(results_reset.bse, 4),
-        "t": round(results_reset.tvalues, 4),
-        "pval": round(results_reset.pvalues, 4),
+        "Variable": augmented_results.params.index,
+        "Coefficient": augmented_results.params.round(4),
+        "Std_Error": augmented_results.bse.round(4),
+        "t_stat": augmented_results.tvalues.round(3),
+        "p_value": augmented_results.pvalues.round(4),
+        "Test_Term": ["No", "No", "No", "No", "YES", "YES"],  # Mark RESET test terms
     },
 )
-print(f"Auxiliary Regression Estimates:\n{table_reset}\n")
-# Note: The coefficients on the original variables are difficult to interpret here.
-# We are primarily interested in the significance of fitted_sq and fitted_cub.
+
+print("RESET AUXILIARY REGRESSION RESULTS")
+print("=" * 70)
+print(reset_table.to_string(index=False))
+print("-" * 70)
+print(
+    "Note: Focus on test terms (fitted_sq, fitted_cub) for misspecification detection"
+)
 ```
 
 ```python
@@ -416,22 +448,37 @@ print(f"Results:\n{results_np_handling}\n")
 Now, let's examine missing data in a real dataset (`lawsch85`).
 
 ```python
-# Load law school data
+# Missing Data Analysis: Law School Dataset
+# Demonstrates detection and handling of missing values
+
+# Load law school dataset
 lawsch85 = wool.data("lawsch85")
-lsat_pd = lawsch85["LSAT"]  # Extract LSAT scores as a pandas Series
+print(f"Dataset dimensions: {lawsch85.shape} (schools × variables)")
 
-# Create a boolean indicator Series for missing LSAT values
-missLSAT = (
-    lsat_pd.isna()
-)  # .isna() returns True if value is missing (NaN), False otherwise
+# Extract LSAT scores to analyze missingness pattern
+lsat_scores = lawsch85["LSAT"]  # Law School Admission Test scores
 
-# Display LSAT and the missing indicator for a subset of schools
-preview = pd.DataFrame(
-    {"LSAT Score": lsat_pd[119:129], "Is Missing?": missLSAT[119:129]},
+# Create missing data indicator (True = missing, False = present)
+lsat_missing = lsat_scores.isna()  # pandas method for NaN detection
+
+# Examine specific observations to see missing pattern
+observation_range = slice(119, 129)  # Schools 120-129
+missing_preview = pd.DataFrame(
+    {
+        "School_Index": range(120, 130),
+        "LSAT_Score": lsat_scores.iloc[observation_range].values,
+        "Is_Missing": lsat_missing.iloc[observation_range].values,
+        "Data_Status": [
+            "MISSING" if m else "Present" for m in lsat_missing.iloc[observation_range]
+        ],
+    }
 )
-print("--- Missing Data Example (LSAT) ---")
-print(f"Preview (Schools 120-129):\n{preview}\n")
-# We can see some schools have NaN for LSAT score.
+
+print("\nMISSING DATA DETECTION EXAMPLE")
+print("=" * 50)
+print("Preview of schools 120-129:")
+print(missing_preview.to_string(index=False))
+print("\nNote: NaN indicates missing LSAT scores for some schools")
 ```
 
 ```python

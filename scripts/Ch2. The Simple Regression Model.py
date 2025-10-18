@@ -108,27 +108,43 @@ plt.rcParams["axes.labelsize"] = 12  # Larger axis label font
 # %%
 # Load and prepare data
 ceosal1 = wool.data("ceosal1")  # Load the ceosal1 dataset from wooldridge package
-x = ceosal1["roe"]  # Extract 'roe' as the independent variable
-y = ceosal1["salary"]  # Extract 'salary' as the dependent variable
+roe_values = ceosal1[
+    "roe"
+]  # Extract 'roe' (return on equity, %) as independent variable
+salary_values = ceosal1["salary"]  # Extract 'salary' (in $1000s) as dependent variable
 
-# Calculate OLS coefficients manually
-cov_xy = np.cov(x, y)[1, 0]  # Calculate the covariance between roe and salary
-var_x = np.var(x, ddof=1)  # Calculate the variance of roe (ddof=1 for sample variance)
-x_bar = np.mean(x)  # Calculate the mean of roe
-y_bar = np.mean(y)  # Calculate the mean of salary
+# Calculate OLS coefficients manually using the formula:
+# β̂₁ = Cov(x,y) / Var(x) and β̂₀ = ȳ - β̂₁x̄
 
-b1 = cov_xy / var_x  # Calculate beta_1_hat using the formula
-b0 = y_bar - b1 * x_bar  # Calculate beta_0_hat using the formula
+# Step 1: Calculate sample statistics
+covariance_roe_salary = np.cov(roe_values, salary_values)[1, 0]  # Sample covariance
+variance_roe = np.var(roe_values, ddof=1)  # Sample variance (n-1 denominator)
+mean_roe = np.mean(roe_values)  # Sample mean of ROE
+mean_salary = np.mean(salary_values)  # Sample mean of salary
 
-# Display results using DataFrame for better formatting
+# Step 2: Apply OLS formulas
+slope_estimate = covariance_roe_salary / variance_roe  # β̂₁ = Cov(x,y)/Var(x)
+intercept_estimate = mean_salary - slope_estimate * mean_roe  # β̂₀ = ȳ - β̂₁x̄
+
+# Display results with clear formatting
 manual_results = pd.DataFrame(
     {
-        "Parameter": ["Intercept ($\\beta_0$)", "Slope ($\\beta_1$)"],
-        "Estimate": [b0, b1],
-        "Formatted": [f"{b0:.2f}", f"{b1:.2f}"],
+        "Parameter": ["Intercept ($\\hat{\\beta}_0$)", "Slope ($\\hat{\\beta}_1$)"],
+        "Estimate": [intercept_estimate, slope_estimate],
+        "Formatted": [f"{intercept_estimate:.2f}", f"{slope_estimate:.2f}"],
+        "Interpretation": [
+            "Expected salary when ROE=0",
+            "Salary increase per 1% ROE increase",
+        ],
     },
 )
-manual_results[["Parameter", "Formatted"]]
+print("Manual OLS Calculation Results:")
+print(f"Sample covariance: {covariance_roe_salary:.2f}")
+print(f"Sample variance of ROE: {variance_roe:.2f}")
+print(
+    f"Slope calculation: {covariance_roe_salary:.2f} / {variance_roe:.2f} = {slope_estimate:.2f}\n",
+)
+manual_results[["Parameter", "Formatted", "Interpretation"]]
 
 # %% [markdown]
 # The code first loads the `ceosal1` dataset and extracts the 'roe' and 'salary' columns as our $x$ and $y$ variables, respectively. Then, it calculates the covariance between `roe` and `salary`, the variance of `roe`, and the means of both variables. Finally, it applies the formulas to compute $\hat{\beta}_1$ and $\hat{\beta}_0$ and displays them.
@@ -136,23 +152,31 @@ manual_results[["Parameter", "Formatted"]]
 # Now, let's use the `statsmodels` library, which provides a more convenient and comprehensive way to perform OLS regression. This will also serve as a verification of our manual calculations.
 
 # %%
-# Fit regression model using statsmodels
-reg = smf.ols(
-    formula="salary ~ roe",
+# Fit regression model using statsmodels for comparison and validation
+regression_model = smf.ols(
+    formula="salary ~ roe",  # y ~ x notation: salary depends on roe
     data=ceosal1,
-)  # Define the OLS regression model using formula notation
-results = reg.fit()  # Fit the model to the data and store the results
-b = results.params  # Extract the estimated coefficients
+)
+fitted_results = regression_model.fit()  # Estimate parameters via OLS
+coefficient_estimates = fitted_results.params  # Extract β̂ estimates
 
-# Display statsmodels results using DataFrame
+# Display statsmodels results with additional statistics
 statsmodels_results = pd.DataFrame(
     {
-        "Parameter": ["Intercept ($\\beta_0$)", "Slope ($\\beta_1$)"],
-        "Estimate": [b.iloc[0], b.iloc[1]],
-        "Formatted": [f"{b.iloc[0]:.2f}", f"{b.iloc[1]:.2f}"],
+        "Parameter": ["Intercept ($\\hat{\\beta}_0$)", "Slope ($\\hat{\\beta}_1$)"],
+        "Estimate": [coefficient_estimates.iloc[0], coefficient_estimates.iloc[1]],
+        "Std Error": [fitted_results.bse.iloc[0], fitted_results.bse.iloc[1]],
+        "t-statistic": [fitted_results.tvalues.iloc[0], fitted_results.tvalues.iloc[1]],
+        "p-value": [fitted_results.pvalues.iloc[0], fitted_results.pvalues.iloc[1]],
     },
 )
-statsmodels_results[["Parameter", "Formatted"]]
+
+# Verify manual calculations match statsmodels
+print("Statsmodels OLS Results:")
+print(f"R-squared: {fitted_results.rsquared:.4f}")
+print(f"Number of observations: {fitted_results.nobs:.0f}\n")
+print("Parameter Estimates:")
+statsmodels_results.round(4)
 
 
 # %% [markdown]
@@ -161,43 +185,60 @@ statsmodels_results[["Parameter", "Formatted"]]
 # To better visualize the regression results and the relationship between CEO salary and ROE, let's create an enhanced regression plot. We'll define a reusable function for this purpose, which includes the regression line, scatter plot of the data, confidence intervals, and annotations for the regression equation and R-squared.
 
 # %%
-def plot_regression(x, y, data, results, title, add_ci=True):
-    """Create an enhanced regression plot with seaborn styling.
+def plot_regression(
+    x: str,
+    y: str,
+    data: pd.DataFrame,
+    results,
+    title: str,
+    add_ci: bool = True,
+):
+    """Create an enhanced regression plot with confidence intervals and statistics.
 
     Parameters
     ----------
     x : str
-        Name of x variable in data
+        Column name of independent variable in data
     y : str
-        Name of y variable in data
+        Column name of dependent variable in data
     data : pandas.DataFrame
-        Data containing x and y
-    results : statsmodels results object
-        Fitted regression results
+        Dataset containing both variables
+    results : statsmodels.regression.linear_model.RegressionResults
+        Fitted OLS regression results object
     title : str
-        Plot title
-    add_ci : bool
-        Whether to add confidence intervals
+        Main title for the plot
+    add_ci : bool, default=True
+        Whether to display 95% confidence interval band
+
+    Returns
+    -------
+    matplotlib.figure.Figure
+        The created figure object
 
     """
-    # Create figure with seaborn styling
+    # Create figure with professional styling
     fig, ax = plt.subplots(figsize=(12, 8))
 
-    # Use seaborn's regplot with clean defaults
+    # Plot data points and regression line with confidence band
     sns.regplot(
         data=data,
         x=x,
         y=y,
-        ci=95 if add_ci else None,
+        ci=95 if add_ci else None,  # 95% confidence interval for mean prediction
         ax=ax,
+        scatter_kws={"alpha": 0.6, "edgecolor": "white", "linewidth": 0.5},
+        line_kws={"linewidth": 2},
     )
 
-    # Add equation and R-squared as text annotations
-    eq = f"y = {results.params.iloc[0]:.2f} + {results.params.iloc[1]:.2f}x"
-    r2 = f"$R^2$ = {results.rsquared:.3f}"
+    # Construct regression equation and statistics text
+    intercept = results.params.iloc[0]
+    slope = results.params.iloc[1]
+    equation = f"$\\hat{{y}}$ = {intercept:.2f} + {slope:.2f}x"
+    r_squared = f"$R^2$ = {results.rsquared:.3f}"
+    n_obs = f"n = {int(results.nobs)}"
 
-    # Add equation and R-squared with clean styling
-    textstr = f"{eq}\n{r2}"
+    # Add formatted text box with regression statistics
+    textstr = f"{equation}\n{r_squared}\n{n_obs}"
     ax.text(
         0.05,
         0.95,
@@ -362,6 +403,11 @@ plot_regression(
 # $$\hat{u}_i = y_i - \hat{y}_i$$
 #
 # Residuals are estimates of the unobservable error terms $u_i$. In OLS regression, we aim to minimize the sum of squared residuals.
+#
+# **Important Properties of OLS Residuals:**
+# 1. **Zero mean:** $\bar{\hat{u}} = \frac{1}{n}\sum_{i=1}^n \hat{u}_i = 0$ (always true by construction)
+# 2. **Orthogonality:** $\sum_{i=1}^n x_i \hat{u}_i = 0$ (residuals are uncorrelated with regressors)
+# 3. **Regression line passes through mean:** The point $(\bar{x}, \bar{y})$ always lies on the fitted regression line
 #
 # ### Example 2.6: CEO Salary and Return on Equity
 #

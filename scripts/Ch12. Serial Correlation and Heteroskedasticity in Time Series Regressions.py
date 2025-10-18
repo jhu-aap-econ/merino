@@ -26,6 +26,11 @@
 #
 # We will cover methods for testing for these issues and discuss strategies for obtaining valid inference, either by using Feasible Generalized Least Squares (FGLS) or by correcting the OLS standard errors.
 #
+# **Connection to Previous Chapters:**
+# - Chapter 8 introduced heteroskedasticity in cross-sectional data; this chapter extends to time series
+# - Chapter 11 introduced time series assumptions (stationarity, weak dependence); we now address their violations
+# - The HAC standard errors here generalize the HC standard errors from Chapter 8
+#
 # First, let's install and import the necessary libraries.
 
 # %%

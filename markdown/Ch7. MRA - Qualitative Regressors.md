@@ -49,21 +49,52 @@ Dummy variables (also called indicator variables or binary variables) take on th
 In this example, we will investigate how gender affects hourly wages, controlling for education, experience, and tenure. We will use the `wage1` dataset from the `wooldridge` package. The dataset includes information on wages, education, experience, tenure, and gender (female=1 if female, 0 if male).
 
 ```python
+# Load wage dataset for dummy variable analysis
 wage1 = wool.data("wage1")
 
-reg = smf.ols(formula="wage ~ female + educ + exper + tenure", data=wage1)
-results = reg.fit()
+# Examine the gender variable
+print("GENDER DISTRIBUTION IN DATASET")
+print("-" * 40)
+print(f"Total observations: {len(wage1)}")
+print(
+    f"Males (female=0): {(wage1['female'] == 0).sum()} ({(wage1['female'] == 0).mean():.1%})",
+)
+print(
+    f"Females (female=1): {(wage1['female'] == 1).sum()} ({(wage1['female'] == 1).mean():.1%})\n",
+)
 
-# print regression table:
-table = pd.DataFrame(
+# Estimate model with dummy variable for gender
+dummy_model = smf.ols(
+    formula="wage ~ female + educ + exper + tenure",
+    data=wage1,
+)
+dummy_results = dummy_model.fit()
+
+# Create enhanced results table with interpretations
+results_table = pd.DataFrame(
     {
-        "b": round(results.params, 4),
-        "se": round(results.bse, 4),
-        "t": round(results.tvalues, 4),
-        "pval": round(results.pvalues, 4),
+        "Coefficient": dummy_results.params.round(4),
+        "Std_Error": dummy_results.bse.round(4),
+        "t_statistic": dummy_results.tvalues.round(3),
+        "p_value": dummy_results.pvalues.round(4),
+        "Interpretation": [
+            "Baseline wage ($/hr) for males with zero education/experience",
+            "Gender wage gap: females earn $1.81/hr less than males",
+            "Return to education: $0.57/hr per year of schooling",
+            "Return to experience: $0.03/hr per year",
+            "Return to tenure: $0.14/hr per year with current employer",
+        ],
     },
 )
-print(f"table: \n{table}\n")
+
+print("REGRESSION RESULTS: WAGE EQUATION WITH GENDER DUMMY")
+print("=" * 60)
+print("Dependent Variable: wage (hourly wage in dollars)")
+print("Reference Category: male (female=0)")
+print("-" * 60)
+print(results_table.to_string(index=False))
+print(f"\nR-squared: {dummy_results.rsquared:.4f}")
+print(f"Number of observations: {int(dummy_results.nobs)}")
 ```
 
 **Explanation:**

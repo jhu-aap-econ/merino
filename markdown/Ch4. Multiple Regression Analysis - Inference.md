@@ -47,6 +47,17 @@ For asymptotically valid inference in large samples, we need only the Gauss-Mark
 
 **Practical Implication:** With moderate to large sample sizes (typically $n \geq 30$ or more), the t-tests and F-tests are robust to violations of normality, making them widely applicable even when errors are not normally distributed. Throughout this chapter, we assume sufficient conditions for valid inference—either MLR.1-MLR.6 for exact results or MLR.1-MLR.5 with large $n$ for asymptotic results.
 
+**Summary Table: Assumptions Required for Different Properties**
+
+| Property | Required Assumptions | Notes |
+|----------|---------------------|-------|
+| **Consistency** | MLR.1-MLR.4 | Weaker than unbiasedness; $n \to \infty$ |
+| **Unbiasedness** | MLR.1-MLR.4 | Zero conditional mean (MLR.4) is crucial |
+| **Efficiency (BLUE)** | MLR.1-MLR.5 | Homoscedasticity (MLR.5) required |
+| **Exact t/F tests** | MLR.1-MLR.6 | Normality (MLR.6) for finite samples |
+| **Asymptotic t/F tests** | MLR.1-MLR.5 | CLT applies as $n \to \infty$ |
+| **Valid OLS standard errors** | MLR.1-MLR.5 | Homoscedasticity needed; otherwise use robust SE |
+
 ## 4.2 The $t$ Test
 
 The $t$ test is a fundamental tool for hypothesis testing about individual regression coefficients in multiple regression models. It allows us to formally examine whether a specific independent variable has a statistically significant effect on the dependent variable, holding other factors constant.
@@ -114,12 +125,22 @@ $$\text{colGPA} = \beta_0 + \beta_1 \text{hsGPA} + \beta_2 \text{ACT} + \beta_3 
 We will perform hypothesis tests on the coefficients $\beta_1$, $\beta_2$, and $\beta_3$ to see which of these variables are statistically significant predictors of college GPA. We will use the standard null hypothesis $H_0: \beta_j = 0$ for each variable.
 
 ```python
-# CV for alpha=5% and 1% using the t distribution with 137 d.f.:
-alpha = np.array([0.05, 0.01])
-cv_t = stats.t.ppf(1 - alpha / 2, 137)  # Two-sided critical values
-print(
-    f"Critical values from t-distribution (df=137):\nFor alpha={alpha[0] * 100}%: +/-{cv_t[0]:.3f}\nFor alpha={alpha[1] * 100}%: +/-{cv_t[1]:.3f}\n",
-)
+# Calculate critical values for hypothesis testing
+# These are the thresholds for rejecting H0 at different significance levels
+
+significance_levels = np.array([0.05, 0.01])  # α = 5% and 1%
+degrees_freedom = 137  # Will be n - k - 1 from our regression
+
+# Two-sided critical values: P(|t| > c) = α
+critical_values_t = stats.t.ppf(1 - significance_levels / 2, degrees_freedom)
+
+print("Critical Values for Two-Sided t-Tests:")
+print(f"  Significance level α = {significance_levels[0]:.0%}:")
+print(f"    Critical value = ±{critical_values_t[0]:.3f}")
+print(f"    Reject H₀ if |t-stat| > {critical_values_t[0]:.3f}")
+print(f"  Significance level α = {significance_levels[1]:.0%}:")
+print(f"    Critical value = ±{critical_values_t[1]:.3f}")
+print(f"    Reject H₀ if |t-stat| > {critical_values_t[1]:.3f}\n")
 ```
 
 This code calculates the critical values from the $t$ distribution for significance levels of 5% and 1% with 137 degrees of freedom (which we will see is approximately the degrees of freedom in our regression). These are the thresholds against which we'll compare our calculated $t$-statistics.
@@ -146,20 +167,42 @@ print(f"Regression summary:\n{results.summary()}\n")
 This code runs the OLS regression of `colGPA` on `hsGPA`, `ACT`, and `skipped` using the `gpa1` dataset from the `wooldridge` package. The `results.summary()` provides a comprehensive output of the regression results, including estimated coefficients, standard errors, t-statistics, p-values, and other relevant statistics.
 
 ```python
-# manually confirm the formulas, i.e. extract coefficients and SE:
-b = results.params
-se = results.bse
+# Manually verify hypothesis testing calculations
+# This demonstrates how t-statistics and p-values are computed
 
-# reproduce t statistic:
-tstat = b / se
-print(f"Calculated t-statistics:\n{tstat}\n")
+# Extract estimated coefficients and their standard errors
+coefficient_estimates = results.params  # β̂ from OLS
+standard_errors = results.bse  # SE(β̂)
 
-# reproduce p value:
-pval = 2 * stats.t.cdf(
-    -abs(tstat),
-    results.df_resid,
-)  # df_resid is the degrees of freedom
-print(f"Calculated p-values:\n{pval}\n")
+# Calculate t-statistics for H₀: βⱼ = 0
+# Formula: t = (β̂ⱼ - 0) / SE(β̂ⱼ)
+t_statistics = coefficient_estimates / standard_errors
+
+print("Manual Hypothesis Testing Calculations:")
+print("-" * 50)
+for var, coef, se, t_stat in zip(
+    coefficient_estimates.index,
+    coefficient_estimates.values,
+    standard_errors.values,
+    t_statistics.values,
+    strict=False,
+):
+    print(f"{var:10s}: β̂ = {coef:7.4f}, SE = {se:7.4f}, t = {t_stat:7.3f}")
+
+# Calculate two-sided p-values
+# p-value = P(|T| > |t_obs|) = 2 * P(T < -|t_obs|) where T ~ t(df)
+p_values = 2 * stats.t.cdf(
+    -abs(t_statistics),  # Use negative absolute value for lower tail
+    results.df_resid,  # degrees of freedom = n - k - 1
+)
+
+print(f"\nDegrees of freedom: {results.df_resid}")
+print("\nCalculated p-values:")
+for var, p_val in zip(p_values.index, p_values.values, strict=False):
+    significance = (
+        "***" if p_val < 0.01 else "**" if p_val < 0.05 else "*" if p_val < 0.10 else ""
+    )
+    print(f"  {var:10s}: p = {p_val:.4f} {significance}")
 ```
 
 This section manually calculates the $t$ statistics and p-values using the formulas we discussed. It extracts the estimated coefficients (`b`) and standard errors (`se`) from the regression results. Then, it calculates the $t$ statistic by dividing each coefficient by its standard error. Finally, it computes the two-sided p-value using the CDF of the $t$ distribution with the correct degrees of freedom (`results.df_resid`).  The calculated values should match those reported in the `results.summary()`, confirming our understanding of how these values are derived.
