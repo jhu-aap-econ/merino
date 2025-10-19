@@ -94,19 +94,19 @@ baseline_summary = pd.DataFrame(
 baseline_summary
 
 # Step 2: Generate polynomial terms from fitted values
-# Theory: If model is misspecified, powers of ŷ capture omitted terms
-hprice1["fitted_sq"] = baseline_results.fittedvalues**2  # ŷ²
-hprice1["fitted_cub"] = baseline_results.fittedvalues**3  # ŷ³
+# Theory: If model is misspecified, powers of y_hat capture omitted terms
+hprice1["fitted_sq"] = baseline_results.fittedvalues**2  # y_hat^2
+hprice1["fitted_cub"] = baseline_results.fittedvalues**3  # y_hat^3
 
 # RESET test construction details
 reset_info = pd.DataFrame(
     {
-        "Component": ["Original predictors", "Added test terms", "H₀", "H₁"],
+        "Component": ["Original predictors", "Added test terms", "H_0", "H_1"],
         "Description": [
             "lotsize, sqrft, bdrms",
-            "fitted², fitted³",
-            "Coefficients on fitted² and fitted³ = 0 (no misspecification)",
-            "At least one polynomial term ≠ 0 (misspecification present)",
+            "fitted^2, fitted^3",
+            "Coefficients on fitted^2 and fitted^3 = 0 (no misspecification)",
+            "At least one polynomial term != 0 (misspecification present)",
         ],
     },
 )
@@ -360,7 +360,7 @@ b1_me_mean = np.mean(b1_me)
 pd.DataFrame(
     {
         "Model": ["No Measurement Error", "Measurement Error in y"],
-        "Average β₁": [f"{b1_mean:.4f}", f"{b1_me_mean:.4f}"],
+        "Average beta_1": [f"{b1_mean:.4f}", f"{b1_me_mean:.4f}"],
     },
 )
 
@@ -377,7 +377,7 @@ b1_me_var = np.var(b1_me, ddof=1)
 pd.DataFrame(
     {
         "Model": ["No Measurement Error", "Measurement Error in y"],
-        "Variance of β₁": [f"{b1_var:.6f}", f"{b1_me_var:.6f}"],
+        "Variance of beta_1": [f"{b1_var:.6f}", f"{b1_me_var:.6f}"],
     },
 )
 
@@ -441,7 +441,7 @@ b1_me_mean = np.mean(b1_me)
 pd.DataFrame(
     {
         "Model": ["No Measurement Error", "Measurement Error in x"],
-        "Average β₁": [f"{b1_mean:.4f}", f"{b1_me_mean:.4f}"],
+        "Average beta_1": [f"{b1_mean:.4f}", f"{b1_me_mean:.4f}"],
     },
 )
 
@@ -461,7 +461,7 @@ b1_me_var = np.var(b1_me, ddof=1)
 pd.DataFrame(
     {
         "Model": ["No Measurement Error", "Measurement Error in x"],
-        "Variance of β₁": [f"{b1_var:.6f}", f"{b1_me_var:.6f}"],
+        "Variance of beta_1": [f"{b1_var:.6f}", f"{b1_me_var:.6f}"],
     },
 )
 

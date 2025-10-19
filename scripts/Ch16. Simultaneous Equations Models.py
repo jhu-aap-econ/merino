@@ -33,7 +33,7 @@
 # **16.6** Extend SEM techniques to panel data for richer micro-econometric applications.
 # :::
 #
-# Welcome to Chapter 16, where we study **simultaneous equations models (SEMs)**—systems where multiple variables are determined jointly. Unlike previous chapters where we had one equation with clearly defined dependent and independent variables, SEMs recognize that economic variables are often **mutually determined**.
+# Welcome to Chapter 16, where we study **simultaneous equations models (SEMs)**--systems where multiple variables are determined jointly. Unlike previous chapters where we had one equation with clearly defined dependent and independent variables, SEMs recognize that economic variables are often **mutually determined**.
 #
 # Classic examples include:
 # - **Supply and Demand**: Price and quantity are simultaneously determined
@@ -172,7 +172,7 @@ alpha_0, alpha_1, alpha_2 = 100, 2, 0.5  # Demand: Q = 100 - 2P + 0.5I + u_D
 beta_0, beta_1, beta_2 = 50, 1.5, 0.3  # Supply: Q = 50 + 1.5P + 0.3W + u_S
 
 # Solve for equilibrium price and quantity
-# Q_D = Q_S → alpha_0 - alpha_1*P + alpha_2*I + u_D = beta_0 + beta_1*P + beta_2*W + u_S
+# Q_D = Q_S -> alpha_0 - alpha_1*P + alpha_2*I + u_D = beta_0 + beta_1*P + beta_2*W + u_S
 # P = (alpha_0 - beta_0 + alpha_2*I - beta_2*W + u_D - u_S) / (alpha_1 + beta_1)
 
 price_equilibrium = (
@@ -195,8 +195,8 @@ sim_data = pd.DataFrame(
 print("SIMULATED SUPPLY AND DEMAND DATA")
 print("=" * 70)
 print("\nTrue Structural Parameters:")
-print(f"Demand:  Q = {alpha_0} - {alpha_1}·P + {alpha_2}·I + u_D")
-print(f"Supply:  Q = {beta_0} + {beta_1}·P + {beta_2}·W + u_S")
+print(f"Demand:  Q = {alpha_0} - {alpha_1}*P + {alpha_2}*I + u_D")
+print(f"Supply:  Q = {beta_0} + {beta_1}*P + {beta_2}*W + u_S")
 print("\nObserved equilibrium data (Q*, P*) where supply = demand")
 
 display(sim_data.describe().round(2))
@@ -312,7 +312,7 @@ print("OLS traces out the locus of equilibrium points, not a structural curve")
 #
 # **In practice**: 
 # - Use order condition as a quick check
-# - Order satisfied + economic theory → likely identified
+# - Order satisfied + economic theory -> likely identified
 # - Formal rank condition checked by software
 #
 # ### Example: Labor Supply and Wage Determination
@@ -326,17 +326,17 @@ print("OLS traces out the locus of equilibrium points, not a structural curve")
 # $$ \log(\text{wage}) = \beta_{20} + \beta_{21} \text{hours} + \beta_{22} \text{educ} + \beta_{23} \text{exper} + \beta_{24} \text{exper}^2 + u_2 $$
 #
 # **Endogenous variables**: hours, log(wage)
-# **Exogenous variables**: educ, age, kidslt6, nwifeinc, exper, exper²
+# **Exogenous variables**: educ, age, kidslt6, nwifeinc, exper, exper^2
 #
 # **Identification check for Equation 1**:
-# - Endogenous on RHS: log(wage) → need 1 excluded exogenous variable
-# - Excluded exogenous: exper, exper² → have 2 instruments
-# - **Overidentified** ✓
+# - Endogenous on RHS: log(wage) -> need 1 excluded exogenous variable
+# - Excluded exogenous: exper, exper^2 -> have 2 instruments
+# - **Overidentified** YES
 #
 # **Identification check for Equation 2**:
-# - Endogenous on RHS: hours → need 1 excluded exogenous variable  
-# - Excluded exogenous: age, kidslt6, nwifeinc → have 3 instruments
-# - **Overidentified** ✓
+# - Endogenous on RHS: hours -> need 1 excluded exogenous variable  
+# - Excluded exogenous: age, kidslt6, nwifeinc -> have 3 instruments
+# - **Overidentified** YES
 #
 # ## 16.4 Systems with More Than Two Equations
 #
@@ -405,19 +405,19 @@ print(f"Observations: {len(mroz_working)}")
 print("\nSTRUCTURAL EQUATIONS:")
 print("\n1. Labor Supply Equation:")
 print(
-    "   hours = β₁₀ + β₁₂·log(wage) + β₁₁·educ + β₁₂·age + β₁₃·kidslt6 + β₁₄·nwifeinc + u₁"
+    "   hours = beta_1_0 + beta_1_2*log(wage) + beta_1_1*educ + beta_1_2*age + beta_1_3*kidslt6 + beta_1_4*nwifeinc + u_1"
 )
 print("   Endogenous: log(wage)")
-print("   Instruments: exper, exper²")
+print("   Instruments: exper, exper^2")
 
 print("\n2. Wage Equation:")
-print("   log(wage) = β₂₀ + β₂₁·hours + β₂₂·educ + β₂₃·exper + β₂₄·exper² + u₂")
+print("   log(wage) = beta_2_0 + beta_2_1*hours + beta_2_2*educ + beta_2_3*exper + beta_2_4*exper^2 + u_2")
 print("   Endogenous: hours")
 print("   Instruments: age, kidslt6, nwifeinc")
 
 print("\nKEY QUESTION: Are hours and wages simultaneously determined?")
-print("- Labor supply theory: Higher wages → More hours worked (substitution effect)")
-print("- Wage determination: More hours → Lower hourly wage? (fatigue, bargaining)")
+print("- Labor supply theory: Higher wages -> More hours worked (substitution effect)")
+print("- Wage determination: More hours -> Lower hourly wage? (fatigue, bargaining)")
 
 # Summary statistics
 key_vars = ["hours", "lwage", "educ", "age", "kidslt6", "nwifeinc", "exper"]
@@ -433,7 +433,7 @@ print("\nEQUATION 1: Labor Supply")
 print("-" * 70)
 print("Dependent variable: hours")
 print("Endogenous regressor: log(wage)")
-print("Instruments: exper, exper²")
+print("Instruments: exper, exper^2")
 
 labor_supply_2sls = IV2SLS.from_formula(
     formula="hours ~ 1 + educ + age + kidslt6 + nwifeinc + "
@@ -496,13 +496,13 @@ cor_u1u2 = np.corrcoef(u1_hat, u2_hat)[0, 1]
 print(f"\nCorrelation between residuals: {cor_u1u2:.4f}")
 
 if abs(cor_u1u2) > 0.1:
-    print(f"✓ Substantial correlation (|{cor_u1u2:.4f}| > 0.1)")
-    print("  → 3SLS will be more efficient than 2SLS")
-    print("  → Errors across equations are related")
+    print(f"YES Substantial correlation (|{cor_u1u2:.4f}| > 0.1)")
+    print("  -> 3SLS will be more efficient than 2SLS")
+    print("  -> Errors across equations are related")
 else:
-    print(f"✗ Low correlation (|{cor_u1u2:.4f}| ≤ 0.1)")
-    print("  → Little efficiency gain from 3SLS")
-    print("  → 2SLS and 3SLS will give similar results")
+    print(f"NO Low correlation (|{cor_u1u2:.4f}| <= 0.1)")
+    print("  -> Little efficiency gain from 3SLS")
+    print("  -> 2SLS and 3SLS will give similar results")
 
 # %%
 # Interpretation of 2SLS results
@@ -516,17 +516,17 @@ wage_se = labor_supply_2sls.std_errors["np.log(wage)"]
 print("\n1. LABOR SUPPLY EQUATION:")
 print(f"   Effect of wage on hours: {wage_effect:.2f}")
 if wage_effect > 0:
-    print(f"   A 1% increase in wage → {wage_effect:.2f} more hours worked per year")
-    print("   ✓ Positive substitution effect (higher wage → more labor supply)")
+    print(f"   A 1% increase in wage -> {wage_effect:.2f} more hours worked per year")
+    print("   YES Positive substitution effect (higher wage -> more labor supply)")
 else:
-    print(f"   A 1% increase in wage → {abs(wage_effect):.2f} fewer hours worked")
-    print("   ✓ Negative income effect dominates (higher wage → less need to work)")
+    print(f"   A 1% increase in wage -> {abs(wage_effect):.2f} fewer hours worked")
+    print("   YES Negative income effect dominates (higher wage -> less need to work)")
 
 print(f"\n   Standard error: {wage_se:.4f}")
 if abs(wage_effect / wage_se) > 1.96:
-    print(f"   ✓ Statistically significant (t = {wage_effect / wage_se:.2f})")
+    print(f"   YES Statistically significant (t = {wage_effect / wage_se:.2f})")
 else:
-    print(f"   ✗ Not statistically significant (t = {wage_effect / wage_se:.2f})")
+    print(f"   NO Not statistically significant (t = {wage_effect / wage_se:.2f})")
 
 # Wage equation
 hours_effect = wage_eq_2sls.params["hours"]
@@ -535,17 +535,17 @@ hours_se = wage_eq_2sls.std_errors["hours"]
 print("\n2. WAGE EQUATION:")
 print(f"   Effect of hours on log(wage): {hours_effect:.6f}")
 if hours_effect > 0:
-    print(f"   Each additional hour worked → {100 * hours_effect:.4f}% higher wage")
+    print(f"   Each additional hour worked -> {100 * hours_effect:.4f}% higher wage")
     print("   Interpretation: Positive correlation (more productive workers work more)")
 else:
-    print(f"   Each additional hour worked → {100 * abs(hours_effect):.4f}% lower wage")
+    print(f"   Each additional hour worked -> {100 * abs(hours_effect):.4f}% lower wage")
     print("   Interpretation: Fatigue effect or part-time premium")
 
 print(f"\n   Standard error: {hours_se:.6f}")
 if abs(hours_effect / hours_se) > 1.96:
-    print(f"   ✓ Statistically significant (t = {hours_effect / hours_se:.2f})")
+    print(f"   YES Statistically significant (t = {hours_effect / hours_se:.2f})")
 else:
-    print(f"   ✗ Not statistically significant (t = {hours_effect / hours_se:.2f})")
+    print(f"   NO Not statistically significant (t = {hours_effect / hours_se:.2f})")
 
 # %%
 # THREE-STAGE LEAST SQUARES (3SLS)
@@ -647,8 +647,8 @@ print("- In practice: Report both and compare for robustness")
 # - $M_t$ = money supply (exogenous)
 #
 # **Identification**:
-# - IS equation: Excluded exogenous = $M_t$ → identified
-# - LM equation: Excluded exogenous = $G_t$ → identified
+# - IS equation: Excluded exogenous = $M_t$ -> identified
+# - LM equation: Excluded exogenous = $G_t$ -> identified
 #
 # ### Dynamic SEMs
 #
@@ -665,18 +665,18 @@ print("=" * 70)
 
 print("\nIS-LM MODEL (Conceptual)")
 print("\nIS Equation (Goods Market Equilibrium):")
-print("  Y = α₀ + α₁·r + α₂·G + u")
+print("  Y = alpha_0 + alpha_1*r + alpha_2*G + u")
 print("  Output (Y) depends negatively on interest rate (r)")
 print("  Government spending (G) is exogenous policy variable")
 
 print("\nLM Equation (Money Market Equilibrium):")
-print("  r = β₀ + β₁·Y + β₂·M + v")
+print("  r = beta_0 + beta_1*Y + beta_2*M + v")
 print("  Interest rate (r) depends positively on output (Y)")
 print("  Money supply (M) is exogenous policy variable")
 
 print("\nIDENTIFICATION:")
-print("✓ IS equation: Use M (excluded from IS) as instrument for r")
-print("✓ LM equation: Use G (excluded from LM) as instrument for Y")
+print("YES IS equation: Use M (excluded from IS) as instrument for r")
+print("YES LM equation: Use G (excluded from LM) as instrument for Y")
 
 print("\nESTIMATION:")
 print("- Apply 2SLS to each equation using appropriate instruments")
@@ -728,11 +728,11 @@ print("=" * 70)
 print("\nSTRUCTURAL EQUATIONS:")
 
 print("\n1. Productivity Equation:")
-print("   log(output)ᵢₜ = β₁·trainingᵢₜ + controls + αᵢ + u₁ᵢₜ")
+print("   log(output)_i_t = beta_1*training_i_t + controls + alpha_i + u_1_i_t")
 print("   Productivity depends on training")
 
 print("\n2. Training Decision:")
-print("   trainingᵢₜ = β₂·log(output)ᵢₜ₋₁ + controls + cᵢ + u₂ᵢₜ")
+print("   training_i_t = beta_2*log(output)_i_t_-_1 + controls + c_i + u_2_i_t")
 print("   Training depends on past productivity")
 
 print("\nSIMULTANEITY:")
@@ -741,9 +741,9 @@ print("- Training affects future productivity")
 print("- Need to account for both directions of causality")
 
 print("\nIDENTIFICATION STRATEGY:")
-print("✓ Use lagged productivity as instrument for current training")
-print("✓ Use policy variables (grants) as instrument for training")
-print("✓ Fixed effects control for time-invariant firm heterogeneity")
+print("YES Use lagged productivity as instrument for current training")
+print("YES Use policy variables (grants) as instrument for training")
+print("YES Fixed effects control for time-invariant firm heterogeneity")
 
 print("\nESTIMATION:")
 print("- First-difference to remove fixed effects")
@@ -751,10 +751,10 @@ print("- Apply 2SLS using lagged variables as instruments")
 print("- Or use system GMM for efficiency")
 
 print("\nADVANTAGES OF PANEL SEM:")
-print("✓ More instruments available (lags, differences)")
-print("✓ Control for unobserved heterogeneity (fixed effects)")
-print("✓ Richer identification from time variation")
-print("✓ Can test Granger causality")
+print("YES More instruments available (lags, differences)")
+print("YES Control for unobserved heterogeneity (fixed effects)")
+print("YES Richer identification from time variation")
+print("YES Can test Granger causality")
 
 # %% [markdown]
 # ### Key Considerations
@@ -789,7 +789,7 @@ print("✓ Can test Granger causality")
 #    - Reduced form used to construct instruments
 #
 # 3. **Identification**:
-#    - Order condition: # excluded exogenous ≥ # included endogenous - 1
+#    - Order condition: # excluded exogenous >= # included endogenous - 1
 #    - Rank condition: More rigorous but checked by software
 #    - Need at least one excluded exogenous variable per endogenous RHS variable
 #
@@ -804,12 +804,12 @@ print("✓ Can test Granger causality")
 #
 # ### When to Use SEMs
 #
-# ✓ Use SEMs when:
+# YES Use SEMs when:
 # - Variables are clearly simultaneously determined
 # - Have valid instruments (excluded exogenous variables)
 # - Economic theory suggests mutual causation
 #
-# ✗ Don't use SEMs when:
+# NO Don't use SEMs when:
 # - One-way causality is plausible (use single-equation IV)
 # - No valid instruments available
 # - Can't justify exclusion restrictions
@@ -857,26 +857,26 @@ ax.add_patch(
     plt.Rectangle((0.05, 0.70), 0.35, 0.12, fill=True, alpha=0.3, color="green")
 )
 ax.text(
-    0.225, 0.80, "NO → One-way causality", ha="center", fontsize=10, fontweight="bold"
+    0.225, 0.80, "NO -> One-way causality", ha="center", fontsize=10, fontweight="bold"
 )
 ax.text(
     0.225, 0.76, "Use single-equation IV", ha="center", fontsize=11, color="darkgreen"
 )
-ax.text(0.225, 0.72, "✓ Simpler, more robust", ha="center", fontsize=8)
+ax.text(0.225, 0.72, "YES Simpler, more robust", ha="center", fontsize=8)
 
 # Branch: Yes
 ax.add_patch(plt.Rectangle((0.6, 0.70), 0.35, 0.12, fill=True, alpha=0.3, color="red"))
 ax.text(
-    0.775, 0.80, "YES → Mutual causation", ha="center", fontsize=10, fontweight="bold"
+    0.775, 0.80, "YES -> Mutual causation", ha="center", fontsize=10, fontweight="bold"
 )
 ax.text(0.775, 0.76, "Need SEM methods", ha="center", fontsize=11, color="darkred")
-ax.text(0.775, 0.72, "✓ 2SLS or 3SLS", ha="center", fontsize=8)
+ax.text(0.775, 0.72, "YES 2SLS or 3SLS", ha="center", fontsize=8)
 
 # Identification
 ax.text(0.5, 0.63, "Identification Check:", ha="center", fontsize=11, fontweight="bold")
 
 checks = [
-    "Order: # excluded exog ≥ # endog - 1?",
+    "Order: # excluded exog >= # endog - 1?",
     "Economic theory supports exclusions?",
     "Instruments relevant (F > 10)?",
 ]
@@ -927,7 +927,7 @@ for i, app in enumerate(apps):
 ax.text(
     0.5,
     0.02,
-    "⚠️ Key: Justify exclusion restrictions with theory  |  Test identification  |  Report both 2SLS and 3SLS",
+    "WARNING Key: Justify exclusion restrictions with theory  |  Test identification  |  Report both 2SLS and 3SLS",
     ha="center",
     fontsize=8,
     color="red",

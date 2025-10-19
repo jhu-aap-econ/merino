@@ -168,7 +168,7 @@ hseinv["gprice_lag1"] = hseinv["gprice"].shift(1)
 hseinv["linvpc_det_lag1"] = hseinv["linvpc_det"].shift(1)
 
 print("\nQUESTION: How does housing price growth affect investment?")
-print("  - Immediate effect (β₀)")
+print("  - Immediate effect (beta_0)")
 print("  - Long-run effect (LRP)")
 
 # Summary statistics
@@ -213,15 +213,15 @@ plt.tight_layout()
 plt.show()
 
 print("\nOBSERVATIONS:")
-print("✓ Both investment and prices trend upward over time")
-print("✓ Detrending removes long-run growth pattern")
-print("✓ Price growth is volatile with cyclical patterns")
+print("YES Both investment and prices trend upward over time")
+print("YES Detrending removes long-run growth pattern")
+print("YES Price growth is volatile with cyclical patterns")
 
 # %%
 # KOYCK GEOMETRIC DISTRIBUTED LAG
 print("\nKOYCK MODEL (Geometric Distributed Lag)")
 print("=" * 70)
-print("Model: y_t = γ₀ + γ₁·y_{t-1} + β₀·x_t + v_t")
+print("Model: y_t = gamma_0 + gamma_1*y_{t-1} + beta_0*x_t + v_t")
 print("where y = detrended log investment, x = price growth")
 
 koyck = smf.ols(
@@ -247,27 +247,27 @@ print("\nINTERPRETATION:")
 beta_0 = koyck.params["gprice"]
 rho = koyck.params["linvpc_det_lag1"]
 
-print(f"  β₀ (immediate effect): {beta_0:.4f}")
+print(f"  beta_0 (immediate effect): {beta_0:.4f}")
 print(
-    f"    → 1 percentage point increase in price growth → {100 * beta_0:.2f}% immediate increase in investment"
+    f"    -> 1 percentage point increase in price growth -> {100 * beta_0:.2f}% immediate increase in investment"
 )
 
-print(f"\n  ρ (persistence): {rho:.4f}")
-print(f"    → Each period, {100 * rho:.1f}% of previous period's effect carries over")
+print(f"\n  rho (persistence): {rho:.4f}")
+print(f"    -> Each period, {100 * rho:.1f}% of previous period's effect carries over")
 
 # Long-Run Propensity
 lrp_koyck = beta_0 / (1 - rho)
 print(f"\n  LRP (long-run effect): {lrp_koyck:.4f}")
 print(
-    f"    → 1 percentage point permanent increase in price growth → {100 * lrp_koyck:.2f}% long-run increase in investment"
+    f"    -> 1 percentage point permanent increase in price growth -> {100 * lrp_koyck:.2f}% long-run increase in investment"
 )
-print(f"    → LRP = β₀/(1-ρ) = {beta_0:.4f}/(1-{rho:.4f}) = {lrp_koyck:.4f}")
+print(f"    -> LRP = beta_0/(1-rho) = {beta_0:.4f}/(1-{rho:.4f}) = {lrp_koyck:.4f}")
 
 # %%
 # RATIONAL DISTRIBUTED LAG
 print("\n\nRATIONAL DISTRIBUTED LAG")
 print("=" * 70)
-print("Model: y_t = γ₀ + γ₁·y_{t-1} + β₀·x_t + δ₁·x_{t-1} + v_t")
+print("Model: y_t = gamma_0 + gamma_1*y_{t-1} + beta_0*x_t + delta_1*x_{t-1} + v_t")
 print("More flexible: allows non-monotonic lag pattern")
 
 rational = smf.ols(
@@ -294,21 +294,21 @@ beta_0_rat = rational.params["gprice"]
 delta_1 = rational.params["gprice_lag1"]
 rho_rat = rational.params["linvpc_det_lag1"]
 
-print(f"  β₀ (contemporaneous effect): {beta_0_rat:.4f}")
-print(f"  δ₁ (one-period lag effect): {delta_1:.4f}")
-print(f"  ρ (persistence): {rho_rat:.4f}")
+print(f"  beta_0 (contemporaneous effect): {beta_0_rat:.4f}")
+print(f"  delta_1 (one-period lag effect): {delta_1:.4f}")
+print(f"  rho (persistence): {rho_rat:.4f}")
 
 # Long-Run Propensity for rational DL
 lrp_rational = (beta_0_rat + delta_1) / (1 - rho_rat)
 print(f"\n  LRP (long-run effect): {lrp_rational:.4f}")
 print(
-    f"    → LRP = (β₀ + δ₁)/(1-ρ) = ({beta_0_rat:.4f} + {delta_1:.4f})/(1-{rho_rat:.4f}) = {lrp_rational:.4f}"
+    f"    -> LRP = (beta_0 + delta_1)/(1-rho) = ({beta_0_rat:.4f} + {delta_1:.4f})/(1-{rho_rat:.4f}) = {lrp_rational:.4f}"
 )
 
 if delta_1 < 0:
-    print("\n  ✓ Negative lagged effect: price growth has smaller impact over time")
+    print("\n  YES Negative lagged effect: price growth has smaller impact over time")
 else:
-    print("\n  ✓ Positive lagged effect: price growth has amplified impact initially")
+    print("\n  YES Positive lagged effect: price growth has amplified impact initially")
 
 # %%
 # Compare the two models
@@ -332,22 +332,22 @@ comparison = pd.DataFrame(
             rational.rsquared,
         ],
     },
-    index=["β₀ (immediate)", "δ₁ (lagged x)", "ρ (lagged y)", "LRP", "R²"],
+    index=["beta_0 (immediate)", "delta_1 (lagged x)", "rho (lagged y)", "LRP", "R^2"],
 )
 
 display(comparison.round(4))
 
 print("\nKEY INSIGHTS:")
 print("1. Both models show positive immediate effect of price growth on investment")
-print("2. Rational DL has slightly better fit (higher R²)")
+print("2. Rational DL has slightly better fit (higher R^2)")
 print(f"3. LRP is larger in Koyck ({lrp_koyck:.4f}) than Rational ({lrp_rational:.4f})")
-print("4. Rational DL shows negative lagged effect → initial enthusiasm fades")
+print("4. Rational DL shows negative lagged effect -> initial enthusiasm fades")
 
 print("\nCHOICE OF MODEL:")
 if rational.rsquared > koyck.rsquared + 0.01:
-    print("✓ Rational DL preferred: better fit, more flexible")
+    print("YES Rational DL preferred: better fit, more flexible")
 else:
-    print("✓ Koyck preferred: simpler, similar fit")
+    print("YES Koyck preferred: simpler, similar fit")
 
 # %% [markdown]
 # ## 18.2 Testing for Unit Roots
@@ -405,8 +405,8 @@ else:
 # 3. **With constant and trend**: $\Delta y_t = \alpha + \beta t + \theta y_{t-1} + \cdots$
 #
 # **Decision rule**:
-# - If ADF statistic < critical value → **Reject $H_0$** (stationary)
-# - If ADF statistic > critical value → **Fail to reject $H_0$** (unit root)
+# - If ADF statistic < critical value -> **Reject $H_0$** (stationary)
+# - If ADF statistic > critical value -> **Fail to reject $H_0$** (unit root)
 #
 # ### Example 18.4: Unit Root Test for GDP
 
@@ -427,8 +427,8 @@ print("  gdp  = US real GDP")
 print("  lgdp = log(GDP)")
 
 print("\nQUESTION: Does log GDP have a unit root?")
-print("  H₀: Unit root (non-stationary, random walk)")
-print("  H₁: Stationary (mean-reverting)")
+print("  H_0: Unit root (non-stationary, random walk)")
+print("  H_1: Stationary (mean-reverting)")
 
 # Summary statistics
 display(inven[["gdp", "lgdp"]].describe().round(4))
@@ -449,7 +449,7 @@ inven["dlgdp"] = inven["lgdp"].diff()
 axes[1].plot(inven.index, inven["dlgdp"], "g-", linewidth=2)
 axes[1].axhline(y=0, color="black", linestyle="--", linewidth=1)
 axes[1].set_xlabel("Quarter")
-axes[1].set_ylabel("Δ Log GDP (Growth Rate)")
+axes[1].set_ylabel("Delta Log GDP (Growth Rate)")
 axes[1].set_title("GDP Growth Rate")
 axes[1].grid(True, alpha=0.3)
 
@@ -457,16 +457,16 @@ plt.tight_layout()
 plt.show()
 
 print("\nVISUAL INSPECTION:")
-print("✓ Log GDP trends strongly upward → suggests non-stationarity")
-print("✓ Growth rate fluctuates around constant mean → suggests stationarity")
-print("→ Need formal test to confirm!")
+print("YES Log GDP trends strongly upward -> suggests non-stationarity")
+print("YES Growth rate fluctuates around constant mean -> suggests stationarity")
+print("-> Need formal test to confirm!")
 
 # %%
 # AUGMENTED DICKEY-FULLER TEST
 print("\n\nAUGMENTED DICKEY-FULLER (ADF) TEST")
 print("=" * 70)
-print("Test: H₀: θ = 0 (unit root) vs H₁: θ < 0 (stationary)")
-print("Model: Δy_t = α + β·t + θ·y_{t-1} + γ₁·Δy_{t-1} + u_t")
+print("Test: H_0: theta = 0 (unit root) vs H_1: theta < 0 (stationary)")
+print("Model: Deltay_t = alpha + beta*t + theta*y_{t-1} + gamma_1*Deltay_{t-1} + u_t")
 print("       (with constant and trend)")
 
 # Perform ADF test with constant and trend
@@ -502,17 +502,17 @@ for key, value in adf_crit.items():
 
 print("\nDECISION:")
 if adf_stat < adf_crit["5%"]:
-    print(f"✓ ADF statistic ({adf_stat:.4f}) < critical value ({adf_crit['5%']:.4f})")
-    print("  → REJECT H₀: Log GDP is stationary")
+    print(f"YES ADF statistic ({adf_stat:.4f}) < critical value ({adf_crit['5%']:.4f})")
+    print("  -> REJECT H_0: Log GDP is stationary")
 else:
-    print(f"✗ ADF statistic ({adf_stat:.4f}) > critical value ({adf_crit['5%']:.4f})")
-    print("  → FAIL TO REJECT H₀: Log GDP has a unit root")
-    print("  → Log GDP is NON-STATIONARY")
+    print(f"NO ADF statistic ({adf_stat:.4f}) > critical value ({adf_crit['5%']:.4f})")
+    print("  -> FAIL TO REJECT H_0: Log GDP has a unit root")
+    print("  -> Log GDP is NON-STATIONARY")
 
 print("\nINTERPRETATION:")
-print("  → Log GDP appears to have a unit root")
-print("  → Shocks to GDP have permanent effects")
-print("  → GDP follows a random walk with drift")
+print("  -> Log GDP appears to have a unit root")
+print("  -> Shocks to GDP have permanent effects")
+print("  -> GDP follows a random walk with drift")
 
 # %%
 # Test first difference (should be stationary)
@@ -541,22 +541,22 @@ for key, value in adf_crit_diff.items():
 print("\nDECISION:")
 if adf_stat_diff < adf_crit_diff["5%"]:
     print(
-        f"✓ ADF statistic ({adf_stat_diff:.4f}) < critical value ({adf_crit_diff['5%']:.4f})"
+        f"YES ADF statistic ({adf_stat_diff:.4f}) < critical value ({adf_crit_diff['5%']:.4f})"
     )
-    print("  → REJECT H₀: GDP growth is stationary")
-    print("  → Log GDP is I(1): integrated of order 1")
-    print("  → First difference is stationary")
+    print("  -> REJECT H_0: GDP growth is stationary")
+    print("  -> Log GDP is I(1): integrated of order 1")
+    print("  -> First difference is stationary")
 else:
     print(
-        f"✗ ADF statistic ({adf_stat_diff:.4f}) > critical value ({adf_crit_diff['5%']:.4f})"
+        f"NO ADF statistic ({adf_stat_diff:.4f}) > critical value ({adf_crit_diff['5%']:.4f})"
     )
-    print("  → FAIL TO REJECT H₀")
+    print("  -> FAIL TO REJECT H_0")
 
 print("\nCONCLUSION:")
-print("✓ Log GDP has a unit root (non-stationary in levels)")
-print("✓ First difference (growth rate) is stationary")
-print("✓ Log GDP is I(1): need to difference once to achieve stationarity")
-print("→ Use growth rates for regression, not levels!")
+print("YES Log GDP has a unit root (non-stationary in levels)")
+print("YES First difference (growth rate) is stationary")
+print("YES Log GDP is I(1): need to difference once to achieve stationarity")
+print("-> Use growth rates for regression, not levels!")
 
 # %% [markdown]
 # ## 18.3 Spurious Regression
@@ -637,7 +637,7 @@ sim_data = pd.DataFrame({"y": y, "x": x})
 print(f"\nGenerated {n} observations of two INDEPENDENT random walks")
 print("  x_t = x_{t-1} + a_t, where a_t ~ N(0,1)")
 print("  y_t = y_{t-1} + e_t, where e_t ~ N(0,1)")
-print("  Cov(a_t, e_t) = 0  → x and y are UNRELATED")
+print("  Cov(a_t, e_t) = 0  -> x and y are UNRELATED")
 
 # Visualize the two series
 fig, axes = plt.subplots(1, 2, figsize=(14, 5))
@@ -662,12 +662,12 @@ plt.tight_layout()
 plt.show()
 
 print("\nOBSERVATION:")
-print("✓ Both series wander randomly (unit roots)")
-print("✓ They may appear to move together by chance")
+print("YES Both series wander randomly (unit roots)")
+print("YES They may appear to move together by chance")
 
 # %%
 # Spurious regression
-print("\nSPURIOUS REGRESSION: y = α + β·x + e")
+print("\nSPURIOUS REGRESSION: y = alpha + beta*x + e")
 print("=" * 70)
 
 spurious_reg = smf.ols(formula="y ~ x", data=sim_data).fit()
@@ -693,27 +693,27 @@ pval = spurious_reg.pvalues["x"]
 
 if pval < 0.05:
     print(
-        f"✗ β̂ = {beta_hat:.4f} appears HIGHLY SIGNIFICANT (t = {t_stat:.2f}, p = {pval:.4f})"
+        f"NO beta_hat = {beta_hat:.4f} appears HIGHLY SIGNIFICANT (t = {t_stat:.2f}, p = {pval:.4f})"
     )
-    print("  → OLS says x and y are related")
-    print("  → But we KNOW they are independent!")
-    print("  → This is SPURIOUS REGRESSION")
+    print("  -> OLS says x and y are related")
+    print("  -> But we KNOW they are independent!")
+    print("  -> This is SPURIOUS REGRESSION")
 else:
-    print(f"  β̂ = {beta_hat:.4f} is not significant (t = {t_stat:.2f}, p = {pval:.4f})")
-    print("  → This particular simulation avoided spurious regression")
-    print("  → But it happens frequently with non-stationary data!")
+    print(f"  beta_hat = {beta_hat:.4f} is not significant (t = {t_stat:.2f}, p = {pval:.4f})")
+    print("  -> This particular simulation avoided spurious regression")
+    print("  -> But it happens frequently with non-stationary data!")
 
 # Durbin-Watson diagnostic
 dw = sm.stats.stattools.durbin_watson(spurious_reg.resid)
 if spurious_reg.rsquared > dw:
-    print(f"\n✗ WARNING: R² ({spurious_reg.rsquared:.4f}) > DW ({dw:.4f})")
-    print("  → Granger-Newbold rule suggests spurious regression")
+    print(f"\nNO WARNING: R^2 ({spurious_reg.rsquared:.4f}) > DW ({dw:.4f})")
+    print("  -> Granger-Newbold rule suggests spurious regression")
 
 # %%
 # Test residuals for unit root
 print("\n\nTESTING RESIDUALS FOR UNIT ROOT")
 print("=" * 70)
-print("If residuals have unit root → spurious regression")
+print("If residuals have unit root -> spurious regression")
 
 adf_resid = adfuller(spurious_reg.resid.dropna(), maxlag=1, regression="c")
 
@@ -722,18 +722,18 @@ print(f"p-value: {adf_resid[1]:.4f}")
 print(f"Critical value (5%): {adf_resid[4]['5%']:.4f}")
 
 if adf_resid[0] > adf_resid[4]["5%"]:
-    print("\n✗ Residuals have unit root (non-stationary)")
-    print("  → Confirms spurious regression")
-    print("  → Standard inference is invalid!")
+    print("\nNO Residuals have unit root (non-stationary)")
+    print("  -> Confirms spurious regression")
+    print("  -> Standard inference is invalid!")
 else:
-    print("\n✓ Residuals are stationary")
-    print("  → Not spurious (or cointegrated - see next section)")
+    print("\nYES Residuals are stationary")
+    print("  -> Not spurious (or cointegrated - see next section)")
 
 # %%
 # Correct approach: use first differences
 print("\n\nCORRECT APPROACH: First Differences")
 print("=" * 70)
-print("Model: Δy_t = β·Δx_t + u_t")
+print("Model: Deltay_t = beta*Deltax_t + u_t")
 
 # Calculate first differences
 sim_data["dy"] = sim_data["y"].diff()
@@ -762,15 +762,15 @@ pval_diff = correct_reg.pvalues["dx"]
 
 if pval_diff >= 0.05:
     print(
-        f"✓ β̂ = {beta_diff:.4f} is NOT significant (t = {t_diff:.2f}, p = {pval_diff:.4f})"
+        f"YES beta_hat = {beta_diff:.4f} is NOT significant (t = {t_diff:.2f}, p = {pval_diff:.4f})"
     )
-    print("  → Correctly finds NO relationship")
-    print("  → First differences avoid spurious regression")
+    print("  -> Correctly finds NO relationship")
+    print("  -> First differences avoid spurious regression")
 else:
     print(
-        f"  β̂ = {beta_diff:.4f} is significant (t = {t_diff:.2f}, p = {pval_diff:.4f})"
+        f"  beta_hat = {beta_diff:.4f} is significant (t = {t_diff:.2f}, p = {pval_diff:.4f})"
     )
-    print("  → Type I error (but much less likely than with levels)")
+    print("  -> Type I error (but much less likely than with levels)")
 
 # %%
 # Multiple simulations
@@ -805,9 +805,9 @@ print("\nEXPECTED if variables were stationary: 5%")
 print(f"ACTUAL with non-stationary variables: {100 * spurious_rate:.1f}%")
 
 if spurious_rate > 0.10:
-    print("\n✗ MUCH higher than 5%!")
-    print("  → Non-stationary variables produce spurious relationships")
-    print("  → ALWAYS test for unit roots before regressing levels")
+    print("\nNO MUCH higher than 5%!")
+    print("  -> Non-stationary variables produce spurious relationships")
+    print("  -> ALWAYS test for unit roots before regressing levels")
 
 # %% [markdown]
 # ## 18.4 Cointegration and Error Correction Models
@@ -879,7 +879,7 @@ print("Two I(1) variables can have a stationary linear combination")
 
 print("\nEXAMPLE: Consumption and Income")
 print("  - Both consumption (C) and income (Y) are I(1)")
-print("  - But C_t - β·Y_t might be stationary")
+print("  - But C_t - beta*Y_t might be stationary")
 print("  - Economic theory: long-run consumption proportional to income")
 print("  - Deviations from this relationship are temporary")
 
@@ -889,9 +889,9 @@ print("  Cointegration: y and x share a common trend (genuine relationship)")
 
 print("\nTESTING PROCEDURE:")
 print("  1. Confirm both y and x are I(1) (unit root tests)")
-print("  2. Regress y_t on x_t → get residuals û_t")
-print("  3. Test if û_t is stationary (ADF test)")
-print("  4. If stationary → cointegrated (long-run relationship exists)")
+print("  2. Regress y_t on x_t -> get residuals u_hat_t")
+print("  3. Test if u_hat_t is stationary (ADF test)")
+print("  4. If stationary -> cointegrated (long-run relationship exists)")
 print("  5. Estimate error correction model (ECM)")
 
 # %%
@@ -934,15 +934,15 @@ plt.tight_layout()
 plt.show()
 
 print("\nOBSERVATION:")
-print("✓ Both variables trend upward (unit roots)")
-print("✓ They move together (share common trend)")
-print("✓ Unlike spurious regression, this is a REAL relationship")
+print("YES Both variables trend upward (unit roots)")
+print("YES They move together (share common trend)")
+print("YES Unlike spurious regression, this is a REAL relationship")
 
 # %%
 # Step 1: Cointegrating regression
 print("\nSTEP 1: Cointegrating Regression")
 print("=" * 70)
-print("Regress: y_t = α + β·x_t + u_t")
+print("Regress: y_t = alpha + beta*x_t + u_t")
 
 coint_reg = smf.ols(formula="y ~ x", data=coint_data).fit()
 
@@ -961,8 +961,8 @@ print(f"\nR-squared: {coint_reg.rsquared:.4f}")
 
 print("\nLONG-RUN RELATIONSHIP:")
 beta_coint = coint_reg.params["x"]
-print(f"  β̂ = {beta_coint:.4f}")
-print(f"  → Long-run: y ≈ {coint_reg.params['Intercept']:.2f} + {beta_coint:.2f}·x")
+print(f"  beta_hat = {beta_coint:.4f}")
+print(f"  -> Long-run: y ~= {coint_reg.params['Intercept']:.2f} + {beta_coint:.2f}*x")
 
 # Save residuals
 coint_data["resid"] = coint_reg.resid
@@ -971,8 +971,8 @@ coint_data["resid"] = coint_reg.resid
 # Step 2: Test residuals for stationarity
 print("\nSTEP 2: Test Residuals for Stationarity (ADF Test)")
 print("=" * 70)
-print("H₀: No cointegration (residuals have unit root)")
-print("H₁: Cointegration (residuals are stationary)")
+print("H_0: No cointegration (residuals have unit root)")
+print("H_1: Cointegration (residuals are stationary)")
 
 adf_coint = adfuller(coint_data["resid"].dropna(), maxlag=1, regression="c")
 
@@ -984,13 +984,13 @@ print(f"Critical value (5%): {adf_coint[4]['5%']:.4f}")
 # Standard ADF critical values are too conservative for cointegration test
 
 if adf_coint[0] < adf_coint[4]["5%"]:
-    print("\n✓ Residuals are stationary")
-    print("  → REJECT H₀: Variables are COINTEGRATED")
-    print("  → Long-run relationship is genuine, not spurious")
+    print("\nYES Residuals are stationary")
+    print("  -> REJECT H_0: Variables are COINTEGRATED")
+    print("  -> Long-run relationship is genuine, not spurious")
 else:
-    print("\n✗ Residuals have unit root")
-    print("  → FAIL TO REJECT H₀: Variables are NOT cointegrated")
-    print("  → Relationship may be spurious")
+    print("\nNO Residuals have unit root")
+    print("  -> FAIL TO REJECT H_0: Variables are NOT cointegrated")
+    print("  -> Relationship may be spurious")
 
 # %%
 # Alternative: Using coint function
@@ -1007,18 +1007,18 @@ print(f"p-value: {coint_pval:.4f}")
 print(f"Critical values: {coint_crit}")
 
 if coint_pval < 0.05:
-    print("\n✓ p-value < 0.05 → COINTEGRATED")
-    print("  → Can estimate error correction model")
+    print("\nYES p-value < 0.05 -> COINTEGRATED")
+    print("  -> Can estimate error correction model")
 else:
-    print("\n✗ p-value ≥ 0.05 → NOT cointegrated")
-    print("  → Use first differences instead")
+    print("\nNO p-value >= 0.05 -> NOT cointegrated")
+    print("  -> Use first differences instead")
 
 # %%
 # Error Correction Model (ECM)
 print("\n\nERROR CORRECTION MODEL (ECM)")
 print("=" * 70)
-print("Model: Δy_t = γ + θ₁·Δx_t + θ₂·û_{t-1} + error")
-print("where û_{t-1} = y_{t-1} - β̂·x_{t-1} (lagged residual)")
+print("Model: Deltay_t = gamma + theta_1*Deltax_t + theta_2*u_hat_{t-1} + error")
+print("where u_hat_{t-1} = y_{t-1} - beta_hat*x_{t-1} (lagged residual)")
 
 # Create variables for ECM
 coint_data["dy"] = coint_data["y"].diff()
@@ -1045,23 +1045,23 @@ print("\nINTERPRETATION:")
 theta_1 = ecm.params["dx"]
 theta_2 = ecm.params["resid_lag1"]
 
-print(f"  θ₁ (short-run effect): {theta_1:.4f}")
-print("    → Immediate impact of Δx on Δy")
+print(f"  theta_1 (short-run effect): {theta_1:.4f}")
+print("    -> Immediate impact of Deltax on Deltay")
 
-print(f"\n  θ₂ (error correction): {theta_2:.4f}")
+print(f"\n  theta_2 (error correction): {theta_2:.4f}")
 if theta_2 < 0:
-    print("    ✓ Negative (as expected)")
-    print("    → If y_{t-1} > β̂·x_{t-1} (above equilibrium), Δy_t decreases")
+    print("    YES Negative (as expected)")
+    print("    -> If y_{t-1} > beta_hat*x_{t-1} (above equilibrium), Deltay_t decreases")
     print(
-        f"    → Adjustment speed: {abs(theta_2):.1%} of deviation corrected per period"
+        f"    -> Adjustment speed: {abs(theta_2):.1%} of deviation corrected per period"
     )
 else:
-    print("    ✗ Positive (unexpected)")
-    print("    → May indicate misspecification")
+    print("    NO Positive (unexpected)")
+    print("    -> May indicate misspecification")
 
-print(f"\n  Long-run effect: β̂ = {beta_coint:.4f}")
-print("    → From cointegrating regression")
-print(f"    → Permanent 1-unit increase in x → {beta_coint:.2f}-unit increase in y")
+print(f"\n  Long-run effect: beta_hat = {beta_coint:.4f}")
+print("    -> From cointegrating regression")
+print(f"    -> Permanent 1-unit increase in x -> {beta_coint:.2f}-unit increase in y")
 
 # %% [markdown]
 # ## 18.5 Forecasting
@@ -1155,7 +1155,7 @@ display(phillips[["unem", "inf", "unem_1", "inf_1"]].describe().round(2))
 # Model 1: AR(1) without inflation
 print("\nMODEL 1: AR(1) - Unemployment Only")
 print("=" * 70)
-print("Specification: unem_t = α + β₁·unem_{t-1} + u_t")
+print("Specification: unem_t = alpha + beta_1*unem_{t-1} + u_t")
 
 model_1 = smf.ols(formula="unem ~ unem_1", data=phillips[train_mask]).fit()
 
@@ -1175,17 +1175,17 @@ print(f"Adj. R-squared: {model_1.rsquared_adj:.4f}")
 
 print("\nINTERPRETATION:")
 beta_1 = model_1.params["unem_1"]
-print(f"  β̂₁ = {beta_1:.4f}")
+print(f"  beta_hat_1 = {beta_1:.4f}")
 if 0 < beta_1 < 1:
-    print("  → Unemployment is persistent (0 < β₁ < 1)")
-    print("  → High unemployment today → high unemployment tomorrow")
-    print("  → But mean-reverting (β₁ < 1)")
+    print("  -> Unemployment is persistent (0 < beta_1 < 1)")
+    print("  -> High unemployment today -> high unemployment tomorrow")
+    print("  -> But mean-reverting (beta_1 < 1)")
 
 # %%
 # Model 2: ARX with inflation
 print("\nMODEL 2: ARX - Unemployment and Inflation")
 print("=" * 70)
-print("Specification: unem_t = α + β₁·unem_{t-1} + β₂·inf_{t-1} + u_t")
+print("Specification: unem_t = alpha + beta_1*unem_{t-1} + beta_2*inf_{t-1} + u_t")
 
 model_2 = smf.ols(formula="unem ~ unem_1 + inf_1", data=phillips[train_mask]).fit()
 
@@ -1206,25 +1206,25 @@ print(f"Adj. R-squared: {model_2.rsquared_adj:.4f}")
 print("\nINTERPRETATION:")
 beta_inf = model_2.params["inf_1"]
 pval_inf = model_2.pvalues["inf_1"]
-print(f"  β̂₂ (inflation effect): {beta_inf:.4f}")
+print(f"  beta_hat_2 (inflation effect): {beta_inf:.4f}")
 if pval_inf < 0.05:
-    print(f"  ✓ Statistically significant (p = {pval_inf:.4f})")
+    print(f"  YES Statistically significant (p = {pval_inf:.4f})")
     if beta_inf < 0:
-        print("  → Higher inflation → lower unemployment (Phillips curve)")
+        print("  -> Higher inflation -> lower unemployment (Phillips curve)")
     else:
-        print("  → Higher inflation → higher unemployment")
+        print("  -> Higher inflation -> higher unemployment")
 else:
-    print(f"  ✗ Not statistically significant (p = {pval_inf:.4f})")
-    print("  → Inflation may not help forecast unemployment")
+    print(f"  NO Not statistically significant (p = {pval_inf:.4f})")
+    print("  -> Inflation may not help forecast unemployment")
 
 # Compare models
 print("\nMODEL COMPARISON:")
-print(f"  Model 1 (AR only):  R² = {model_1.rsquared:.4f}")
-print(f"  Model 2 (with inf): R² = {model_2.rsquared:.4f}")
+print(f"  Model 1 (AR only):  R^2 = {model_1.rsquared:.4f}")
+print(f"  Model 2 (with inf): R^2 = {model_2.rsquared:.4f}")
 if model_2.rsquared > model_1.rsquared:
-    print("  → Model 2 fits better in-sample")
+    print("  -> Model 2 fits better in-sample")
 else:
-    print("  → Model 1 fits better in-sample")
+    print("  -> Model 1 fits better in-sample")
 
 # %%
 # Forecasts with 95% intervals
@@ -1274,10 +1274,10 @@ print(f"  Model 2 (with inf): {rmse_2:.4f}")
 
 if rmse_1 < rmse_2:
     improvement = ((rmse_2 - rmse_1) / rmse_2) * 100
-    print(f"  ✓ Model 1 is better (RMSE {improvement:.1f}% lower)")
+    print(f"  YES Model 1 is better (RMSE {improvement:.1f}% lower)")
 else:
     improvement = ((rmse_1 - rmse_2) / rmse_1) * 100
-    print(f"  ✓ Model 2 is better (RMSE {improvement:.1f}% lower)")
+    print(f"  YES Model 2 is better (RMSE {improvement:.1f}% lower)")
 
 # MAE
 mae_1 = np.mean(np.abs(e1))
@@ -1289,22 +1289,22 @@ print(f"  Model 2 (with inf): {mae_2:.4f}")
 
 if mae_1 < mae_2:
     improvement = ((mae_2 - mae_1) / mae_2) * 100
-    print(f"  ✓ Model 1 is better (MAE {improvement:.1f}% lower)")
+    print(f"  YES Model 1 is better (MAE {improvement:.1f}% lower)")
 else:
     improvement = ((mae_1 - mae_2) / mae_1) * 100
-    print(f"  ✓ Model 2 is better (MAE {improvement:.1f}% lower)")
+    print(f"  YES Model 2 is better (MAE {improvement:.1f}% lower)")
 
 print("\nKEY INSIGHT:")
 if rmse_1 < rmse_2 and mae_1 < mae_2:
-    print("  → Simple AR(1) model forecasts better than model with inflation")
-    print("  → Adding inflation does not improve out-of-sample forecasts")
-    print("  → Simpler model preferred (parsimony principle)")
+    print("  -> Simple AR(1) model forecasts better than model with inflation")
+    print("  -> Adding inflation does not improve out-of-sample forecasts")
+    print("  -> Simpler model preferred (parsimony principle)")
 elif rmse_2 < rmse_1 and mae_2 < mae_1:
-    print("  → Model with inflation forecasts better")
-    print("  → Inflation provides useful information for forecasting unemployment")
+    print("  -> Model with inflation forecasts better")
+    print("  -> Inflation provides useful information for forecasting unemployment")
 else:
-    print("  → Mixed results: one metric favors Model 1, another favors Model 2")
-    print("  → Consider context and forecast horizon")
+    print("  -> Mixed results: one metric favors Model 1, another favors Model 2")
+    print("  -> Consider context and forecast horizon")
 
 # %%
 # Visualization
@@ -1369,10 +1369,10 @@ plt.tight_layout()
 plt.show()
 
 print("\nOBSERVATIONS:")
-print("✓ Forecast intervals widen for multi-step forecasts (cumulative uncertainty)")
-print("✓ Both models track the general trend")
-print("✓ Actual unemployment sometimes falls outside forecast intervals")
-print("  → Unexpected shocks (recessions, policy changes)")
+print("YES Forecast intervals widen for multi-step forecasts (cumulative uncertainty)")
+print("YES Both models track the general trend")
+print("YES Actual unemployment sometimes falls outside forecast intervals")
+print("  -> Unexpected shocks (recessions, policy changes)")
 
 # %% [markdown]
 # ## 18.6 Event Studies with Control Groups
@@ -1425,28 +1425,28 @@ print("=" * 70)
 
 print("\nCONCEPT: Difference-in-Differences with Time Series")
 print("\nSETUP:")
-print("  - Treatment group: Affected by policy/event at time T₀")
+print("  - Treatment group: Affected by policy/event at time T_0")
 print("  - Control group: Not affected")
-print("  - Compare trends before and after T₀")
+print("  - Compare trends before and after T_0")
 
 print("\nMODEL:")
-print("  y_{it} = α + δ₀·Treat_i + δ₁·Post_t + β·(Treat_i × Post_t) + u_{it}")
+print("  y_{it} = alpha + delta_0*Treat_i + delta_1*Post_t + beta*(Treat_i x Post_t) + u_{it}")
 
 print("\nINTERPRETATION:")
-print("  α: Baseline level (control group, pre-period)")
-print("  δ₀: Pre-treatment difference (treatment - control)")
-print("  δ₁: Time trend (affects both groups)")
-print("  β: TREATMENT EFFECT (difference-in-differences)")
+print("  alpha: Baseline level (control group, pre-period)")
+print("  delta_0: Pre-treatment difference (treatment - control)")
+print("  delta_1: Time trend (affects both groups)")
+print("  beta: TREATMENT EFFECT (difference-in-differences)")
 
 print("\nKEY ASSUMPTION: Parallel Trends")
-print("  → Without treatment, both groups would follow similar trends")
-print("  → Testable: check if trends are parallel in pre-period")
+print("  -> Without treatment, both groups would follow similar trends")
+print("  -> Testable: check if trends are parallel in pre-period")
 
 print("\nEXAMPLE APPLICATIONS:")
-print("  • Minimum wage increase in one state (control: neighboring state)")
-print("  • Tax policy change in one region")
-print("  • Environmental regulation in one industry")
-print("  • COVID-19 policy (e.g., lockdowns in some regions)")
+print("  * Minimum wage increase in one state (control: neighboring state)")
+print("  * Tax policy change in one region")
+print("  * Environmental regulation in one industry")
+print("  * COVID-19 policy (e.g., lockdowns in some regions)")
 
 # %%
 # Simulation: DiD with Time Series
@@ -1543,15 +1543,15 @@ plt.tight_layout()
 plt.show()
 
 print("\nOBSERVATIONS:")
-print("✓ Pre-treatment: Both groups follow parallel trends")
-print("✓ Post-treatment: Treatment group jumps up (treatment effect)")
-print("  → Difference-in-differences captures this jump")
+print("YES Pre-treatment: Both groups follow parallel trends")
+print("YES Post-treatment: Treatment group jumps up (treatment effect)")
+print("  -> Difference-in-differences captures this jump")
 
 # %%
 # Estimate DiD model
 print("\nDIFFERENCE-IN-DIFFERENCES ESTIMATION")
 print("=" * 70)
-print("Model: y = α + δ₀·Treat + δ₁·Post + β·(Treat × Post) + u")
+print("Model: y = alpha + delta_0*Treat + delta_1*Post + beta*(Treat x Post) + u")
 
 did_model = smf.ols(formula="y ~ treat + post + treat_post", data=did_data).fit()
 
@@ -1574,30 +1574,30 @@ delta_0 = did_model.params["treat"]
 delta_1 = did_model.params["post"]
 beta_dd = did_model.params["treat_post"]
 
-print(f"  α̂ (baseline): {alpha:.4f}")
-print("    → Control group level in pre-period")
+print(f"  alpha_hat (baseline): {alpha:.4f}")
+print("    -> Control group level in pre-period")
 
-print(f"\n  δ̂₀ (group difference): {delta_0:.4f}")
-print(f"    → Treatment group {delta_0:.2f} units higher pre-treatment")
+print(f"\n  delta_hat_0 (group difference): {delta_0:.4f}")
+print(f"    -> Treatment group {delta_0:.2f} units higher pre-treatment")
 
-print(f"\n  δ̂₁ (time trend): {delta_1:.4f}")
-print(f"    → Both groups increase {delta_1:.2f} units in post-period")
+print(f"\n  delta_hat_1 (time trend): {delta_1:.4f}")
+print(f"    -> Both groups increase {delta_1:.2f} units in post-period")
 
-print(f"\n  β̂ (treatment effect): {beta_dd:.4f}")
-print("    ✓ CAUSAL EFFECT of treatment")
-print(f"    → Treatment causes {beta_dd:.2f}-unit increase in outcome")
-print(f"    → True effect = 2.0, estimated = {beta_dd:.2f}")
+print(f"\n  beta_hat (treatment effect): {beta_dd:.4f}")
+print("    YES CAUSAL EFFECT of treatment")
+print(f"    -> Treatment causes {beta_dd:.2f}-unit increase in outcome")
+print(f"    -> True effect = 2.0, estimated = {beta_dd:.2f}")
 
 # Compare to truth
 if abs(beta_dd - 2.0) < 0.5:
-    print("\n✓ Estimated effect close to true effect (2.0)")
+    print("\nYES Estimated effect close to true effect (2.0)")
 else:
-    print("\n⚠ Estimated effect differs from true effect (sampling variation)")
+    print("\nWARNING Estimated effect differs from true effect (sampling variation)")
 
 print("\nCONCLUSION:")
-print("  → Difference-in-differences successfully identifies treatment effect")
-print("  → Control group accounts for common time trends")
-print("  → Critical assumption: parallel trends (testable in pre-period)")
+print("  -> Difference-in-differences successfully identifies treatment effect")
+print("  -> Control group accounts for common time trends")
+print("  -> Critical assumption: parallel trends (testable in pre-period)")
 
 # %% [markdown]
 # ## Summary
@@ -1616,7 +1616,7 @@ print("  → Critical assumption: parallel trends (testable in pre-period)")
 #
 # 3. **Spurious Regression**:
 #    - False relationships between non-stationary series
-#    - Detection: R² > DW, non-stationary residuals
+#    - Detection: R^2 > DW, non-stationary residuals
 #    - Solution: First differences or cointegration
 #
 # 4. **Cointegration**:
@@ -1639,21 +1639,21 @@ print("  → Critical assumption: parallel trends (testable in pre-period)")
 #
 # ```
 # Are your variables trending over time?
-# ├─ NO → Standard OLS regression (Chapters 10-12)
-# └─ YES
-#    ├─ Test for unit roots (ADF test)
-#    │  ├─ Both stationary (I(0))
-#    │  │  └─ → Use levels in regression
-#    │  └─ At least one non-stationary (I(1))
-#    │     ├─ Test for cointegration
-#    │     │  ├─ Cointegrated
-#    │     │  │  └─ → Error correction model (ECM)
-#    │     │  └─ Not cointegrated
-#    │     │     └─ → Use first differences
-#    │     └─ Forecasting?
-#    │        ├─ One-step ahead → Direct forecast
-#    │        ├─ Multi-step → Iterate forecasts
-#    │        └─ Evaluate: RMSE, MAE, forecast intervals
+# |- NO -> Standard OLS regression (Chapters 10-12)
+# |- YES
+#    |- Test for unit roots (ADF test)
+#    |  |- Both stationary (I(0))
+#    |  |  |- -> Use levels in regression
+#    |  |- At least one non-stationary (I(1))
+#    |     |- Test for cointegration
+#    |     |  |- Cointegrated
+#    |     |  |  |- -> Error correction model (ECM)
+#    |     |  |- Not cointegrated
+#    |     |     |- -> Use first differences
+#    |     |- Forecasting?
+#    |        |- One-step ahead -> Direct forecast
+#    |        |- Multi-step -> Iterate forecasts
+#    |        |- Evaluate: RMSE, MAE, forecast intervals
 # ```
 #
 # ### Key Takeaways
@@ -1662,7 +1662,7 @@ print("  → Critical assumption: parallel trends (testable in pre-period)")
 # 2. **Spurious regression is a real danger** with non-stationary data
 # 3. **Cointegration** allows using levels when a long-run relationship exists
 # 4. **Error correction models** combine long-run and short-run dynamics
-# 5. **Forecasting** requires out-of-sample evaluation (not just R²)
+# 5. **Forecasting** requires out-of-sample evaluation (not just R^2)
 # 6. **Event studies** need parallel trends assumption for causal inference
 #
 # ### Best Practices

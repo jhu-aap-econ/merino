@@ -346,9 +346,9 @@ shape_info
 # Design matrix X = [1, hsGPA, ACT] for each observation
 X = pd.DataFrame(
     {
-        "const": 1,  # Intercept column (β₀)
-        "hsGPA": gpa1["hsGPA"],  # High school GPA (β₁)
-        "ACT": gpa1["ACT"],  # ACT test score (β₂)
+        "const": 1,  # Intercept column (beta_0)
+        "hsGPA": gpa1["hsGPA"],  # High school GPA (beta_1)
+        "ACT": gpa1["ACT"],  # ACT test score (beta_2)
     },
 )
 
@@ -364,7 +364,7 @@ y2, X2 = pt.dmatrices(
 matrix_info = pd.DataFrame(
     {
         "Description": ["Design matrix dimensions", "Interpretation"],
-        "Value": [f"{X.shape}", "(n observations × k+1 variables)"],
+        "Value": [f"{X.shape}", "(n observations x k+1 variables)"],
     },
 )
 display(matrix_info)
@@ -374,35 +374,35 @@ X.head()
 The code above constructs the $X$ matrix and $y$ vector from the `gpa1` data.  The `patsy` library provides a convenient way to create design matrices directly from formulas, which is often more efficient for complex models.
 
 ```python
-# Calculate OLS estimates using the matrix formula: β̂ = (X'X)⁻¹X'y
+# Calculate OLS estimates using the matrix formula: beta_hat = (X'X)^-^1X'y
 
 # Step 1: Convert to numpy arrays for matrix operations
-X_array = np.array(X)  # Design matrix as numpy array (n × k+1)
-y_array = np.array(y).reshape(n, 1)  # Dependent variable as column vector (n × 1)
+X_array = np.array(X)  # Design matrix as numpy array (n x k+1)
+y_array = np.array(y).reshape(n, 1)  # Dependent variable as column vector (n x 1)
 
 # Step 2: Calculate intermediate matrices for clarity
-XtX = X_array.T @ X_array  # X'X matrix (k+1 × k+1)
-Xty = X_array.T @ y_array  # X'y vector (k+1 × 1)
+XtX = X_array.T @ X_array  # X'X matrix (k+1 x k+1)
+Xty = X_array.T @ y_array  # X'y vector (k+1 x 1)
 
 # Display matrix operation results
 matrix_ops = pd.DataFrame(
     {
         "Operation": ["X'X matrix", "X'X symmetry check", "X'y vector"],
         "Shape": [str(XtX.shape), "-", str(Xty.shape)],
-        "Result": ["(k+1 × k+1)", str(np.allclose(XtX, XtX.T)), "(k+1 × 1)"],
+        "Result": ["(k+1 x k+1)", str(np.allclose(XtX, XtX.T)), "(k+1 x 1)"],
     },
 )
 matrix_ops
 
 # Step 3: Apply OLS formula
-XtX_inverse = np.linalg.inv(XtX)  # (X'X)⁻¹
-beta_estimates = XtX_inverse @ Xty  # β̂ = (X'X)⁻¹X'y
+XtX_inverse = np.linalg.inv(XtX)  # (X'X)^-^1
+beta_estimates = XtX_inverse @ Xty  # beta_hat = (X'X)^-^1X'y
 
 # Display results
 coef_results = pd.DataFrame(
     {
         "Variable": ["Intercept", "hsGPA", "ACT"],
-        "Coefficient (β̂)": [beta_estimates[i, 0] for i in range(3)],
+        "Coefficient (beta_hat)": [beta_estimates[i, 0] for i in range(3)],
     },
 )
 coef_results
@@ -568,7 +568,7 @@ This assumption ensures that the variance of the error term is constant across a
 Under assumptions **MLR.1 through MLR.4** (linearity, random sampling, no perfect collinearity, and zero conditional mean), the OLS estimators are unbiased:
 $$E(\hat{\beta}_j) = \beta_j \text{ for } j = 0, 1, 2, \ldots, k$$
 
-This means that on average, across repeated random samples from the same population, the OLS estimates equal the true population parameters. Crucially, **homoscedasticity (MLR.5) is not required** for unbiasedness—only the first four assumptions are needed.
+This means that on average, across repeated random samples from the same population, the OLS estimates equal the true population parameters. Crucially, **homoscedasticity (MLR.5) is not required** for unbiasedness--only the first four assumptions are needed.
 
 **Theorem 3.2: Variance of OLS Estimators (MLR.1-MLR.5)**
 Under assumptions **MLR.1 through MLR.5** (including homoscedasticity), the variance-covariance matrix of the OLS estimators $\hat{\boldsymbol{\beta}} = (\hat{\beta}_0, \hat{\beta}_1, \ldots, \hat{\beta}_k)'$ conditional on the sample values of $\mathbf{X}$ is:
@@ -648,21 +648,21 @@ SER = np.sqrt(
 )  # mse_resid is Mean Squared Error of Residuals (estimated sigma^2)
 
 # Calculate VIF for hsGPA to assess multicollinearity
-# VIF measures how much the variance of β̂_hsGPA is inflated due to correlation with ACT
+# VIF measures how much the variance of beta_hat_hsGPA is inflated due to correlation with ACT
 
 # Step 1: Auxiliary regression - regress hsGPA on other predictors (just ACT here)
 auxiliary_regression = smf.ols(formula="hsGPA ~ ACT", data=gpa1)
 auxiliary_results = auxiliary_regression.fit()
-R2_auxiliary = auxiliary_results.rsquared  # R² from auxiliary regression
+R2_auxiliary = auxiliary_results.rsquared  # R^2 from auxiliary regression
 
-# Step 2: Calculate VIF using formula: VIF = 1 / (1 - R²)
+# Step 2: Calculate VIF using formula: VIF = 1 / (1 - R^2)
 VIF_hsGPA = 1 / (1 - R2_auxiliary)
 
 # VIF Calculation for hsGPA
 vif_results = pd.DataFrame(
     {
         "Metric": [
-            "R² from auxiliary regression",
+            "R^2 from auxiliary regression",
             "VIF calculation",
             "VIF for hsGPA",
             "Interpretation",
@@ -761,8 +761,8 @@ The Variance Inflation Factors calculated for the wage equation variables help u
 
 * **VIF = 1:** No correlation with other independent variables (ideal)
 * **1 < VIF < 5:** Moderate correlation (generally acceptable)
-* **5 ≤ VIF < 10:** High correlation (potential concern)
-* **VIF ≥ 10:** Very high correlation (serious multicollinearity problem)
+* **5 <= VIF < 10:** High correlation (potential concern)
+* **VIF >= 10:** Very high correlation (serious multicollinearity problem)
 
 **Key Points About Multicollinearity:**
 

@@ -113,7 +113,7 @@ roe_values = ceosal1[
 salary_values = ceosal1["salary"]  # Extract 'salary' (in $1000s) as dependent variable
 
 # Calculate OLS coefficients manually using the formula:
-# β̂₁ = Cov(x,y) / Var(x) and β̂₀ = ȳ - β̂₁x̄
+# beta_hat_1 = Cov(x,y) / Var(x) and beta_hat_0 = y_bar - beta_hat_1x_bar
 
 # Step 1: Calculate sample statistics
 covariance_roe_salary = np.cov(roe_values, salary_values)[1, 0]  # Sample covariance
@@ -122,8 +122,8 @@ mean_roe = np.mean(roe_values)  # Sample mean of ROE
 mean_salary = np.mean(salary_values)  # Sample mean of salary
 
 # Step 2: Apply OLS formulas
-slope_estimate = covariance_roe_salary / variance_roe  # β̂₁ = Cov(x,y)/Var(x)
-intercept_estimate = mean_salary - slope_estimate * mean_roe  # β̂₀ = ȳ - β̂₁x̄
+slope_estimate = covariance_roe_salary / variance_roe  # beta_hat_1 = Cov(x,y)/Var(x)
+intercept_estimate = mean_salary - slope_estimate * mean_roe  # beta_hat_0 = y_bar - beta_hat_1x_bar
 
 # Display results with clear formatting
 manual_results = pd.DataFrame(
@@ -168,7 +168,7 @@ regression_model = smf.ols(
     data=ceosal1,
 )
 fitted_results = regression_model.fit()  # Estimate parameters via OLS
-coefficient_estimates = fitted_results.params  # Extract β̂ estimates
+coefficient_estimates = fitted_results.params  # Extract beta_hat estimates
 
 # Display statsmodels results with additional statistics
 statsmodels_results = pd.DataFrame(

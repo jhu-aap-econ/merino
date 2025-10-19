@@ -261,8 +261,8 @@ y, X = pt.dmatrices(
     return_type="dataframe",
 )
 # Perform Breusch-Pagan test for heteroskedasticity
-# H₀: Var(u|X) = σ² (homoskedasticity)
-# H₁: Var(u|X) depends on X (heteroskedasticity)
+# H_0: Var(u|X) = sigma^2 (homoskedasticity)
+# H_1: Var(u|X) depends on X (heteroskedasticity)
 # Separator line removed
 # BREUSCH-PAGAN TEST FOR HETEROSKEDASTICITY
 # Separator line removed
@@ -299,9 +299,9 @@ significance_level = 0.05
 test_decision = pd.DataFrame(
     {
         "Decision": [
-            f"REJECT H₀ at {significance_level:.0%} level"
+            f"REJECT H_0 at {significance_level:.0%} level"
             if bp_lm_pvalue < significance_level
-            else f"FAIL TO REJECT H₀ at {significance_level:.0%} level",
+            else f"FAIL TO REJECT H_0 at {significance_level:.0%} level",
         ],
         "Conclusion": [
             "Evidence of heteroskedasticity detected"

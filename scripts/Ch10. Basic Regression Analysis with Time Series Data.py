@@ -85,7 +85,7 @@ data_info = pd.DataFrame(
 )
 data_info
 
-# Estimate static time series model: i3_t = β₀ + β₁*inf_t + β₂*def_t + u_t
+# Estimate static time series model: i3_t = beta_0 + beta_1*inf_t + beta_2*def_t + u_t
 # Static = all variables from same time period (no lags)
 # Q() protects variable names that could be Python keywords or operators
 static_model = smf.ols(

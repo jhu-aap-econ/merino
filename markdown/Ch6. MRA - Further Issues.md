@@ -85,8 +85,8 @@ table
 **Interpretation of Results:**
 
 - **`b` (bwght):** This column shows the coefficients when birth weight is in ounces and cigarettes are in individual units.  For example, the coefficient for `cigs` is approximately -0.4638, meaning that, holding family income constant, each additional cigarette smoked per day is associated with a decrease in birth weight of about 0.46 ounces.
-- **`b_lbs` and `b_lbs2` (bwght_lbs):** These columns show the coefficients when birth weight is converted to pounds. Notice that the coefficients for `b_lbs` (manual conversion) and `b_lbs2` (direct conversion in formula) are identical.  The coefficient for `cigs` is now approximately -0.0290. This is exactly the coefficient from the first regression divided by 16 (-0.4638 / 16 ≈ -0.0290), as expected.  An additional cigarette is now associated with a decrease of about 0.029 pounds in birth weight.
-- **`b_packs` (packs of cigs):**  Here, cigarettes are converted to packs (assuming 20 cigarettes per pack) within the formula. The coefficient for `I(cigs/20)` is approximately -9.2762. This is 20 times the coefficient from the first regression (-0.4638 * 20 ≈ -9.276), as expected. One additional pack of cigarettes smoked per day is associated with a decrease of about 9.27 ounces in birth weight.
+- **`b_lbs` and `b_lbs2` (bwght_lbs):** These columns show the coefficients when birth weight is converted to pounds. Notice that the coefficients for `b_lbs` (manual conversion) and `b_lbs2` (direct conversion in formula) are identical.  The coefficient for `cigs` is now approximately -0.0290. This is exactly the coefficient from the first regression divided by 16 (-0.4638 / 16 ~= -0.0290), as expected.  An additional cigarette is now associated with a decrease of about 0.029 pounds in birth weight.
+- **`b_packs` (packs of cigs):**  Here, cigarettes are converted to packs (assuming 20 cigarettes per pack) within the formula. The coefficient for `I(cigs/20)` is approximately -9.2762. This is 20 times the coefficient from the first regression (-0.4638 * 20 ~= -9.276), as expected. One additional pack of cigarettes smoked per day is associated with a decrease of about 9.27 ounces in birth weight.
 
 **Key takeaway:** Scaling the dependent or independent variables changes the scale of the corresponding regression coefficients but does not fundamentally alter the relationship being estimated.  It's crucial to be mindful of the units and choose scaling that makes the coefficients easily interpretable in the context of the problem. Using `I()` within the formula allows for convenient on-the-fly scaling.
 
@@ -291,7 +291,7 @@ pd.DataFrame(
 - Turning point: $\text{rooms}^* = -(-0.5451)/(2 \times 0.0623) = 4.38$ rooms
 - Marginal effect at mean (6.28 rooms): $-0.5451 + 2(0.0623)(6.28) = 0.237$ log points per room
 - Since dependent variable is log(price), a one-room increase at the mean raises price by approximately 23.7%
-- Units: The coefficients have units of (log dollars)/(room) and (log dollars)/(room²)
+- Units: The coefficients have units of (log dollars)/(room) and (log dollars)/(room^2)
 
 **Finding the Turning Point for Rooms:**
 
@@ -410,9 +410,9 @@ results_table = pd.DataFrame(
             "Main Effect",  # atndrte
             "Main Effect",  # priGPA
             "Control",  # ACT
-            "Quadratic",  # priGPA²
-            "Quadratic",  # ACT²
-            "Interaction",  # atndrte×priGPA
+            "Quadratic",  # priGPA^2
+            "Quadratic",  # ACT^2
+            "Interaction",  # atndrtexpriGPA
         ],
     },
 )
@@ -442,7 +442,7 @@ Let's calculate the estimated partial effect of attendance rate on `stndfnl` for
 
 ```python
 # Calculate partial effect of attendance at specific GPA values
-# ∂stndfnl/∂atndrte = β₁ + β₆*priGPA
+# dstndfnl/datndrte = beta_1 + beta_6*priGPA
 
 # Extract coefficients
 coefficients = interaction_results.params
@@ -464,7 +464,7 @@ pd.DataFrame(
         ],
         "Value": [
             f"{coefficients['atndrte']:.4f}",
-            f"{mean_priGPA:.2f} × {coefficients['atndrte:priGPA']:.4f}",
+            f"{mean_priGPA:.2f} x {coefficients['atndrte:priGPA']:.4f}",
             f"{partial_effect_at_mean:.4f}",
         ],
     },
@@ -493,7 +493,7 @@ We can use the `f_test` method in `statsmodels` to perform this test:
 ```python
 # F test for partial effect at priGPA=2.59:
 # We need to create the linear combination manually
-# Partial effect = β_atndrte + 2.59 * β_interaction
+# Partial effect = beta_atndrte + 2.59 * beta_interaction
 R = np.zeros((1, len(interaction_results.params)))
 R[0, interaction_results.params.index.get_loc("atndrte")] = 1
 R[0, interaction_results.params.index.get_loc("atndrte:priGPA")] = 2.59

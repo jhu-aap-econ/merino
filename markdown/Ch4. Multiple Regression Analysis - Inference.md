@@ -46,7 +46,7 @@ For asymptotically valid inference in large samples, we need only the Gauss-Mark
 - The t-statistics approximately follow the t-distribution (or standard normal for large $n$)
 - The F-statistics approximately follow the F-distribution
 
-**Practical Implication:** With moderate to large sample sizes (typically $n \geq 30$ or more), the t-tests and F-tests are robust to violations of normality, making them widely applicable even when errors are not normally distributed. Throughout this chapter, we assume sufficient conditions for valid inference—either MLR.1-MLR.6 for exact results or MLR.1-MLR.5 with large $n$ for asymptotic results.
+**Practical Implication:** With moderate to large sample sizes (typically $n \geq 30$ or more), the t-tests and F-tests are robust to violations of normality, making them widely applicable even when errors are not normally distributed. Throughout this chapter, we assume sufficient conditions for valid inference--either MLR.1-MLR.6 for exact results or MLR.1-MLR.5 with large $n$ for asymptotic results.
 
 **Summary Table: Assumptions Required for Different Properties**
 
@@ -129,10 +129,10 @@ We will perform hypothesis tests on the coefficients $\beta_1$, $\beta_2$, and $
 # Calculate critical values for hypothesis testing
 # These are the thresholds for rejecting H0 at different significance levels
 
-significance_levels = np.array([0.05, 0.01])  # α = 5% and 1%
+significance_levels = np.array([0.05, 0.01])  # alpha = 5% and 1%
 degrees_freedom = 137  # Will be n - k - 1 from our regression
 
-# Two-sided critical values: P(|t| > c) = α
+# Two-sided critical values: P(|t| > c) = alpha
 critical_values_t = stats.t.ppf(1 - significance_levels / 2, degrees_freedom)
 
 # Display critical values
@@ -143,10 +143,10 @@ crit_val_df = pd.DataFrame(
             f"{significance_levels[1]:.0%}",
         ],
         "Critical Value": [
-            f"±{critical_values_t[0]:.3f}",
-            f"±{critical_values_t[1]:.3f}",
+            f"+/-{critical_values_t[0]:.3f}",
+            f"+/-{critical_values_t[1]:.3f}",
         ],
-        "Reject H₀ if": [
+        "Reject H_0 if": [
             f"|t-stat| > {critical_values_t[0]:.3f}",
             f"|t-stat| > {critical_values_t[1]:.3f}",
         ],
@@ -165,7 +165,7 @@ cv_n = stats.norm.ppf(1 - alpha / 2)  # Two-sided critical values
 pd.DataFrame(
     {
         "Alpha": [f"{alpha[0] * 100}%", f"{alpha[1] * 100}%"],
-        "Critical Values": [f"±{cv_n[0]:.3f}", f"±{cv_n[1]:.3f}"],
+        "Critical Values": [f"+/-{cv_n[0]:.3f}", f"+/-{cv_n[1]:.3f}"],
     },
 )
 ```
@@ -196,18 +196,18 @@ This code runs the OLS regression of `colGPA` on `hsGPA`, `ACT`, and `skipped` u
 # This demonstrates how t-statistics and p-values are computed
 
 # Extract estimated coefficients and their standard errors
-coefficient_estimates = results.params  # β̂ from OLS
-standard_errors = results.bse  # SE(β̂)
+coefficient_estimates = results.params  # beta_hat from OLS
+standard_errors = results.bse  # SE(beta_hat)
 
-# Calculate t-statistics for H₀: βⱼ = 0
-# Formula: t = (β̂ⱼ - 0) / SE(β̂ⱼ)
+# Calculate t-statistics for H_0: beta_j = 0
+# Formula: t = (beta_hat_j - 0) / SE(beta_hat_j)
 t_statistics = coefficient_estimates / standard_errors
 
 # Manual Hypothesis Testing Calculations:
 manual_test_results = pd.DataFrame(
     {
         "Variable": coefficient_estimates.index,
-        "β̂": coefficient_estimates.values,
+        "beta_hat": coefficient_estimates.values,
         "SE": standard_errors.values,
         "t-statistic": t_statistics.values,
     },
@@ -276,7 +276,7 @@ cv_t = stats.t.ppf(1 - alpha / 2, 522)  # Two-sided critical values
 pd.DataFrame(
     {
         "Alpha": [f"{alpha[0] * 100}%", f"{alpha[1] * 100}%"],
-        "Critical Values (t-dist, df=522)": [f"±{cv_t[0]:.3f}", f"±{cv_t[1]:.3f}"],
+        "Critical Values (t-dist, df=522)": [f"+/-{cv_t[0]:.3f}", f"+/-{cv_t[1]:.3f}"],
     },
 )
 ```
@@ -291,7 +291,7 @@ cv_n = stats.norm.ppf(1 - alpha / 2)  # Two-sided critical values
 pd.DataFrame(
     {
         "Alpha": [f"{alpha[0] * 100}%", f"{alpha[1] * 100}%"],
-        "Critical Values": [f"±{cv_n[0]:.3f}", f"±{cv_n[1]:.3f}"],
+        "Critical Values": [f"+/-{cv_n[0]:.3f}", f"+/-{cv_n[1]:.3f}"],
     },
 )
 ```

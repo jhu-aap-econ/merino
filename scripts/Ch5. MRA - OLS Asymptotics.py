@@ -24,7 +24,7 @@
 #
 # **1. Consistency:** $\hat{\beta}_j \xrightarrow{p} \beta_j$ as $n \to \infty$ for all $j = 0, 1, \ldots, k$
 #
-# The OLS estimators converge in probability to the true parameter values as the sample size grows large. Consistency is a weaker property than unbiasedness—it only requires that the estimator approaches the true value asymptotically. Notably, consistency does **not** require normality (MLR.6) or homoscedasticity (MLR.5).
+# The OLS estimators converge in probability to the true parameter values as the sample size grows large. Consistency is a weaker property than unbiasedness--it only requires that the estimator approaches the true value asymptotically. Notably, consistency does **not** require normality (MLR.6) or homoscedasticity (MLR.5).
 #
 # **2. Asymptotic Normality:** $\sqrt{n}(\hat{\beta}_j - \beta_j) \xrightarrow{d} N(0, \sigma^2_{\beta_j})$ as $n \to \infty$
 #
@@ -55,6 +55,9 @@ import statsmodels.formula.api as smf
 import wooldridge as woo
 from scipy import stats
 
+# Configure matplotlib to avoid font parsing issues
+plt.rcParams['mathtext.fontset'] = 'dejavusans'
+
 # %% [markdown]
 # ## 5.1 Simulation Exercises
 #
@@ -76,11 +79,11 @@ sample_sizes = [5, 10, 100, 1000]  # n: Small to large samples
 num_replications = 10000  # r: Number of Monte Carlo iterations
 
 # Define true population parameters (Data Generating Process)
-# True model: y = β₀ + β₁x + u, where u ~ N(0, 1)
-true_intercept = 1.0  # β₀ = 1
-true_slope = 0.5  # β₁ = 0.5
-x_std_dev = 1.0  # σₓ: Standard deviation of x
-x_mean = 4.0  # μₓ: Mean of x
+# True model: y = beta_0 + beta_1x + u, where u ~ N(0, 1)
+true_intercept = 1.0  # beta_0 = 1
+true_slope = 0.5  # beta_1 = 0.5
+x_std_dev = 1.0  # sigma_x: Standard deviation of x
+x_mean = 4.0  # mu_x: Mean of x
 
 # SIMULATION 1: OLS WITH NORMAL ERRORS
 sim_info = pd.DataFrame(
@@ -93,7 +96,7 @@ sim_info = pd.DataFrame(
         ],
         "Value": [
             f"y = {true_intercept} + {true_slope}*x + u",
-            f"X ~ N({x_mean}, {x_std_dev}²)",
+            f"X ~ N({x_mean}, {x_std_dev}^2)",
             "u ~ N(0, 1)",
             f"{num_replications:,}",
         ],
@@ -116,7 +119,7 @@ for idx, n in enumerate(sample_sizes):
     error_terms = stats.norm.rvs(0, 1, size=(num_replications, n))
 
     # Step 3: Generate y values using true DGP
-    # y = β₀ + β₁*x + u for each replication
+    # y = beta_0 + beta_1*x + u for each replication
     y_values = true_intercept + true_slope * x_values + error_terms
 
     # Step 4: Construct design matrix X (same for all replications)
@@ -129,15 +132,15 @@ for idx, n in enumerate(sample_sizes):
     XtX_inv_Xt = XtX_inv @ X_matrix.T
 
     # Step 6: Estimate coefficients for all replications at once
-    # β̂ = (X'X)^(-1)X'y for each replication
-    # Result: 2 × num_replications matrix (each column = one replication)
+    # beta_hat = (X'X)^(-1)X'y for each replication
+    # Result: 2 x num_replications matrix (each column = one replication)
     all_coefficients = XtX_inv_Xt @ y_values.T
-    slope_estimates = all_coefficients[1, :]  # Extract β̂₁ (second row)
+    slope_estimates = all_coefficients[1, :]  # Extract beta_hat_1 (second row)
 
     # Step 7: Calculate theoretical standard error for comparison
-    # Under CLM assumptions: Var(β̂) = σ²(X'X)^(-1), where σ² = 1
-    variance_matrix = XtX_inv  # Since σ² = 1
-    theoretical_se = np.sqrt(variance_matrix[1, 1])  # SE(β̂₁)
+    # Under CLM assumptions: Var(beta_hat) = sigma^2(X'X)^(-1), where sigma^2 = 1
+    variance_matrix = XtX_inv  # Since sigma^2 = 1
+    theoretical_se = np.sqrt(variance_matrix[1, 1])  # SE(beta_hat_1)
 
     # Step 8: Estimate empirical density using kernel density estimation
     kde = sm.nonparametric.KDEUnivariate(slope_estimates)
@@ -201,7 +204,7 @@ plt.show()  # Display the plot
 #
 # ### 5.1.2 Non-Normal Error Terms
 #
-# In this simulation, we investigate what happens when one of the classical linear model assumptions is violated – specifically, the assumption of normally distributed errors. We will use error terms that follow a standardized Chi-squared distribution with 1 degree of freedom.  Even when the error term is not normally distributed, under the Gauss-Markov conditions and assuming homoskedasticity and no autocorrelation, OLS is still BLUE. More importantly, even with non-normal errors, the OLS estimator is still consistent and asymptotically normally distributed under weaker conditions (CLT for sample averages). This simulation will demonstrate the asymptotic normality even with non-normal errors.
+# In this simulation, we investigate what happens when one of the classical linear model assumptions is violated - specifically, the assumption of normally distributed errors. We will use error terms that follow a standardized Chi-squared distribution with 1 degree of freedom.  Even when the error term is not normally distributed, under the Gauss-Markov conditions and assuming homoskedasticity and no autocorrelation, OLS is still BLUE. More importantly, even with non-normal errors, the OLS estimator is still consistent and asymptotically normally distributed under weaker conditions (CLT for sample averages). This simulation will demonstrate the asymptotic normality even with non-normal errors.
 #
 # First, let's visualize the shape of the standardized Chi-squared distribution compared to the standard normal distribution.
 
