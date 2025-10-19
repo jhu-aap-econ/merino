@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.17.3
+#       jupytext_version: 1.18.1
 #   kernelspec:
 #     display_name: merino
 #     language: python
@@ -48,62 +48,62 @@ import wooldridge as wool
 # ### Example 7.1: Hourly Wage Equation
 #
 # In this example, we will investigate how gender affects hourly wages, controlling for education, experience, and tenure. We will use the `wage1` dataset from the `wooldridge` package. The dataset includes information on wages, education, experience, tenure, and gender (female=1 if female, 0 if male).
-#
-# ```
-# # Load wage dataset for dummy variable analysis
-# wage1 = wool.data("wage1")
-#
-# # Examine the gender variable
-# # GENDER DISTRIBUTION IN DATASET
-# # Dataset size
-# pd.DataFrame({
-#     "Metric": ["Total observations"],
-#     "Value": [len(wage1)]
-# })
-#
-# # Gender distribution details
-# gender_dist = pd.DataFrame({
-#     "Gender": ["Males (female=0)", "Females (female=1)"],
-#     "Count": [(wage1['female'] == 0).sum(), (wage1['female'] == 1).sum()],
-#     "Percentage": [f"{(wage1['female'] == 0).mean():.1%}", f"{(wage1['female'] == 1).mean():.1%}"]
-# })
-# gender_dist
-#
-# # Estimate model with dummy variable for gender
-# dummy_model = smf.ols(
-#     formula="wage ~ female + educ + exper + tenure",
-#     data=wage1,
-# )
-# dummy_results = dummy_model.fit()
-#
-# # Create enhanced results table with interpretations
-# results_table = pd.DataFrame(
-#     {
-#         "Coefficient": dummy_results.params.round(4),
-#         "Std_Error": dummy_results.bse.round(4),
-#         "t_statistic": dummy_results.tvalues.round(3),
-#         "p_value": dummy_results.pvalues.round(4),
-#         "Interpretation": [
-#             "Baseline wage ($/hr) for males with zero education/experience",
-#             "Gender wage gap: females earn $1.81/hr less than males",
-#             "Return to education: $0.57/hr per year of schooling",
-#             "Return to experience: $0.03/hr per year",
-#             "Return to tenure: $0.14/hr per year with current employer",
-#         ],
-#     },
-# )
-#
-# # REGRESSION RESULTS: WAGE EQUATION WITH GENDER DUMMY
-# # Dependent Variable: wage (hourly wage in dollars)
-# # Reference Category: male (female=0)
-# results_table
-# # Model statistics
-# pd.DataFrame({
-#     "Metric": ["R-squared", "Number of observations"],
-#     "Value": [f"{dummy_results.rsquared:.4f}", int(dummy_results.nobs)]
-# })
-# ```
-#
+
+# %%
+# Load wage dataset for dummy variable analysis
+wage1 = wool.data("wage1")
+
+# Examine the gender variable
+# GENDER DISTRIBUTION IN DATASET
+# Dataset size
+pd.DataFrame({
+    "Metric": ["Total observations"],
+    "Value": [len(wage1)]
+})
+
+# Gender distribution details
+gender_dist = pd.DataFrame({
+    "Gender": ["Males (female=0)", "Females (female=1)"],
+    "Count": [(wage1['female'] == 0).sum(), (wage1['female'] == 1).sum()],
+    "Percentage": [f"{(wage1['female'] == 0).mean():.1%}", f"{(wage1['female'] == 1).mean():.1%}"]
+})
+gender_dist
+
+# Estimate model with dummy variable for gender
+dummy_model = smf.ols(
+    formula="wage ~ female + educ + exper + tenure",
+    data=wage1,
+)
+dummy_results = dummy_model.fit()
+
+# Create enhanced results table with interpretations
+results_table = pd.DataFrame(
+    {
+        "Coefficient": dummy_results.params.round(4),
+        "Std_Error": dummy_results.bse.round(4),
+        "t_statistic": dummy_results.tvalues.round(3),
+        "p_value": dummy_results.pvalues.round(4),
+        "Interpretation": [
+            "Baseline wage ($/hr) for males with zero education/experience",
+            "Gender wage gap: females earn $1.81/hr less than males",
+            "Return to education: $0.57/hr per year of schooling",
+            "Return to experience: $0.03/hr per year",
+            "Return to tenure: $0.14/hr per year with current employer",
+        ],
+    },
+)
+
+# REGRESSION RESULTS: WAGE EQUATION WITH GENDER DUMMY
+# Dependent Variable: wage (hourly wage in dollars)
+# Reference Category: male (female=0)
+results_table
+# Model statistics
+pd.DataFrame({
+    "Metric": ["R-squared", "Number of observations"],
+    "Value": [f"{dummy_results.rsquared:.4f}", int(dummy_results.nobs)]
+})
+
+# %% [markdown]
 # **Explanation:**
 #
 # - `wage ~ female + educ + exper + tenure`: This formula specifies the regression model. We are regressing `wage` (hourly wage) on `female` (dummy variable for gender), `educ` (years of education), `exper` (years of experience), and `tenure` (years with current employer).

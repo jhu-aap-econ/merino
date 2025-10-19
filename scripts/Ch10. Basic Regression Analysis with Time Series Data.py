@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.17.3
+#       jupytext_version: 1.18.1
 #   kernelspec:
 #     display_name: merino
 #     language: python
@@ -67,59 +67,59 @@ import wooldridge as wool  # For accessing Wooldridge textbook datasets
 # ### Example 10.2 Effects of Inflation and Deficits on Interest Rates
 #
 # We'll investigate how the 3-month T-bill interest rate (`i3`) is related to the inflation rate (`inf`) and the federal budget deficit (`def`) using annual data. This is a static model because we assume the interest rate in a given year depends only on inflation and the deficit in that *same* year.
-#
-# ```
-# # Load the interest rate/inflation/deficit dataset
-# intdef = wool.dataWoo("intdef")
-#
-# # Display dataset information
-# data_info = pd.DataFrame({
-#     "Metric": ["Number of years", "Number of variables", "Time span"],
-#     "Value": [
-#         intdef.shape[0],
-#         intdef.shape[1],
-#         f"{intdef.index.min()} to {intdef.index.max()}"
-#     ]
-# })
-# data_info
-#
-# # Estimate static time series model: i3_t = β₀ + β₁*inf_t + β₂*def_t + u_t
-# # Static = all variables from same time period (no lags)
-# # Q() protects variable names that could be Python keywords or operators
-# static_model = smf.ols(
-#     formula='i3 ~ Q("inf") + Q("def")',  # i3: 3-month T-bill rate
-#     data=intdef,
-# )
-#
-# # Fit model using OLS (appropriate under time series assumptions)
-# results = static_model.fit()
-#
-# # Display the results in a formatted table.
-# # We extract coefficients (b), standard errors (se), t-statistics (t), and p-values (pval).
-# table = pd.DataFrame(
-#     {
-#         "b": round(results.params, 4),  # Estimated coefficients
-#         "se": round(results.bse, 4),  # Standard errors of the coefficients
-#         "t": round(
-#             results.tvalues,
-#             4,
-#         ),  # t-statistics for hypothesis testing (H0: beta = 0)
-#         "pval": round(results.pvalues, 4),  # p-values associated with the t-statistics
-#     },
-# )
-# # Regression Results (Dependent Variable: i3)
-# table
-#
-# # Interpretation:
-# # - The coefficient on 'inf' (inflation) is 0.6059. This suggests that a 1 percentage point increase
-# #   in inflation is associated with about a 0.61 percentage point increase in the 3-month T-bill rate,
-# #   holding the deficit constant. This effect is statistically significant (p-value < 0.0001).
-# # - The coefficient on 'def' (deficit) is 0.5131. This suggests that a 1 percentage point increase
-# #   in the deficit (relative to GDP) is associated with about a 0.51 percentage point increase in the
-# #   T-bill rate, holding inflation constant. This effect is also statistically significant (p-value = 0.0001).
-# # - The intercept (1.7333) represents the predicted T-bill rate when both inflation and deficit are zero.
-# ```
-#
+
+# %%
+# Load the interest rate/inflation/deficit dataset
+intdef = wool.dataWoo("intdef")
+
+# Display dataset information
+data_info = pd.DataFrame({
+    "Metric": ["Number of years", "Number of variables", "Time span"],
+    "Value": [
+        intdef.shape[0],
+        intdef.shape[1],
+        f"{intdef.index.min()} to {intdef.index.max()}"
+    ]
+})
+data_info
+
+# Estimate static time series model: i3_t = β₀ + β₁*inf_t + β₂*def_t + u_t
+# Static = all variables from same time period (no lags)
+# Q() protects variable names that could be Python keywords or operators
+static_model = smf.ols(
+    formula='i3 ~ Q("inf") + Q("def")',  # i3: 3-month T-bill rate
+    data=intdef,
+)
+
+# Fit model using OLS (appropriate under time series assumptions)
+results = static_model.fit()
+
+# Display the results in a formatted table.
+# We extract coefficients (b), standard errors (se), t-statistics (t), and p-values (pval).
+table = pd.DataFrame(
+    {
+        "b": round(results.params, 4),  # Estimated coefficients
+        "se": round(results.bse, 4),  # Standard errors of the coefficients
+        "t": round(
+            results.tvalues,
+            4,
+        ),  # t-statistics for hypothesis testing (H0: beta = 0)
+        "pval": round(results.pvalues, 4),  # p-values associated with the t-statistics
+    },
+)
+# Regression Results (Dependent Variable: i3)
+table
+
+# Interpretation:
+# - The coefficient on 'inf' (inflation) is 0.6059. This suggests that a 1 percentage point increase
+#   in inflation is associated with about a 0.61 percentage point increase in the 3-month T-bill rate,
+#   holding the deficit constant. This effect is statistically significant (p-value < 0.0001).
+# - The coefficient on 'def' (deficit) is 0.5131. This suggests that a 1 percentage point increase
+#   in the deficit (relative to GDP) is associated with about a 0.51 percentage point increase in the
+#   T-bill rate, holding inflation constant. This effect is also statistically significant (p-value = 0.0001).
+# - The intercept (1.7333) represents the predicted T-bill rate when both inflation and deficit are zero.
+
+# %% [markdown]
 # ## 10.2 Time Series Data Types in Python
 #
 # Working with time series data often requires specific tools to handle dates and the temporal ordering of observations. `pandas` is the primary library in Python for this. It provides data structures like `DateTimeIndex` which allow for easy manipulation, plotting, and analysis of time series data.

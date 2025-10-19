@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.17.3
+#       jupytext_version: 1.18.1
 #   kernelspec:
 #     display_name: merino
 #     language: python
@@ -61,54 +61,53 @@ import wooldridge as wool  # Access to Wooldridge textbook datasets
 # We test for AR(1) serial correlation in the residuals of two Phillips curve models estimated using data up to 1996:
 # 1.  **Static Phillips Curve:** Inflation (`inf`) regressed on unemployment (`unem`).
 # 2.  **Expectations-Augmented Phillips Curve:** Change in inflation (`inf_diff1`) regressed on unemployment (`unem`).
-#
-# ```
-# # Load the Phillips curve data
-# phillips = wool.data("phillips")
-# T = len(phillips)
-#
-# # Define a yearly time series index starting in 1948
-# date_range = pd.date_range(start="1948", periods=T, freq="YE")
-# phillips.index = date_range.year
-#
-# # --- Test for Static Phillips Curve ---
-#
-# # Define subset of data up to 1996
-# yt96 = phillips["year"] <= 1996
-#
-# # 1. Estimate the static Phillips curve model
-# # Use Q() for 'inf' just in case, although not strictly needed here
-# reg_s = smf.ols(formula='Q("inf") ~ unem', data=phillips, subset=yt96)
-# results_s = reg_s.fit()
-#
-# # 2. Obtain residuals and create lagged residuals
-# phillips["resid_s"] = results_s.resid
-# phillips["resid_s_lag1"] = phillips["resid_s"].shift(1)
-#
-# # 3. Regress residuals on lagged residuals (using the same subset of data, note NaNs are handled)
-# # The intercept in this regression should be statistically indistinguishable from zero if the original model included one.
-# reg_test_s = smf.ols(formula="resid_s ~ resid_s_lag1", data=phillips, subset=yt96)
-# results_test_s = reg_test_s.fit()
-#
-# # Print the results of the residual regression
-# # --- Test for AR(1) Serial Correlation (Static Phillips Curve) ---
-# table_s = pd.DataFrame(
-#     {
-#         "b": round(results_test_s.params, 4),
-#         "se": round(results_test_s.bse, 4),
-#         "t": round(results_test_s.tvalues, 4),
-#         "pval": round(results_test_s.pvalues, 4),
-#     },
-# )
-# # Regression: resid_s ~ resid_s_lag1
-# table_s
-#
-# # Interpretation (Static Phillips Curve):
-# # The coefficient on the lagged residual (resid_s_lag1) is 0.5730, and it is highly
-# # statistically significant (p-value = 0.0000). This provides strong evidence of positive
-# # AR(1) serial correlation in the errors of the static Phillips curve model.
-# # OLS standard errors for the original regression are likely invalid.
-# ```
+
+# %%
+# Load the Phillips curve data
+phillips = wool.data("phillips")
+T = len(phillips)
+
+# Define a yearly time series index starting in 1948
+date_range = pd.date_range(start="1948", periods=T, freq="YE")
+phillips.index = date_range.year
+
+# --- Test for Static Phillips Curve ---
+
+# Define subset of data up to 1996
+yt96 = phillips["year"] <= 1996
+
+# 1. Estimate the static Phillips curve model
+# Use Q() for 'inf' just in case, although not strictly needed here
+reg_s = smf.ols(formula='Q("inf") ~ unem', data=phillips, subset=yt96)
+results_s = reg_s.fit()
+
+# 2. Obtain residuals and create lagged residuals
+phillips["resid_s"] = results_s.resid
+phillips["resid_s_lag1"] = phillips["resid_s"].shift(1)
+
+# 3. Regress residuals on lagged residuals (using the same subset of data, note NaNs are handled)
+# The intercept in this regression should be statistically indistinguishable from zero if the original model included one.
+reg_test_s = smf.ols(formula="resid_s ~ resid_s_lag1", data=phillips, subset=yt96)
+results_test_s = reg_test_s.fit()
+
+# Print the results of the residual regression
+# --- Test for AR(1) Serial Correlation (Static Phillips Curve) ---
+table_s = pd.DataFrame(
+    {
+        "b": round(results_test_s.params, 4),
+        "se": round(results_test_s.bse, 4),
+        "t": round(results_test_s.tvalues, 4),
+        "pval": round(results_test_s.pvalues, 4),
+    },
+)
+# Regression: resid_s ~ resid_s_lag1
+table_s
+
+# Interpretation (Static Phillips Curve):
+# The coefficient on the lagged residual (resid_s_lag1) is 0.5730, and it is highly
+# statistically significant (p-value = 0.0000). This provides strong evidence of positive
+# AR(1) serial correlation in the errors of the static Phillips curve model.
+# OLS standard errors for the original regression are likely invalid.
 
 # %%
 # --- Test for Expectations-Augmented Phillips Curve ---

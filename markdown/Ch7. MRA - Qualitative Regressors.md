@@ -6,7 +6,7 @@ jupyter:
       extension: .md
       format_name: markdown
       format_version: '1.3'
-      jupytext_version: 1.17.3
+      jupytext_version: 1.18.1
   kernelspec:
     display_name: merino
     language: python
@@ -48,7 +48,7 @@ Dummy variables (also called indicator variables or binary variables) take on th
 
 In this example, we will investigate how gender affects hourly wages, controlling for education, experience, and tenure. We will use the `wage1` dataset from the `wooldridge` package. The dataset includes information on wages, education, experience, tenure, and gender (female=1 if female, 0 if male).
 
-```
+```python
 # Load wage dataset for dummy variable analysis
 wage1 = wool.data("wage1")
 

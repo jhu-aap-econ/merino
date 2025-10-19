@@ -6,7 +6,7 @@ jupyter:
       extension: .md
       format_name: markdown
       format_version: '1.3'
-      jupytext_version: 1.17.3
+      jupytext_version: 1.18.1
   kernelspec:
     display_name: merino
     language: python
@@ -60,7 +60,7 @@ Using robust standard errors allows for valid t-tests, F-tests, and confidence i
 
 We estimate a model for college cumulative GPA (`cumgpa`) using data for students observed in the spring semester (`spring == 1`). We compare the standard OLS results with results using robust standard errors.
 
-```
+```python
 # Load the GPA data
 gpa3 = wool.data("gpa3")
 

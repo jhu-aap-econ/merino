@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.17.3
+#       jupytext_version: 1.18.1
 #   kernelspec:
 #     display_name: merino
 #     language: python
@@ -59,86 +59,86 @@ from IPython.display import display
 # ### Example 8.2: Heteroskedasticity-Robust Inference for GPA Equation
 #
 # We estimate a model for college cumulative GPA (`cumgpa`) using data for students observed in the spring semester (`spring == 1`). We compare the standard OLS results with results using robust standard errors.
-#
-# ```
-# # Load the GPA data
-# gpa3 = wool.data("gpa3")
-#
-# # Define the regression model using statsmodels formula API
-# # We predict cumgpa based on SAT score, high school percentile, total credit hours,
-# # gender, and race dummies.
-# # We only use data for the spring semester using the 'subset' argument.
-# reg = smf.ols(
-#     formula="cumgpa ~ sat + hsperc + tothrs + female + black + white",
-#     data=gpa3,
-#     subset=(gpa3["spring"] == 1),  # Use only spring observations
-# )
-#
-# # --- Estimate with Default (Homoskedasticity-Assumed) Standard Errors ---
-# results_default = reg.fit()
-#
-# # Display the results in a table
-# # OLS Results with Default Standard Errors
-# table_default = pd.DataFrame(
-#     {
-#         "b": round(results_default.params, 5),  # OLS Coefficients
-#         "se": round(results_default.bse, 5),  # Default Standard Errors
-#         "t": round(results_default.tvalues, 5),  # t-statistics based on default SEs
-#         "pval": round(results_default.pvalues, 5),  # p-values based on default SEs
-#     },
-# )
-# display(table_default)
-#
-# # Interpretation (Default): Based on these standard errors, variables like sat, hsperc,
-# # tothrs, female, and black appear statistically significant (p < 0.05).
-# # However, if heteroskedasticity is present, these SEs and p-values are unreliable.
-#
-# # --- Estimate with White's Original Robust Standard Errors (HC0) ---
-# # We fit the same model, but specify cov_type='HC0' to get robust SEs.
-# results_white = reg.fit(cov_type="HC0")
-#
-# # Display the results
-# # OLS Results with Robust (HC0) Standard Errors
-# table_white = pd.DataFrame(
-#     {
-#         "b": round(results_white.params, 5),  # OLS Coefficients (same as default)
-#         "se": round(results_white.bse, 5),  # Robust (HC0) Standard Errors
-#         "t": round(results_white.tvalues, 5),  # Robust t-statistics
-#         "pval": round(results_white.pvalues, 5),  # Robust p-values
-#     },
-# )
-# display(table_white)
-#
-# # Interpretation (HC0): The coefficient estimates 'b' are identical to the default OLS run.
-# # However, the standard errors 'se' have changed for most variables compared to the default.
-# # For example, the SE for 'tothrs' increased from 0.00104 to 0.00121, reducing its t-statistic
-# # and increasing its p-value (though still significant). The SE for 'black' decreased slightly.
-# # The conclusions about significance might change depending on the variable and significance level.
-#
-# # --- Estimate with Refined Robust Standard Errors (HC3) ---
-# # HC3 applies a different small-sample correction, often preferred over HC0.
-# results_refined = reg.fit(cov_type="HC3")
-#
-# # Display the results
-# # OLS Results with Robust (HC3) Standard Errors
-# table_refined = pd.DataFrame(
-#     {
-#         "b": round(results_refined.params, 5),  # OLS Coefficients (same as default)
-#         "se": round(results_refined.bse, 5),  # Robust (HC3) Standard Errors
-#         "t": round(results_refined.tvalues, 5),  # Robust t-statistics
-#         "pval": round(results_refined.pvalues, 5),  # Robust p-values
-#     },
-# )
-# display(table_refined)
-#
-# # Interpretation (HC3): The HC3 robust standard errors are slightly different from the HC0 SEs
-# # (e.g., SE for 'tothrs' is 0.00123 with HC3 vs 0.00121 with HC0). In this specific case,
-# # the differences between HC0 and HC3 are minor and don't change the conclusions about
-# # statistical significance compared to HC0. Using robust standard errors confirms that
-# # sat, hsperc, tothrs, female, and black have statistically significant effects on cumgpa
-# # in this sample, even if heteroskedasticity is present.
-# ```
-#
+
+# %%
+# Load the GPA data
+gpa3 = wool.data("gpa3")
+
+# Define the regression model using statsmodels formula API
+# We predict cumgpa based on SAT score, high school percentile, total credit hours,
+# gender, and race dummies.
+# We only use data for the spring semester using the 'subset' argument.
+reg = smf.ols(
+    formula="cumgpa ~ sat + hsperc + tothrs + female + black + white",
+    data=gpa3,
+    subset=(gpa3["spring"] == 1),  # Use only spring observations
+)
+
+# --- Estimate with Default (Homoskedasticity-Assumed) Standard Errors ---
+results_default = reg.fit()
+
+# Display the results in a table
+# OLS Results with Default Standard Errors
+table_default = pd.DataFrame(
+    {
+        "b": round(results_default.params, 5),  # OLS Coefficients
+        "se": round(results_default.bse, 5),  # Default Standard Errors
+        "t": round(results_default.tvalues, 5),  # t-statistics based on default SEs
+        "pval": round(results_default.pvalues, 5),  # p-values based on default SEs
+    },
+)
+display(table_default)
+
+# Interpretation (Default): Based on these standard errors, variables like sat, hsperc,
+# tothrs, female, and black appear statistically significant (p < 0.05).
+# However, if heteroskedasticity is present, these SEs and p-values are unreliable.
+
+# --- Estimate with White's Original Robust Standard Errors (HC0) ---
+# We fit the same model, but specify cov_type='HC0' to get robust SEs.
+results_white = reg.fit(cov_type="HC0")
+
+# Display the results
+# OLS Results with Robust (HC0) Standard Errors
+table_white = pd.DataFrame(
+    {
+        "b": round(results_white.params, 5),  # OLS Coefficients (same as default)
+        "se": round(results_white.bse, 5),  # Robust (HC0) Standard Errors
+        "t": round(results_white.tvalues, 5),  # Robust t-statistics
+        "pval": round(results_white.pvalues, 5),  # Robust p-values
+    },
+)
+display(table_white)
+
+# Interpretation (HC0): The coefficient estimates 'b' are identical to the default OLS run.
+# However, the standard errors 'se' have changed for most variables compared to the default.
+# For example, the SE for 'tothrs' increased from 0.00104 to 0.00121, reducing its t-statistic
+# and increasing its p-value (though still significant). The SE for 'black' decreased slightly.
+# The conclusions about significance might change depending on the variable and significance level.
+
+# --- Estimate with Refined Robust Standard Errors (HC3) ---
+# HC3 applies a different small-sample correction, often preferred over HC0.
+results_refined = reg.fit(cov_type="HC3")
+
+# Display the results
+# OLS Results with Robust (HC3) Standard Errors
+table_refined = pd.DataFrame(
+    {
+        "b": round(results_refined.params, 5),  # OLS Coefficients (same as default)
+        "se": round(results_refined.bse, 5),  # Robust (HC3) Standard Errors
+        "t": round(results_refined.tvalues, 5),  # Robust t-statistics
+        "pval": round(results_refined.pvalues, 5),  # Robust p-values
+    },
+)
+display(table_refined)
+
+# Interpretation (HC3): The HC3 robust standard errors are slightly different from the HC0 SEs
+# (e.g., SE for 'tothrs' is 0.00123 with HC3 vs 0.00121 with HC0). In this specific case,
+# the differences between HC0 and HC3 are minor and don't change the conclusions about
+# statistical significance compared to HC0. Using robust standard errors confirms that
+# sat, hsperc, tothrs, female, and black have statistically significant effects on cumgpa
+# in this sample, even if heteroskedasticity is present.
+
+# %% [markdown]
 # Robust standard errors can also be used for hypothesis tests involving multiple restrictions, such as F-tests. We test the joint significance of the race dummies (`black` and `white`), comparing the standard F-test (assuming homoskedasticity) with robust F-tests.
 
 # %%

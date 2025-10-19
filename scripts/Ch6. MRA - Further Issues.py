@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.17.3
+#       jupytext_version: 1.18.1
 #   kernelspec:
 #     display_name: merino
 #     language: python
@@ -24,7 +24,6 @@ import numpy as np
 import pandas as pd
 import statsmodels.formula.api as smf
 import wooldridge as wool
-
 
 # %% [markdown]
 # ## 6.1 Model Formulae
@@ -45,45 +44,46 @@ import wooldridge as wool
 # - `faminc` is family income.
 #
 # We might want to express birth weight in pounds instead of ounces or cigarettes in packs per day instead of individual cigarettes. Let's see how this can be done and how it affects the coefficients.
-#
-# ```
-# bwght = wool.data("bwght")
-#
-# # regress and report coefficients:
-# reg = smf.ols(formula="bwght ~ cigs + faminc", data=bwght)
-# results = reg.fit()
-#
-# # weight in pounds, manual way:
-# bwght["bwght_lbs"] = bwght["bwght"] / 16  # 1 pound = 16 ounces
-# reg_lbs = smf.ols(formula="bwght_lbs ~ cigs + faminc", data=bwght)
-# results_lbs = reg_lbs.fit()
-#
-# # weight in pounds, direct way:
-# reg_lbs2 = smf.ols(
-#     formula="I(bwght/16) ~ cigs + faminc",
-#     data=bwght,
-# )  # Use I() to perform arithmetic within formula
-# results_lbs2 = reg_lbs2.fit()
-#
-# # packs of cigarettes:
-# reg_packs = smf.ols(
-#     formula="bwght ~ I(cigs/20) + faminc",
-#     data=bwght,
-# )  # Assuming 20 cigarettes per pack
-# results_packs = reg_packs.fit()
-#
-# # compare results:
-# table = pd.DataFrame(
-#     {
-#         "b": round(results.params, 4),
-#         "b_lbs": round(results_lbs.params, 4),
-#         "b_lbs2": round(results_lbs2.params, 4),
-#         "b_packs": round(results_packs.params, 4),
-#     },
-# )
-# table
-# ```
-#
+
+# %%
+bwght = wool.data("bwght")
+
+# regress and report coefficients:
+reg = smf.ols(formula="bwght ~ cigs + faminc", data=bwght)
+results = reg.fit()
+
+# weight in pounds, manual way:
+bwght["bwght_lbs"] = bwght["bwght"] / 16  # 1 pound = 16 ounces
+reg_lbs = smf.ols(formula="bwght_lbs ~ cigs + faminc", data=bwght)
+results_lbs = reg_lbs.fit()
+
+# weight in pounds, direct way:
+reg_lbs2 = smf.ols(
+    formula="I(bwght/16) ~ cigs + faminc",
+    data=bwght,
+)  # Use I() to perform arithmetic within formula
+results_lbs2 = reg_lbs2.fit()
+
+# packs of cigarettes:
+reg_packs = smf.ols(
+    formula="bwght ~ I(cigs/20) + faminc",
+    data=bwght,
+)  # Assuming 20 cigarettes per pack
+results_packs = reg_packs.fit()
+
+# compare results:
+table = pd.DataFrame(
+    {
+        "b": round(results.params, 4),
+        "b_lbs": round(results_lbs.params, 4),
+        "b_lbs2": round(results_lbs2.params, 4),
+        "b_packs": round(results_packs.params, 4),
+    },
+)
+table
+
+
+# %% [markdown]
 # **Interpretation of Results:**
 #
 # - **`b` (bwght):** This column shows the coefficients when birth weight is in ounces and cigarettes are in individual units.  For example, the coefficient for `cigs` is approximately -0.4638, meaning that, holding family income constant, each additional cigarette smoked per day is associated with a decrease in birth weight of about 0.46 ounces.

@@ -6,7 +6,7 @@ jupyter:
       extension: .md
       format_name: markdown
       format_version: '1.3'
-      jupytext_version: 1.17.3
+      jupytext_version: 1.18.1
   kernelspec:
     display_name: merino
     language: python
@@ -44,7 +44,7 @@ where:
 
 We might want to express birth weight in pounds instead of ounces or cigarettes in packs per day instead of individual cigarettes. Let's see how this can be done and how it affects the coefficients.
 
-```
+```python
 bwght = wool.data("bwght")
 
 # regress and report coefficients:
