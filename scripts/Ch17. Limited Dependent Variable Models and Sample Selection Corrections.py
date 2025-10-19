@@ -1,0 +1,1861 @@
+# ---
+# jupyter:
+#   jupytext:
+#     formats: notebooks//ipynb,markdown//md,scripts//py:percent
+#     text_representation:
+#       extension: .py
+#       format_name: percent
+#       format_version: '1.3'
+#       jupytext_version: 1.18.1
+#   kernelspec:
+#     display_name: Python 3 (ipykernel)
+#     language: python
+#     name: python3
+# ---
+
+# %% [markdown]
+# # 17. Limited Dependent Variable Models and Sample Selection Corrections
+#
+# :::{important} Learning Objectives
+# :class: dropdown
+# By the end of this chapter, you should be able to:
+#
+# **17.1** Estimate and interpret logit and probit models for binary response variables.
+#
+# **17.2** Apply fractional response models when the outcome is a proportion or percentage.
+#
+# **17.3** Use exponential mean models and Poisson regression for count data.
+#
+# **17.4** Estimate Tobit models for corner solution responses (e.g., hours worked, charitable contributions).
+#
+# **17.5** Distinguish between censored and truncated regression models and estimate them appropriately.
+#
+# **17.6** Apply Heckman's two-step procedure to correct for sample selection bias.
+# :::
+#
+# Welcome to Chapter 17, where we study models for **limited dependent variables**—outcomes that are restricted in some way:
+#
+# - **Binary**: 0 or 1 (employed/unemployed, married/single)
+# - **Fractional**: Proportions between 0 and 1 (savings rate, portfolio share)
+# - **Count**: Non-negative integers (number of arrests, patent applications)
+# - **Corner Solution**: Many zeros, positive continuous values (hours worked, charitable giving)
+# - **Censored/Truncated**: Values cut off at some threshold
+#
+# The key insight: **OLS is inappropriate** for limited dependent variables because:
+# 1. Predictions can be outside the feasible range (e.g., negative probabilities)
+# 2. Errors are not normally distributed (heteroskedasticity is inherent)
+# 3. Effects are nonlinear (marginal effects depend on covariate values)
+#
+# We need **specialized models** that respect the nature of the outcome variable!
+
+# %%
+# # %pip install matplotlib numpy pandas statsmodels wooldridge scipy patsy -q
+
+# %%
+# Import required libraries
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import patsy as pt
+import seaborn as sns
+import statsmodels.api as sm
+import statsmodels.formula.api as smf
+import wooldridge as wool
+from IPython.display import display
+from scipy import stats
+from statsmodels.base.model import GenericLikelihoodModel
+
+# Set plotting style
+sns.set_style("whitegrid")
+sns.set_palette("husl")
+plt.rcParams["figure.figsize"] = [10, 6]
+plt.rcParams["font.size"] = 11
+plt.rcParams["axes.titlesize"] = 14
+plt.rcParams["axes.labelsize"] = 12
+
+# %% [markdown]
+# ## 17.1 Logit and Probit Models for Binary Response
+#
+# When the outcome is **binary** (0 or 1), we model the **probability** of the outcome being 1:
+#
+# $$ P(y = 1 | \mathbf{x}) = G(\beta_0 + \beta_1 x_1 + \cdots + \beta_k x_k) = G(\mathbf{x}'\boldsymbol{\beta}) $$
+#
+# where $G(\cdot)$ is a **cumulative distribution function (CDF)** that ensures $0 \leq P(y=1|\mathbf{x}) \leq 1$.
+#
+# ### Three Approaches
+#
+# 1. **Linear Probability Model (LPM)**: $G(z) = z$ (just use OLS)
+#    - ✓ Simple, easy to interpret
+#    - ✗ Can predict outside [0, 1]
+#    - ✗ Heteroskedasticity by construction
+#
+# 2. **Logit Model**: $G(z) = \frac{e^z}{1 + e^z} = \Lambda(z)$ (logistic CDF)
+#    - ✓ Always predicts probabilities in [0, 1]
+#    - ✓ Closed-form derivatives
+#    - Assumes **logistic** error distribution
+#
+# 3. **Probit Model**: $G(z) = \Phi(z)$ (standard normal CDF)
+#    - ✓ Always predicts probabilities in [0, 1]
+#    - ✓ Based on **latent variable** interpretation
+#    - Assumes **normal** error distribution
+#
+# ### Latent Variable Interpretation
+#
+# Think of an **unobserved** continuous variable $y^*$ (e.g., "propensity to work"):
+#
+# $$ y^* = \mathbf{x}'\boldsymbol{\beta} + u $$
+#
+# We observe:
+#
+# $$ y = \begin{cases} 1 & \text{if } y^* > 0 \\ 0 & \text{if } y^* \leq 0 \end{cases} $$
+#
+# Then:
+#
+# $$ P(y = 1 | \mathbf{x}) = P(y^* > 0 | \mathbf{x}) = P(u > -\mathbf{x}'\boldsymbol{\beta} | \mathbf{x}) = G(\mathbf{x}'\boldsymbol{\beta}) $$
+#
+# - **Logit**: $u$ follows logistic distribution
+# - **Probit**: $u \sim N(0, 1)$
+#
+# ### Estimation
+#
+# Both models are estimated by **maximum likelihood**:
+#
+# $$ \mathcal{L}(\boldsymbol{\beta}) = \prod_{i=1}^n [G(\mathbf{x}_i'\boldsymbol{\beta})]^{y_i} [1 - G(\mathbf{x}_i'\boldsymbol{\beta})]^{1-y_i} $$
+#
+# Log likelihood:
+#
+# $$ \ell(\boldsymbol{\beta}) = \sum_{i=1}^n \left\{ y_i \log G(\mathbf{x}_i'\boldsymbol{\beta}) + (1-y_i) \log[1 - G(\mathbf{x}_i'\boldsymbol{\beta})] \right\} $$
+#
+# ### Example 17.1: Married Women's Labor Force Participation
+#
+# Let's estimate the probability that a married woman is in the labor force as a function of her characteristics.
+
+# %%
+# Load married women's labor force participation data
+mroz = wool.data("mroz")
+
+print("MARRIED WOMEN'S LABOR FORCE PARTICIPATION")
+print("=" * 70)
+print(f"\nTotal observations: {len(mroz)}")
+print(f"Women in labor force (inlf=1): {mroz['inlf'].sum()}")
+print(f"Women not in labor force (inlf=0): {(1 - mroz['inlf']).sum()}")
+print(f"Participation rate: {mroz['inlf'].mean():.1%}")
+
+print("\nDEPENDENT VARIABLE:")
+print("  inlf = 1 if woman worked for a wage in 1975, 0 otherwise")
+
+print("\nEXPLANATORY VARIABLES:")
+print("  nwifeinc  = husband's income (thousands)")
+print("  educ      = years of education")
+print("  exper     = actual labor market experience (years)")
+print("  age       = age in years")
+print("  kidslt6   = number of children less than 6 years old")
+print("  kidsge6   = number of children 6-18 years old")
+
+# Summary statistics
+key_vars = ["inlf", "nwifeinc", "educ", "exper", "age", "kidslt6", "kidsge6"]
+display(mroz[key_vars].describe().round(2))
+
+# %%
+# LINEAR PROBABILITY MODEL (LPM)
+print("\n17.1.1 LINEAR PROBABILITY MODEL (OLS)")
+print("=" * 70)
+print("Model: P(inlf=1) = β₀ + β₁·nwifeinc + β₂·educ + ... + u")
+print("Uses OLS but with heteroskedasticity-robust standard errors (HC3)")
+
+lpm = smf.ols(
+    formula="inlf ~ nwifeinc + educ + exper + I(exper**2) + age + kidslt6 + kidsge6",
+    data=mroz,
+).fit(cov_type="HC3")
+
+table_lpm = pd.DataFrame(
+    {
+        "Coefficient": lpm.params,
+        "Std. Error": lpm.bse,
+        "t-statistic": lpm.tvalues,
+        "p-value": lpm.pvalues,
+    },
+)
+
+print("\nLINEAR PROBABILITY MODEL RESULTS:")
+display(table_lpm.round(4))
+
+print(f"\nR-squared: {lpm.rsquared:.4f}")
+print(f"Observations: {lpm.nobs:.0f}")
+
+print("\nINTERPRETATION (coefficients are marginal effects):")
+print(f"  nwifeinc: {lpm.params['nwifeinc']:.4f}")
+print(
+    f"    → $1,000 increase in husband's income → {100 * lpm.params['nwifeinc']:.2f} percentage point decrease in participation"
+)
+print(f"  educ: {lpm.params['educ']:.4f}")
+print(
+    f"    → 1 more year of education → {100 * lpm.params['educ']:.2f} percentage point increase in participation"
+)
+print(f"  kidslt6: {lpm.params['kidslt6']:.4f}")
+print(
+    f"    → 1 more young child → {100 * lpm.params['kidslt6']:.2f} percentage point decrease in participation"
+)
+
+# %%
+# Check LPM predictions - some may be outside [0, 1]
+print("\nPROBLEM WITH LPM: Predictions can be outside [0, 1]")
+print("=" * 70)
+
+lpm_predictions = lpm.predict(mroz)
+print(f"Minimum prediction: {lpm_predictions.min():.4f}")
+print(f"Maximum prediction: {lpm_predictions.max():.4f}")
+
+n_below_zero = (lpm_predictions < 0).sum()
+n_above_one = (lpm_predictions > 1).sum()
+
+print(f"\nPredictions < 0: {n_below_zero} ({100 * n_below_zero / len(mroz):.1f}%)")
+print(f"Predictions > 1: {n_above_one} ({100 * n_above_one / len(mroz):.1f}%)")
+
+if n_below_zero > 0 or n_above_one > 0:
+    print("\n✗ LPM produces invalid probabilities!")
+    print("  → Need logit or probit to constrain predictions to [0, 1]")
+
+# %%
+# Extreme predictions with LPM
+print("\nEXTREME CASE PREDICTIONS (LPM)")
+print("=" * 70)
+
+# Two "extreme" women
+X_extreme = pd.DataFrame(
+    {
+        "nwifeinc": [100, 0],  # High vs low husband income
+        "educ": [5, 17],  # Low vs high education
+        "exper": [0, 30],  # No experience vs lots
+        "age": [20, 52],  # Young vs older
+        "kidslt6": [2, 0],  # Young children vs none
+        "kidsge6": [0, 0],  # No older children
+    },
+)
+
+predictions_lpm = lpm.predict(X_extreme)
+
+print("Woman 1: Low education, high husband income, young children")
+print(f"  Predicted P(inlf=1) = {predictions_lpm.iloc[0]:.4f}")
+
+print("\nWoman 2: High education, low husband income, no young children")
+print(f"  Predicted P(inlf=1) = {predictions_lpm.iloc[1]:.4f}")
+
+if predictions_lpm.iloc[0] < 0:
+    print(f"\n✗ Woman 1: Negative probability! ({predictions_lpm.iloc[0]:.4f})")
+if predictions_lpm.iloc[1] > 1:
+    print(f"✗ Woman 2: Probability > 1! ({predictions_lpm.iloc[1]:.4f})")
+
+# %%
+# LOGIT MODEL
+print("\n\n17.1.3 LOGIT MODEL")
+print("=" * 70)
+print("Model: P(inlf=1) = Λ(β₀ + β₁·nwifeinc + β₂·educ + ...)")
+print("where Λ(z) = exp(z) / [1 + exp(z)] is the logistic CDF")
+
+logit = smf.logit(
+    formula="inlf ~ nwifeinc + educ + exper + I(exper**2) + age + kidslt6 + kidsge6",
+    data=mroz,
+).fit(disp=0)
+
+print("\nLOGIT MODEL RESULTS:")
+print(logit.summary())
+
+print(f"\nLog-Likelihood: {logit.llf:.4f}")
+print(f"McFadden's Pseudo R²: {logit.prsquared:.4f}")
+print(f"AIC: {logit.aic:.4f}")
+
+# %%
+# PROBIT MODEL
+print("\n17.1.4 PROBIT MODEL")
+print("=" * 70)
+print("Model: P(inlf=1) = Φ(β₀ + β₁·nwifeinc + β₂·educ + ...)")
+print("where Φ(z) is the standard normal CDF")
+
+probit = smf.probit(
+    formula="inlf ~ nwifeinc + educ + exper + I(exper**2) + age + kidslt6 + kidsge6",
+    data=mroz,
+).fit(disp=0)
+
+print("\nPROBIT MODEL RESULTS:")
+print(probit.summary())
+
+print(f"\nLog-Likelihood: {probit.llf:.4f}")
+print(f"McFadden's Pseudo R²: {probit.prsquared:.4f}")
+print(f"AIC: {probit.aic:.4f}")
+
+# %%
+# Compare all three models
+print("\n\nCOMPARISON: LPM vs LOGIT vs PROBIT")
+print("=" * 70)
+
+comparison = pd.DataFrame(
+    {
+        "LPM": lpm.params,
+        "LPM SE": lpm.bse,
+        "Logit": logit.params,
+        "Logit SE": logit.bse,
+        "Probit": probit.params,
+        "Probit SE": probit.bse,
+    },
+)
+
+display(comparison.round(4))
+
+print("\nKEY INSIGHTS:")
+print("1. COEFFICIENT MAGNITUDES:")
+print("   - LPM coefficients are on probability scale")
+print("   - Logit coefficients are larger (logistic distribution has heavier tails)")
+print("   - Probit coefficients are between LPM and Logit")
+print("   - CANNOT directly compare coefficients across models!")
+
+print("\n2. STATISTICAL SIGNIFICANCE:")
+print("   - Pattern of significance is similar across models")
+print("   - Same variables are significant in all three models")
+
+print("\n3. PREDICTION VALIDITY:")
+logit_pred = logit.predict(mroz)
+probit_pred = probit.predict(mroz)
+print(f"   - LPM:    min={lpm_predictions.min():.4f}, max={lpm_predictions.max():.4f}")
+print(f"   - Logit:  min={logit_pred.min():.4f}, max={logit_pred.max():.4f}")
+print(f"   - Probit: min={probit_pred.min():.4f}, max={probit_pred.max():.4f}")
+print("   ✓ Logit and Probit always give valid probabilities [0, 1]")
+
+# %%
+# Visualize the three CDFs
+print("\nVISUALIZING THE RESPONSE FUNCTIONS")
+print("=" * 70)
+
+# Create range of z values
+z = np.linspace(-3, 3, 300)
+
+# Three CDFs
+linear = z  # Linear probability (just z)
+logistic = 1 / (1 + np.exp(-z))  # Logit
+normal = stats.norm.cdf(z)  # Probit
+
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
+
+# Panel A: Full range
+ax1.plot(z, linear, "r--", linewidth=2, label="Linear (LPM)")
+ax1.plot(z, logistic, "b-", linewidth=2, label="Logistic (Logit)")
+ax1.plot(z, normal, "g-", linewidth=2, label="Normal (Probit)")
+ax1.axhline(y=0, color="black", linestyle=":", linewidth=1)
+ax1.axhline(y=1, color="black", linestyle=":", linewidth=1)
+ax1.set_xlabel("z = x'β (index function)")
+ax1.set_ylabel("P(y=1|x) = G(z)")
+ax1.set_title("Response Functions: LPM vs Logit vs Probit")
+ax1.legend()
+ax1.grid(True, alpha=0.3)
+ax1.set_ylim([-0.2, 1.2])
+
+# Panel B: Zoomed to [0, 1]
+z_zoom = np.linspace(-2, 2, 300)
+logistic_zoom = 1 / (1 + np.exp(-z_zoom))
+normal_zoom = stats.norm.cdf(z_zoom)
+
+ax2.plot(z_zoom, logistic_zoom, "b-", linewidth=2, label="Logistic (Logit)")
+ax2.plot(z_zoom, normal_zoom, "g-", linewidth=2, label="Normal (Probit)")
+ax2.axhline(y=0, color="black", linestyle=":", linewidth=1)
+ax2.axhline(y=1, color="black", linestyle=":", linewidth=1)
+ax2.set_xlabel("z = x'β (index function)")
+ax2.set_ylabel("P(y=1|x)")
+ax2.set_title("Logit vs Probit (Very Similar!)")
+ax2.legend()
+ax2.grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.show()
+
+print("\nKEY OBSERVATIONS:")
+print("✓ LPM is linear - can exceed [0, 1]")
+print("✓ Logit and Probit are S-shaped - always in [0, 1]")
+print("✓ Logit has slightly heavier tails than Probit")
+print("✓ Near the middle (z ≈ 0), all three are similar")
+
+# %% [markdown]
+# ### Marginal Effects (Partial Effects)
+#
+# The **coefficients** in logit/probit are NOT marginal effects! We need to calculate:
+#
+# $$ \frac{\partial P(y=1|\mathbf{x})}{\partial x_j} = g(\mathbf{x}'\boldsymbol{\beta}) \cdot \beta_j $$
+#
+# where $g(\cdot) = G'(\cdot)$ is the PDF:
+# - **Logit**: $g(z) = \frac{e^z}{(1 + e^z)^2} = \Lambda(z)[1 - \Lambda(z)]$
+# - **Probit**: $g(z) = \phi(z) = \frac{1}{\sqrt{2\pi}} e^{-z^2/2}$
+#
+# **Key insight**: Marginal effects **depend on** $\mathbf{x}$ (evaluated at specific values)!
+#
+# **Common approaches**:
+# 1. **Marginal Effect at the Mean (MEM)**: Evaluate at $\bar{\mathbf{x}}$
+# 2. **Average Marginal Effect (AME)**: Average over all observations
+# 3. **Marginal Effect at Representative Values (MER)**: Choose interesting cases
+
+# %%
+# MARGINAL EFFECTS FOR BINARY MODELS
+print("\n\n17.1.5 MARGINAL EFFECTS (PARTIAL EFFECTS)")
+print("=" * 70)
+print("Coefficients in logit/probit are NOT marginal effects!")
+print("Must calculate: ∂P(y=1|x)/∂xⱼ = g(x'β)·βⱼ")
+
+# Average Marginal Effects (AME) for Logit
+print("\nLOGIT: Average Marginal Effects (AME)")
+print("-" * 70)
+
+# Get fitted values (predicted probabilities)
+logit_fitted = logit.predict(mroz)
+
+# Logit PDF: g(z) = Λ(z)[1 - Λ(z)]
+logit_pdf_values = logit_fitted * (1 - logit_fitted)
+
+# Calculate AME for each coefficient
+ame_logit = {}
+for var in logit.params.index:
+    if var == "Intercept":
+        continue
+    # For I(exper**2), need special handling
+    if var == "I(exper ** 2)":
+        ame_logit[var] = (logit_pdf_values * logit.params[var]).mean()
+    else:
+        ame_logit[var] = (logit_pdf_values * logit.params[var]).mean()
+
+ame_logit_df = pd.DataFrame(
+    {"AME": ame_logit, "Logit Coef": logit.params.drop("Intercept")},
+)
+
+display(ame_logit_df.round(4))
+
+print("\nINTERPRETATION of Average Marginal Effects:")
+print(f"  educ AME: {ame_logit['educ']:.4f}")
+print(
+    f"    → 1 more year of education increases participation probability by {100 * ame_logit['educ']:.2f} percentage points (on average)"
+)
+print(f"  kidslt6 AME: {ame_logit['kidslt6']:.4f}")
+print(
+    f"    → 1 more young child decreases participation probability by {abs(100 * ame_logit['kidslt6']):.2f} percentage points (on average)"
+)
+
+# %%
+# Average Marginal Effects (AME) for Probit
+print("\nPROBIT: Average Marginal Effects (AME)")
+print("-" * 70)
+
+# Get fitted index values
+probit_index = probit.predict(mroz, linear=True)
+
+# Probit PDF: g(z) = φ(z) = standard normal PDF
+probit_pdf_values = stats.norm.pdf(probit_index)
+
+# Calculate AME for each coefficient
+ame_probit = {}
+for var in probit.params.index:
+    if var == "Intercept":
+        continue
+    ame_probit[var] = (probit_pdf_values * probit.params[var]).mean()
+
+ame_probit_df = pd.DataFrame(
+    {
+        "AME": ame_probit,
+        "Probit Coef": probit.params.drop("Intercept"),
+        "Logit AME": ame_logit,
+    },
+)
+
+display(ame_probit_df.round(4))
+
+print("\nKEY INSIGHTS:")
+print("1. Logit and Probit AMEs are very similar")
+print("2. AMEs are comparable to LPM coefficients")
+print("3. AMEs have intuitive interpretation (percentage point changes)")
+print("4. For small changes, AME ≈ LPM coefficient")
+
+# %%
+# Visualize how marginal effects vary with x
+print("\nMARGINAL EFFECTS DEPEND ON X VALUES!")
+print("=" * 70)
+
+# Simulate data to show variation
+np.random.seed(42)
+y_sim = stats.binom.rvs(1, 0.5, size=100)
+x_sim = stats.norm.rvs(0, 1, size=100) + 2 * y_sim
+sim_data = pd.DataFrame({"y": y_sim, "x": x_sim})
+
+# Estimate three models
+reg_lin_sim = smf.ols(formula="y ~ x", data=sim_data).fit()
+reg_logit_sim = smf.logit(formula="y ~ x", data=sim_data).fit(disp=0)
+reg_probit_sim = smf.probit(formula="y ~ x", data=sim_data).fit(disp=0)
+
+# Calculate marginal effects across range of x
+x_range = np.linspace(x_sim.min(), x_sim.max(), 100)
+
+# LPM: constant marginal effect
+me_lin = np.repeat(reg_lin_sim.params["x"], 100)
+
+# Logit: g(xβ) * β
+xb_logit_range = reg_logit_sim.params["Intercept"] + reg_logit_sim.params["x"] * x_range
+prob_logit = 1 / (1 + np.exp(-xb_logit_range))
+me_logit = prob_logit * (1 - prob_logit) * reg_logit_sim.params["x"]
+
+# Probit: φ(xβ) * β
+xb_probit_range = (
+    reg_probit_sim.params["Intercept"] + reg_probit_sim.params["x"] * x_range
+)
+me_probit = stats.norm.pdf(xb_probit_range) * reg_probit_sim.params["x"]
+
+# Plot marginal effects
+fig, ax = plt.subplots(figsize=(10, 6))
+
+ax.plot(x_range, me_lin, "r--", linewidth=2, label="LPM (constant)")
+ax.plot(x_range, me_logit, "b-", linewidth=2, label="Logit (varies)")
+ax.plot(x_range, me_probit, "g-", linewidth=2, label="Probit (varies)")
+ax.axhline(y=0, color="black", linestyle=":", linewidth=1)
+ax.set_xlabel("x")
+ax.set_ylabel("∂P(y=1|x)/∂x")
+ax.set_title("Marginal Effects: Constant (LPM) vs Varying (Logit/Probit)")
+ax.legend()
+ax.grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.show()
+
+print("\nKEY TAKEAWAY:")
+print("✓ LPM: Marginal effect is constant (same for all x)")
+print("✓ Logit/Probit: Marginal effect varies with x")
+print("✓ Largest effects near middle, smaller at extremes")
+print("✓ Must specify which x values when reporting marginal effects!")
+
+# %% [markdown]
+# ## 17.2 Fractional Response Models
+#
+# When the dependent variable is a **fraction** or **proportion** (between 0 and 1), but not necessarily binary:
+#
+# Examples:
+# - Savings rate (fraction of income saved)
+# - Portfolio allocation (fraction in stocks)
+# - Participation rate (fraction of eligible individuals participating)
+#
+# ### Fractional Logit Model
+#
+# Even though $y$ is not binary, we can use:
+#
+# $$ E(y | \mathbf{x}) = G(\mathbf{x}'\boldsymbol{\beta}) $$
+#
+# where $G$ is the logistic CDF. This is a **quasi-MLE** approach:
+# - Estimator is **consistent** even if $G$ is not the true conditional mean
+# - Standard errors should be **robust** (heteroskedasticity is inherent)
+#
+# ### Key Advantage
+#
+# Predictions are **automatically bounded** in (0, 1), unlike OLS which can produce nonsensical predictions.
+
+# %%
+# FRACTIONAL RESPONSE EXAMPLE (Conceptual)
+print("\n17.2 FRACTIONAL RESPONSE MODELS")
+print("=" * 70)
+
+print("USE CASE: Dependent variable is a proportion/fraction between 0 and 1")
+print("\nEXAMPLES:")
+print("  - Savings rate: fraction of income saved")
+print("  - Portfolio share: fraction invested in stocks")
+print("  - 401(k) participation rate at firm level")
+
+print("\nMODEL:")
+print("  E(y|x) = Λ(x'β) where 0 < y < 1")
+print("  Estimated by quasi-MLE (same as logit)")
+
+print("\nADVANTAGES:")
+print("  ✓ Predictions automatically in (0, 1)")
+print("  ✓ Handles corner solutions (y = 0 or y = 1) naturally")
+print("  ✓ Consistent estimator even if model misspecified")
+
+print("\nESTIMATION:")
+print("  1. Use logit estimation with fractional y")
+print("  2. Must use robust standard errors")
+print("  3. Interpret via average marginal effects")
+
+print("\nNOTE: In Python/statsmodels, use smf.logit() with continuous y ∈ (0,1)")
+print("      Some observations can be exactly 0 or 1 (corner solutions)")
+
+# %% [markdown]
+# ## 17.3 An Exponential Mean Model and Poisson Regression
+#
+# When the dependent variable is a **count** (non-negative integer):
+#
+# Examples:
+# - Number of arrests
+# - Number of patents filed
+# - Number of doctor visits
+# - Number of children
+#
+# ### Why Not OLS?
+#
+# 1. $y$ is **discrete** (not continuous)
+# 2. $y \geq 0$ (OLS can predict negative values)
+# 3. **Variance increases with mean** (heteroskedasticity)
+#
+# ### Poisson Regression Model
+#
+# Assume $y | \mathbf{x}$ follows a **Poisson distribution**:
+#
+# $$ P(y = h | \mathbf{x}) = \frac{e^{-\mu} \mu^h}{h!}, \quad h = 0, 1, 2, \ldots $$
+#
+# where the **mean** (and variance) is:
+#
+# $$ \mu = E(y | \mathbf{x}) = \exp(\mathbf{x}'\boldsymbol{\beta}) $$
+#
+# **Key feature**: Exponential mean ensures $\mu > 0$ always!
+#
+# ### Interpretation
+#
+# $$ \log E(y | \mathbf{x}) = \mathbf{x}'\boldsymbol{\beta} $$
+#
+# So $\beta_j$ is the **semi-elasticity**:
+#
+# $$ \frac{\partial \log E(y|\mathbf{x})}{\partial x_j} = \beta_j $$
+#
+# **Interpretation**: A one-unit increase in $x_j$ changes $E(y|\mathbf{x})$ by approximately $100 \cdot \beta_j$ percent.
+#
+# ### Marginal Effects
+#
+# $$ \frac{\partial E(y|\mathbf{x})}{\partial x_j} = \beta_j \cdot \exp(\mathbf{x}'\boldsymbol{\beta}) = \beta_j \cdot E(y|\mathbf{x}) $$
+#
+# Marginal effect is **proportional** to the predicted mean!
+#
+# ### Example 17.3: Number of Arrests
+
+# %%
+# Load arrests data
+crime1 = wool.data("crime1")
+
+print("\n17.3 POISSON REGRESSION FOR COUNT DATA")
+print("=" * 70)
+print("\nEXAMPLE: Number of times arrested in 1986")
+
+print(f"\nTotal observations: {len(crime1)}")
+print("\nDEPENDENT VARIABLE:")
+print("  narr86 = number of times arrested in 1986")
+
+# Distribution of arrests
+arrest_dist = crime1["narr86"].value_counts().sort_index()
+print("\nDISTRIBUTION OF ARRESTS:")
+display(arrest_dist.head(10))
+
+print(f"\nMean arrests: {crime1['narr86'].mean():.3f}")
+print(f"Variance: {crime1['narr86'].var():.3f}")
+print(f"Variance/Mean ratio: {crime1['narr86'].var() / crime1['narr86'].mean():.3f}")
+print("(Poisson assumes variance = mean; ratio > 1 suggests overdispersion)")
+
+print("\nEXPLANATORY VARIABLES:")
+print("  pcnv     = proportion of prior arrests leading to conviction")
+print("  avgsen   = average sentence length served (months)")
+print("  tottime  = total time served in prison (months)")
+print("  ptime86  = months in prison during 1986")
+print("  qemp86   = quarters employed in 1986")
+print("  inc86    = legal income in 1986 ($100s)")
+print("  black    = 1 if black")
+print("  hispan   = 1 if Hispanic")
+print("  born60   = 1 if born in 1960")
+
+# %%
+# OLS for comparison
+print("\nLINEAR MODEL (OLS) - For Comparison")
+print("-" * 70)
+
+ols_count = smf.ols(
+    formula="narr86 ~ pcnv + avgsen + tottime + ptime86 + qemp86 + inc86 + black + hispan + born60",
+    data=crime1,
+).fit()
+
+table_ols = pd.DataFrame(
+    {
+        "Coefficient": ols_count.params,
+        "Std. Error": ols_count.bse,
+        "t-statistic": ols_count.tvalues,
+        "p-value": ols_count.pvalues,
+    },
+)
+
+display(table_ols.round(4))
+
+print(f"\nR-squared: {ols_count.rsquared:.4f}")
+
+# Check for negative predictions
+ols_pred = ols_count.predict(crime1)
+n_negative = (ols_pred < 0).sum()
+print(f"\nPredictions < 0: {n_negative} ({100 * n_negative / len(crime1):.1f}%)")
+if n_negative > 0:
+    print("✗ OLS can predict negative arrests!")
+
+# %%
+# Poisson regression
+print("\n\nPOISSON REGRESSION MODEL")
+print("=" * 70)
+print("Model: E(narr86|x) = exp(β₀ + β₁·pcnv + β₂·avgsen + ...)")
+
+poisson = smf.poisson(
+    formula="narr86 ~ pcnv + avgsen + tottime + ptime86 + qemp86 + inc86 + black + hispan + born60",
+    data=crime1,
+).fit(disp=0)
+
+table_poisson = pd.DataFrame(
+    {
+        "Coefficient": poisson.params,
+        "Std. Error": poisson.bse,
+        "z-statistic": poisson.tvalues,
+        "p-value": poisson.pvalues,
+    },
+)
+
+display(table_poisson.round(4))
+
+print(f"\nLog-Likelihood: {poisson.llf:.4f}")
+print(f"AIC: {poisson.aic:.4f}")
+
+print("\nINTERPRETATION (Semi-Elasticities):")
+print(f"  pcnv: {poisson.params['pcnv']:.4f}")
+print(
+    f"    → 0.1 increase in conviction rate → {100 * poisson.params['pcnv'] * 0.1:.2f}% change in expected arrests"
+)
+print(f"  qemp86: {poisson.params['qemp86']:.4f}")
+print(
+    f"    → 1 more quarter employed → {100 * poisson.params['qemp86']:.2f}% change in expected arrests"
+)
+
+# %%
+# Quasi-Poisson (overdispersion correction)
+print("\n\nQUASI-POISSON (Overdispersion Correction)")
+print("=" * 70)
+print("When Var(y|x) > E(y|x), use quasi-Poisson to adjust standard errors")
+
+quasi_poisson = smf.glm(
+    formula="narr86 ~ pcnv + avgsen + tottime + ptime86 + qemp86 + inc86 + black + hispan + born60",
+    family=sm.families.Poisson(),
+    data=crime1,
+).fit(scale="X2", disp=0)
+
+table_qpoisson = pd.DataFrame(
+    {
+        "Coefficient": quasi_poisson.params,
+        "Std. Error": quasi_poisson.bse,
+        "z-statistic": quasi_poisson.tvalues,
+        "p-value": quasi_poisson.pvalues,
+    },
+)
+
+display(table_qpoisson.round(4))
+
+print(f"\nDispersion parameter: {quasi_poisson.scale:.4f}")
+print("(> 1 confirms overdispersion)")
+
+# %%
+# Compare all three models
+print("\n\nCOMPARISON: OLS vs POISSON vs QUASI-POISSON")
+print("=" * 70)
+
+comparison_count = pd.DataFrame(
+    {
+        "OLS": ols_count.params,
+        "OLS SE": ols_count.bse,
+        "Poisson": poisson.params,
+        "Poisson SE": poisson.bse,
+        "Quasi-Poisson": quasi_poisson.params,
+        "Quasi-Poisson SE": quasi_poisson.bse,
+    },
+)
+
+display(comparison_count.round(4))
+
+print("\nKEY INSIGHTS:")
+print("1. Poisson coefficients are semi-elasticities (not levels like OLS)")
+print("2. Quasi-Poisson has larger SEs (accounts for overdispersion)")
+print("3. Pattern of significance similar across models")
+print("4. Poisson ensures non-negative predictions")
+
+# %% [markdown]
+# ## 17.4 The Tobit Model for Corner Solution Responses
+#
+# A **corner solution** occurs when the dependent variable:
+# - Takes value **zero for a substantial fraction** of observations
+# - Takes **positive continuous values** for the rest
+#
+# Examples:
+# - **Hours worked**: Many people don't work (hours = 0), others work positive hours
+# - **Charitable contributions**: Many give nothing, others give positive amounts
+# - **Savings**: Some save nothing, others save positive amounts
+#
+# ### Why Not OLS?
+#
+# OLS treats zeros as just another value, but zeros are **qualitatively different** (corner solutions from optimization, not "small positive values").
+#
+# ### Tobit Model (Type I Tobit / Censored Regression)
+#
+# **Latent variable** model:
+#
+# $$ y^* = \mathbf{x}'\boldsymbol{\beta} + u, \quad u | \mathbf{x} \sim N(0, \sigma^2) $$
+#
+# **Observation rule**:
+#
+# $$ y = \max(0, y^*) = \begin{cases} y^* & \text{if } y^* > 0 \\ 0 & \text{if } y^* \leq 0 \end{cases} $$
+#
+# Think of $y^*$ as **desired hours** (can be negative = don't want to work).
+# We observe $y$ = **actual hours** (cannot be negative).
+#
+# ### Likelihood Function
+#
+# Two parts:
+#
+# 1. **For $y = 0$**: $P(y = 0 | \mathbf{x}) = P(y^* \leq 0 | \mathbf{x}) = \Phi\left(-\frac{\mathbf{x}'\boldsymbol{\beta}}{\sigma}\right)$
+#
+# 2. **For $y > 0$**: $f(y | \mathbf{x}) = \frac{1}{\sigma} \phi\left(\frac{y - \mathbf{x}'\boldsymbol{\beta}}{\sigma}\right)$
+#
+# Log-likelihood:
+#
+# $$ \ell(\boldsymbol{\beta}, \sigma) = \sum_{y_i=0} \log \Phi\left(-\frac{\mathbf{x}_i'\boldsymbol{\beta}}{\sigma}\right) + \sum_{y_i>0} \left[\log \phi\left(\frac{y_i - \mathbf{x}_i'\boldsymbol{\beta}}{\sigma}\right) - \log \sigma\right] $$
+#
+# ### Interpretation
+#
+# **Marginal effects** are complex:
+#
+# 1. **Effect on latent variable**: $\frac{\partial E(y^* | \mathbf{x})}{\partial x_j} = \beta_j$
+#
+# 2. **Effect on observed variable**: 
+# $$ \frac{\partial E(y | \mathbf{x})}{\partial x_j} = \Phi\left(\frac{\mathbf{x}'\boldsymbol{\beta}}{\sigma}\right) \cdot \beta_j $$
+#
+# 3. **Effect on positive outcomes** (given $y > 0$):
+# $$ \frac{\partial E(y | \mathbf{x}, y > 0)}{\partial x_j} = \left[1 - \lambda\left(\frac{\mathbf{x}'\boldsymbol{\beta}}{\sigma}\right) \cdot \frac{\mathbf{x}'\boldsymbol{\beta}}{\sigma}\right] \beta_j $$
+#
+# where $\lambda(z) = \phi(z) / \Phi(z)$ is the **inverse Mills ratio**.
+#
+# ### Example 17.2: Married Women's Hours Worked
+
+# %%
+# Load data (all married women, including non-workers)
+mroz = wool.data("mroz")
+
+print("\n17.4 TOBIT MODEL FOR CORNER SOLUTION RESPONSES")
+print("=" * 70)
+print("\nEXAMPLE: Annual hours worked by married women")
+
+print(f"\nTotal observations: {len(mroz)}")
+print(
+    f"Women with hours = 0: {(mroz['hours'] == 0).sum()} ({100 * (mroz['hours'] == 0).mean():.1f}%)"
+)
+print(
+    f"Women with hours > 0: {(mroz['hours'] > 0).sum()} ({100 * (mroz['hours'] > 0).mean():.1f}%)"
+)
+
+print("\nDEPENDENT VARIABLE:")
+print("  hours = annual hours worked")
+print("  Corner solution: hours ≥ 0, with many zeros")
+
+print("\nEXPLANATORY VARIABLES:")
+print("  nwifeinc = husband's income")
+print("  educ     = education")
+print("  exper    = experience")
+print("  age      = age")
+print("  kidslt6  = number of young children")
+print("  kidsge6  = number of older children")
+
+# Distribution of hours
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
+
+# Histogram of all hours (including zeros)
+ax1.hist(mroz["hours"], bins=50, edgecolor="black", alpha=0.7)
+ax1.axvline(x=0, color="red", linestyle="--", linewidth=2, label="Corner at 0")
+ax1.set_xlabel("Annual Hours Worked")
+ax1.set_ylabel("Frequency")
+ax1.set_title(f"Distribution of Hours (n={len(mroz)})")
+ax1.legend()
+ax1.grid(True, alpha=0.3)
+
+# Histogram of positive hours only
+hours_positive = mroz[mroz["hours"] > 0]["hours"]
+ax2.hist(hours_positive, bins=50, edgecolor="black", alpha=0.7, color="green")
+ax2.set_xlabel("Annual Hours Worked")
+ax2.set_ylabel("Frequency")
+ax2.set_title(
+    f"Distribution of Hours (Conditional on Working, n={len(hours_positive)})"
+)
+ax2.grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.show()
+
+print("\nSummary statistics (all women):")
+display(mroz["hours"].describe().round(2))
+
+print("\nSummary statistics (working women only):")
+display(hours_positive.describe().round(2))
+
+# %%
+# OLS for comparison (wrong!)
+print("\nOLS REGRESSION (WRONG - Ignores Corner Solution)")
+print("=" * 70)
+
+ols_hours = smf.ols(
+    formula="hours ~ nwifeinc + educ + exper + I(exper**2) + age + kidslt6 + kidsge6",
+    data=mroz,
+).fit()
+
+table_ols_hours = pd.DataFrame(
+    {
+        "Coefficient": ols_hours.params,
+        "Std. Error": ols_hours.bse,
+        "t-statistic": ols_hours.tvalues,
+        "p-value": ols_hours.pvalues,
+    },
+)
+
+display(table_ols_hours.round(4))
+
+print(f"\nR-squared: {ols_hours.rsquared:.4f}")
+print("\nPROBLEM: OLS treats 0 hours like any other value")
+print("         Doesn't account for corner solution nature of the data")
+
+# %%
+# Tobit model - custom MLE class
+print("\n\nTOBIT MODEL")
+print("=" * 70)
+print("Model: y* = x'β + u, u ~ N(0, σ²)")
+print("       y = max(0, y*)")
+
+# Prepare data using patsy
+y, X = pt.dmatrices(
+    "hours ~ nwifeinc + educ + exper + I(exper**2) + age + kidslt6 + kidsge6",
+    data=mroz,
+    return_type="dataframe",
+)
+
+# Get starting values from OLS
+reg_ols_start = smf.ols(
+    formula="hours ~ nwifeinc + educ + exper + I(exper**2) + age + kidslt6 + kidsge6",
+    data=mroz,
+).fit()
+
+sigma_start = np.log(sum(reg_ols_start.resid**2) / len(reg_ols_start.resid))
+params_start = np.concatenate(
+    (np.array(reg_ols_start.params), [sigma_start]), axis=None
+)
+
+
+# Define Tobit model class
+class Tobit(GenericLikelihoodModel):
+    """Tobit model for corner solution responses."""
+
+    def nloglikeobs(self, params):
+        """Negative log-likelihood per observation for Tobit model.
+
+        For details see Wooldridge (2019), formula 17.22:
+        - For y = 0: contribution is log[Φ(-xβ/σ)]
+        - For y > 0: contribution is log[φ((y-xβ)/σ)] - log(σ)
+        """
+        X = self.exog
+        y = self.endog
+        p = X.shape[1]
+
+        # Extract parameters
+        beta = params[0:p]
+        sigma = np.exp(params[p])  # Ensure σ > 0
+
+        # Predicted values
+        y_hat = np.dot(X, beta)
+
+        # Identify censored and uncensored observations
+        y_eq = y == 0  # Censored at zero
+        y_g = y > 0  # Uncensored
+
+        # Initialize log-likelihood array
+        ll = np.empty(len(y))
+
+        # Censored observations: log[Φ(-xβ/σ)]
+        ll[y_eq] = np.log(stats.norm.cdf(-y_hat[y_eq] / sigma))
+
+        # Uncensored observations: log[φ((y-xβ)/σ)] - log(σ)
+        ll[y_g] = np.log(stats.norm.pdf((y - y_hat)[y_g] / sigma)) - np.log(sigma)
+
+        # Return negative log-likelihood
+        return -ll
+
+
+# Estimate Tobit model
+print("\nEstimating Tobit model via Maximum Likelihood...")
+tobit = Tobit(endog=y, exog=X)
+tobit_results = tobit.fit(start_params=params_start, maxiter=10000, disp=0)
+
+print("\nTOBIT MODEL RESULTS:")
+print(tobit_results.summary())
+
+# Extract sigma
+sigma_hat = np.exp(tobit_results.params[-1])
+print(f"\nEstimated σ: {sigma_hat:.4f}")
+
+# %%
+# Compare OLS and Tobit
+print("\nCOMPARISON: OLS vs TOBIT")
+print("=" * 70)
+
+# Get Tobit parameters (exclude sigma)
+tobit_coef = tobit_results.params[:-1]
+tobit_se = tobit_results.bse[:-1]
+
+comparison_tobit = pd.DataFrame(
+    {
+        "OLS": ols_hours.params,
+        "OLS SE": ols_hours.bse,
+        "Tobit": tobit_coef,
+        "Tobit SE": tobit_se,
+    },
+)
+
+display(comparison_tobit.round(4))
+
+print("\nKEY INSIGHTS:")
+print("1. Tobit coefficients are typically LARGER than OLS")
+print("2. Tobit accounts for corner solution (selection into working)")
+print("3. OLS suffers from 'attenuation bias' (biased toward zero)")
+print("4. Tobit interpretation: effect on LATENT variable y*")
+
+# %%
+# Calculate marginal effects
+print("\n\nTOBIT MARGINAL EFFECTS")
+print("=" * 70)
+
+# Marginal effect on E(y|x) = Φ(xβ/σ) * β
+# Calculate at sample means
+
+X_mean = X.mean(axis=0).values
+xb_mean = np.dot(X_mean, tobit_coef)
+prob_positive = stats.norm.cdf(xb_mean / sigma_hat)
+
+print("At sample means:")
+print(f"  x'β = {xb_mean:.4f}")
+print(f"  Φ(x'β/σ) = {prob_positive:.4f}")
+
+# Marginal effects on E(y|x)
+me_tobit = prob_positive * tobit_coef
+
+me_tobit_df = pd.DataFrame(
+    {
+        "Tobit Coef (∂y*/∂x)": tobit_coef,
+        "ME on E(y|x)": me_tobit,
+        "OLS Coef": ols_hours.params,
+    },
+)
+
+display(me_tobit_df.round(4))
+
+print("\nINTERPRETATION:")
+educ_idx = list(X.columns).index("educ")
+kidslt6_idx = list(X.columns).index("kidslt6")
+
+print(f"  educ (Tobit coef): {tobit_coef[educ_idx]:.2f}")
+print(
+    f"    → 1 more year of education increases y* by {tobit_coef[educ_idx]:.2f} hours"
+)
+print(f"  educ (ME on E(y|x)): {me_tobit[educ_idx]:.2f}")
+print(
+    f"    → 1 more year of education increases E(hours|x) by {me_tobit[educ_idx]:.2f} hours"
+)
+print(
+    "    → Accounts for both: (1) more likely to work, (2) work more hours if working"
+)
+
+print(f"\n  kidslt6 (Tobit coef): {tobit_coef[kidslt6_idx]:.2f}")
+print(
+    f"    → 1 more young child decreases y* by {abs(tobit_coef[kidslt6_idx]):.2f} hours"
+)
+print(f"  kidslt6 (ME on E(y|x)): {me_tobit[kidslt6_idx]:.2f}")
+print(
+    f"    → 1 more young child decreases E(hours|x) by {abs(me_tobit[kidslt6_idx]):.2f} hours"
+)
+
+# %% [markdown]
+# ## 17.5 Censored and Truncated Regression Models
+#
+# **Censoring** and **truncation** both involve incomplete observation, but they differ fundamentally:
+#
+# ### Censored Regression
+#
+# **Censoring**: We observe **all** individuals, but the dependent variable is **censored** (cut off) at some value.
+#
+# Example: **Duration until re-arrest** (recidivism study)
+# - Some ex-convicts are re-arrested during study period → observe exact duration
+# - Others are NOT re-arrested by study end → observe only that duration > T (right-censored)
+#
+# **Censored regression model** (similar to Tobit):
+#
+# $$ y^* = \mathbf{x}'\boldsymbol{\beta} + u, \quad u \sim N(0, \sigma^2) $$
+#
+# $$ y = \begin{cases} y^* & \text{if } y^* < c \text{ (uncensored)} \\ c & \text{if } y^* \geq c \text{ (censored at } c) \end{cases} $$
+#
+# **Key**: We know which observations are censored!
+#
+# ### Truncated Regression
+#
+# **Truncation**: We **only observe** individuals for whom $y$ satisfies some condition.
+#
+# Example: **Wage study of working women**
+# - Only observe wages for women who work (hours > 0)
+# - Don't observe non-workers at all (missing from sample)
+#
+# **Truncated regression** accounts for non-random sampling:
+#
+# $$ f(y | \mathbf{x}, y > 0) = \frac{\phi\left(\frac{y - \mathbf{x}'\boldsymbol{\beta}}{\sigma}\right) / \sigma}{\Phi\left(\frac{\mathbf{x}'\boldsymbol{\beta}}{\sigma}\right)} $$
+#
+# **Key**: Sample is **selected** based on $y$!
+#
+# ### Key Difference
+#
+# |  | **Censored** | **Truncated** |
+# |---|---|---|
+# | **Sample** | Observe all individuals | Only some individuals |
+# | **Information** | Know who is censored | Don't know truncated observations |
+# | **Example** | Prison duration (some ongoing) | Wages (only workers) |
+# | **Correction** | Model censoring explicitly | Condition on truncation |
+#
+# ### Example 17.4: Censored Regression (Recidivism)
+
+# %%
+# Load recidivism data
+recid = wool.data("recid")
+
+print("\n17.5 CENSORED AND TRUNCATED REGRESSION")
+print("=" * 70)
+print("\nEXAMPLE 17.4: Duration Until Re-Arrest (Censored Regression)")
+
+print(f"\nTotal observations: {len(recid)}")
+print("\nDEPENDENT VARIABLE:")
+print("  durat = months until re-arrest (or end of study)")
+print("  ldurat = log(durat)")
+
+# Check censoring
+print("\nCENSORING:")
+print(
+    f"  Uncensored (re-arrested): {(recid['cens'] == 0).sum()} ({100 * (recid['cens'] == 0).mean():.1f}%)"
+)
+print(
+    f"  Censored (not re-arrested): {(recid['cens'] == 1).sum()} ({100 * (recid['cens'] == 1).mean():.1f}%)"
+)
+
+print("\nEXPLANATORY VARIABLES:")
+print("  workprg = 1 if participated in work program")
+print("  priors  = number of prior convictions")
+print("  tserved = months served in prison")
+print("  felon   = 1 if felony conviction")
+print("  alcohol = 1 if alcohol problems")
+print("  drugs   = 1 if drug history")
+print("  black   = 1 if black")
+print("  married = 1 if married")
+print("  educ    = years of education")
+print("  age     = age at release")
+
+# Summary statistics
+key_vars = ["ldurat", "workprg", "priors", "tserved", "felon", "age", "educ"]
+display(recid[key_vars].describe().round(2))
+
+# %%
+# Visualize censoring
+fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+
+# Histogram by censoring status
+uncensored = recid[recid["cens"] == 0]["ldurat"]
+censored = recid[recid["cens"] == 1]["ldurat"]
+
+axes[0].hist(
+    uncensored, bins=30, alpha=0.7, label="Uncensored (re-arrested)", edgecolor="black"
+)
+axes[0].hist(
+    censored, bins=30, alpha=0.7, label="Censored (not re-arrested)", edgecolor="black"
+)
+axes[0].set_xlabel("Log Duration (months)")
+axes[0].set_ylabel("Frequency")
+axes[0].set_title("Distribution of Log Duration by Censoring Status")
+axes[0].legend()
+axes[0].grid(True, alpha=0.3)
+
+# Scatter: duration vs priors
+axes[1].scatter(
+    recid[recid["cens"] == 0]["priors"],
+    recid[recid["cens"] == 0]["ldurat"],
+    alpha=0.5,
+    s=20,
+    label="Uncensored",
+)
+axes[1].scatter(
+    recid[recid["cens"] == 1]["priors"],
+    recid[recid["cens"] == 1]["ldurat"],
+    alpha=0.5,
+    s=20,
+    color="red",
+    marker="^",
+    label="Censored",
+)
+axes[1].set_xlabel("Number of Prior Convictions")
+axes[1].set_ylabel("Log Duration (months)")
+axes[1].set_title("Duration vs Priors (by censoring status)")
+axes[1].legend()
+axes[1].grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.show()
+
+# %%
+# Censored regression model
+print("\nCENSORED REGRESSION MODEL")
+print("=" * 70)
+print("Model: log(duration)* = x'β + u, u ~ N(0, σ²)")
+print("       Observe log(duration) if re-arrested")
+print("       Censored if not re-arrested (duration > study period)")
+
+# Prepare data
+censored = recid["cens"] != 0
+y, X = pt.dmatrices(
+    "ldurat ~ workprg + priors + tserved + felon + alcohol + drugs + black + married + educ + age",
+    data=recid,
+    return_type="dataframe",
+)
+
+# Get starting values from OLS
+reg_ols_cens = smf.ols(
+    formula="ldurat ~ workprg + priors + tserved + felon + alcohol + drugs + black + married + educ + age",
+    data=recid,
+).fit()
+
+sigma_start = np.log(sum(reg_ols_cens.resid**2) / len(reg_ols_cens.resid))
+params_start = np.concatenate((np.array(reg_ols_cens.params), [sigma_start]), axis=None)
+
+
+# Define censored regression model class
+class CensoredRegression(GenericLikelihoodModel):
+    """Censored regression model for right-censored data."""
+
+    def __init__(self, endog, cens, exog):
+        self.cens = cens
+        super().__init__(endog, exog, missing="none")
+
+    def nloglikeobs(self, params):
+        """Negative log-likelihood per observation.
+
+        For uncensored: standard normal density
+        For censored: probability of being above censoring point
+        """
+        X = self.exog
+        y = self.endog
+        cens = self.cens
+        p = X.shape[1]
+
+        beta = params[0:p]
+        sigma = np.exp(params[p])
+        y_hat = np.dot(X, beta)
+
+        ll = np.empty(len(y))
+
+        # Uncensored: log[φ((y-xβ)/σ)] - log(σ)
+        ll[~cens] = np.log(stats.norm.pdf((y - y_hat)[~cens] / sigma)) - np.log(sigma)
+
+        # Censored: log[Φ(-(y-xβ)/σ)]
+        ll[cens] = np.log(stats.norm.cdf(-(y - y_hat)[cens] / sigma))
+
+        return -ll
+
+
+# Estimate censored regression
+print("\nEstimating Censored Regression model...")
+censreg = CensoredRegression(endog=y, exog=X, cens=censored)
+censreg_results = censreg.fit(
+    start_params=params_start, maxiter=10000, method="BFGS", disp=0
+)
+
+print("\nCENSORED REGRESSION RESULTS:")
+print(censreg_results.summary())
+
+# Extract sigma
+sigma_censreg = np.exp(censreg_results.params[-1])
+print(f"\nEstimated σ: {sigma_censreg:.4f}")
+
+# %%
+# Compare OLS and Censored Regression
+print("\nCOMPARISON: OLS vs CENSORED REGRESSION")
+print("=" * 70)
+
+# Get censored regression parameters (exclude sigma)
+censreg_coef = censreg_results.params[:-1]
+censreg_se = censreg_results.bse[:-1]
+
+comparison_censreg = pd.DataFrame(
+    {
+        "OLS": reg_ols_cens.params,
+        "OLS SE": reg_ols_cens.bse,
+        "Censored Reg": censreg_coef,
+        "Censored Reg SE": censreg_se,
+    },
+)
+
+display(comparison_censreg.round(4))
+
+print("\nKEY INSIGHTS:")
+print("1. Censored regression accounts for right-censoring")
+print("2. OLS treats censored observations as if uncensored (biased)")
+print("3. workprg effect: Work program increases time to re-arrest")
+print("4. priors effect: More prior convictions → shorter time to re-arrest")
+
+print("\nINTERPRETATION:")
+workprg_idx = list(X.columns).index("workprg")
+priors_idx = list(X.columns).index("priors")
+
+print(f"  workprg: {censreg_coef[workprg_idx]:.4f}")
+print(f"    → Work program increases log(duration) by {censreg_coef[workprg_idx]:.4f}")
+print(
+    f"    → Increases duration by {100 * (np.exp(censreg_coef[workprg_idx]) - 1):.1f}%"
+)
+print(f"  priors: {censreg_coef[priors_idx]:.4f}")
+print(
+    f"    → 1 more prior conviction decreases log(duration) by {abs(censreg_coef[priors_idx]):.4f}"
+)
+print(
+    f"    → Decreases duration by {100 * (1 - np.exp(censreg_coef[priors_idx])):.1f}%"
+)
+
+# %% [markdown]
+# ## 17.6 Sample Selection Corrections
+#
+# **Sample selection bias** occurs when the sample is **not randomly selected** from the population, leading to biased estimates if not corrected.
+#
+# ### Classic Example: Wage Equation for Women
+#
+# We want to estimate the wage equation:
+#
+# $$ \log(\text{wage}) = \beta_0 + \beta_1 \text{educ} + \beta_2 \text{exper} + \beta_3 \text{exper}^2 + u $$
+#
+# **Problem**: We only observe wages for **women who work**! Selection into working is not random:
+#
+# $$ \text{inlf} = 1[\gamma_0 + \gamma_1 \text{educ} + \cdots + \gamma_k \mathbf{z} + v > 0] $$
+#
+# If $\text{Cov}(u, v) \neq 0$, then OLS on the working sample is **biased**!
+#
+# **Intuition**: Women with high unobserved wage offers ($u > 0$) are more likely to work. In the working sample, $E(u | \text{work}) \neq 0$ → OLS is biased.
+#
+# ### Heckman's Two-Step Procedure
+#
+# **Step 1**: Estimate **probit selection equation** using all observations:
+#
+# $$ \text{Pr}(\text{inlf} = 1 | \mathbf{z}) = \Phi(\mathbf{z}'\boldsymbol{\gamma}) $$
+#
+# Compute the **inverse Mills ratio**:
+#
+# $$ \hat{\lambda}_i = \frac{\phi(\mathbf{z}_i'\hat{\boldsymbol{\gamma}})}{\Phi(\mathbf{z}_i'\hat{\boldsymbol{\gamma}})} $$
+#
+# **Step 2**: Estimate **outcome equation** including $\hat{\lambda}_i$ as a regressor (using only working women):
+#
+# $$ \log(\text{wage}_i) = \beta_0 + \beta_1 \text{educ}_i + \beta_2 \text{exper}_i + \beta_3 \text{exper}_i^2 + \theta \hat{\lambda}_i + \text{error} $$
+#
+# **Key**:
+# - $\hat{\lambda}_i$ **controls for selection bias**
+# - If $\theta$ is significant → evidence of selection bias
+# - If $\theta \approx 0$ → OLS on working sample is approximately unbiased
+#
+# ### Identification
+#
+# For identification, need at least one variable in $\mathbf{z}$ (selection equation) that's **excluded** from $\mathbf{x}$ (outcome equation).
+#
+# **Exclusion restriction**: This variable affects **selection** but not the **outcome directly** (only through selection).
+#
+# Common choices:
+# - **Non-labor income** (affects work decision, not wage offer)
+# - **Number of young children** (affects work decision, not wage offer)
+# - **Husband's characteristics** (for married women's labor supply)
+#
+# ### Example 17.5: Heckman Selection Correction for Wages
+
+# %%
+# Full sample (including non-workers)
+mroz = wool.data("mroz")
+
+print("\n17.6 SAMPLE SELECTION CORRECTIONS")
+print("=" * 70)
+print("\nEXAMPLE: Wage equation for married women with selection correction")
+
+print(f"\nTotal sample: {len(mroz)} married women")
+print(
+    f"Working women (observed wages): {mroz['inlf'].sum()} ({100 * mroz['inlf'].mean():.1f}%)"
+)
+print(
+    f"Non-working women (no wages): {(1 - mroz['inlf']).sum()} ({100 * (1 - mroz['inlf']).mean():.1f}%)"
+)
+
+print("\nPROBLEM: Can only estimate wage equation for working women")
+print("         But selection into working is non-random!")
+print("         → OLS on working sample is biased (sample selection bias)")
+
+print("\nSOLUTION: Heckman two-step procedure")
+print("  Step 1: Estimate probit for work decision (all women)")
+print("  Step 2: Estimate wage equation including inverse Mills ratio (working women)")
+
+# %%
+# Naive OLS (wrong - ignores selection)
+print("\nNAIVE OLS (Working Women Only - BIASED)")
+print("=" * 70)
+
+ols_wage = smf.ols(
+    formula="lwage ~ educ + exper + I(exper**2)",
+    data=mroz[mroz["inlf"] == 1],
+).fit()
+
+table_ols_wage = pd.DataFrame(
+    {
+        "Coefficient": ols_wage.params,
+        "Std. Error": ols_wage.bse,
+        "t-statistic": ols_wage.tvalues,
+        "p-value": ols_wage.pvalues,
+    },
+)
+
+display(table_ols_wage.round(4))
+
+print(f"\nR-squared: {ols_wage.rsquared:.4f}")
+print(f"Observations: {ols_wage.nobs:.0f} (working women only)")
+
+print("\nPROBLEM: This ignores sample selection!")
+print("         Returns to education may be biased")
+
+# %%
+# STEP 1: Probit for labor force participation
+print("\n\nHECKMAN STEP 1: Probit Selection Equation")
+print("=" * 70)
+print("Estimate: P(inlf=1) = Φ(γ₀ + γ₁·educ + ... + γₖ·z)")
+print("Using ALL women (workers and non-workers)")
+
+probit_selection = smf.probit(
+    formula="inlf ~ educ + exper + I(exper**2) + nwifeinc + age + kidslt6 + kidsge6",
+    data=mroz,
+).fit(disp=0)
+
+print("\nPROBIT RESULTS (Selection Equation):")
+print(probit_selection.summary())
+
+# Compute inverse Mills ratio
+pred_index = probit_selection.predict(mroz, linear=True)
+mills_ratio = stats.norm.pdf(pred_index) / stats.norm.cdf(pred_index)
+
+# Add to dataframe
+mroz["inv_mills"] = mills_ratio
+
+print("\nInverse Mills Ratio (λ̂):")
+print(f"  Mean: {mills_ratio.mean():.4f}")
+print(f"  Std Dev: {mills_ratio.std():.4f}")
+print(f"  Min: {mills_ratio.min():.4f}")
+print(f"  Max: {mills_ratio.max():.4f}")
+
+# %%
+# STEP 2: OLS with inverse Mills ratio
+print("\n\nHECKMAN STEP 2: Wage Equation with Selection Correction")
+print("=" * 70)
+print("Estimate: log(wage) = β₀ + β₁·educ + β₂·exper + β₃·exper² + θ·λ̂ + u")
+print("Using working women only, but including λ̂ to control for selection")
+
+heckit = smf.ols(
+    formula="lwage ~ educ + exper + I(exper**2) + inv_mills",
+    data=mroz[mroz["inlf"] == 1],
+).fit()
+
+table_heckit = pd.DataFrame(
+    {
+        "Coefficient": heckit.params,
+        "Std. Error": heckit.bse,
+        "t-statistic": heckit.tvalues,
+        "p-value": heckit.pvalues,
+    },
+)
+
+display(table_heckit.round(4))
+
+print(f"\nR-squared: {heckit.rsquared:.4f}")
+print(f"Observations: {heckit.nobs:.0f} (working women only)")
+
+# %%
+# Compare OLS and Heckman
+print("\n\nCOMPARISON: OLS vs HECKMAN SELECTION CORRECTION")
+print("=" * 70)
+
+comparison_heckman = pd.DataFrame(
+    {
+        "OLS (Biased)": ols_wage.params,
+        "OLS SE": ols_wage.bse,
+        "Heckman": heckit.params.drop("inv_mills"),
+        "Heckman SE": heckit.bse.drop("inv_mills"),
+    },
+)
+
+display(comparison_heckman.round(4))
+
+print("\nINVERSE MILLS RATIO:")
+print(f"  Coefficient (θ): {heckit.params['inv_mills']:.4f}")
+print(f"  t-statistic: {heckit.tvalues['inv_mills']:.4f}")
+print(f"  p-value: {heckit.pvalues['inv_mills']:.4f}")
+
+if heckit.pvalues["inv_mills"] < 0.05:
+    print("\n✓ SIGNIFICANT selection bias detected!")
+    print("  → Heckman correction is necessary")
+    print("  → OLS estimates are biased")
+else:
+    print("\n✗ No significant selection bias")
+    print("  → Heckman correction not essential")
+    print("  → OLS and Heckman give similar results")
+
+print("\nKEY INSIGHTS:")
+print("1. RETURNS TO EDUCATION:")
+print(f"   OLS: {100 * ols_wage.params['educ']:.2f}% per year")
+print(f"   Heckman: {100 * heckit.params['educ']:.2f}% per year")
+if abs(ols_wage.params["educ"] - heckit.params["educ"]) > 0.01:
+    print("   → Substantial difference! Selection bias is important")
+else:
+    print("   → Similar estimates")
+
+print("\n2. SELECTION BIAS:")
+theta = heckit.params["inv_mills"]
+if theta < 0:
+    print(f"   θ = {theta:.4f} < 0")
+    print("   → Women with LOW unobserved wage offers are more likely to work")
+    print("   → Positive selection: OLS overestimates returns")
+else:
+    print(f"   θ = {theta:.4f} > 0")
+    print("   → Women with HIGH unobserved wage offers are more likely to work")
+    print("   → Negative selection: OLS underestimates returns")
+
+# %%
+# Visualize selection bias
+print("\nVISUALIZING SELECTION BIAS")
+print("=" * 70)
+
+fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+
+# Panel A: Inverse Mills ratio by work status
+working = mroz[mroz["inlf"] == 1]["inv_mills"]
+not_working = mroz[mroz["inlf"] == 0]["inv_mills"]
+
+axes[0].hist(working, bins=30, alpha=0.7, label="Working", edgecolor="black")
+axes[0].hist(not_working, bins=30, alpha=0.7, label="Not Working", edgecolor="black")
+axes[0].set_xlabel("Inverse Mills Ratio (λ̂)")
+axes[0].set_ylabel("Frequency")
+axes[0].set_title("Distribution of λ̂ by Work Status")
+axes[0].legend()
+axes[0].grid(True, alpha=0.3)
+
+# Panel B: Predicted wages vs inverse Mills ratio (working women)
+working_data = mroz[mroz["inlf"] == 1].copy()
+axes[1].scatter(working_data["inv_mills"], working_data["lwage"], alpha=0.5, s=20)
+axes[1].set_xlabel("Inverse Mills Ratio (λ̂)")
+axes[1].set_ylabel("Log Wage")
+axes[1].set_title("Log Wage vs Selection Correction Term")
+axes[1].grid(True, alpha=0.3)
+
+# Add regression line
+z = np.polyfit(working_data["inv_mills"], working_data["lwage"], 1)
+p = np.poly1d(z)
+x_line = np.linspace(
+    working_data["inv_mills"].min(), working_data["inv_mills"].max(), 100
+)
+axes[1].plot(
+    x_line, p(x_line), "r--", linewidth=2, alpha=0.7, label=f"Slope={z[0]:.3f}"
+)
+axes[1].legend()
+
+plt.tight_layout()
+plt.show()
+
+print("\nINTERPRETATION:")
+print("Panel A: λ̂ is higher for working women (higher selection pressure)")
+print("Panel B: Correlation between λ̂ and wages shows selection effect")
+
+# %% [markdown]
+# ## Summary
+#
+# This chapter introduced **limited dependent variable models** for outcomes that are restricted in some way.
+#
+# ### Key Models and Applications
+#
+# 1. **Binary Response (Logit/Probit)**:
+#    - Outcome: 0 or 1
+#    - Models: Linear probability, logit, probit
+#    - Interpretation: Marginal effects (not coefficients!)
+#    - Applications: Labor force participation, college attendance, loan default
+#
+# 2. **Fractional Response**:
+#    - Outcome: Proportion in (0, 1)
+#    - Model: Fractional logit (quasi-MLE)
+#    - Applications: Savings rate, portfolio shares
+#
+# 3. **Count Data (Poisson)**:
+#    - Outcome: Non-negative integer
+#    - Models: Poisson, quasi-Poisson (overdispersion)
+#    - Interpretation: Semi-elasticities
+#    - Applications: Number of arrests, patents, doctor visits
+#
+# 4. **Corner Solution (Tobit)**:
+#    - Outcome: Many zeros, positive continuous values
+#    - Model: Tobit (Type I censored regression)
+#    - Interpretation: Effects on latent variable and observed variable differ
+#    - Applications: Hours worked, charitable contributions, R&D spending
+#
+# 5. **Censored/Truncated Regression**:
+#    - **Censored**: Observe all individuals, some outcomes censored
+#    - **Truncated**: Only observe individuals meeting some condition
+#    - Applications: Duration models, survival analysis
+#
+# 6. **Sample Selection (Heckman)**:
+#    - Problem: Sample is non-randomly selected
+#    - Solution: Two-step procedure with inverse Mills ratio
+#    - Applications: Wages (only observe workers), firm performance (only observe survivors)
+#
+# ### Key Principles
+#
+# **Don't use OLS for limited dependent variables!**
+#
+# Why?
+# - Predictions can be outside feasible range
+# - Heteroskedasticity is inherent
+# - Effects are nonlinear
+# - Inefficient or biased estimates
+#
+# **Use specialized models** that respect the nature of the outcome:
+#
+# | Outcome Type | Model | Key Feature |
+# |---|---|---|
+# | Binary (0/1) | Logit/Probit | Probabilities in [0, 1] |
+# | Fraction (0-1) | Fractional logit | Handles corner solutions |
+# | Count (0, 1, 2, ...) | Poisson | Non-negative integers |
+# | Corner (many 0s, positive) | Tobit | Two-part model |
+# | Censored | Censored regression | Explicit censoring |
+# | Truncated | Truncated regression | Sample selection |
+# | Non-random sample | Heckman | Inverse Mills ratio |
+#
+# ### Interpretation Guidelines
+#
+# 1. **Binary models**: Report **marginal effects**, not coefficients
+# 2. **Poisson**: Coefficients are **semi-elasticities** (percentage changes)
+# 3. **Tobit**: Distinguish effects on **latent** vs **observed** variable
+# 4. **Heckman**: Test significance of **inverse Mills ratio** (selection bias)
+#
+# ### Practical Recommendations
+#
+# ✓ **Always check**:
+# - Nature of dependent variable (binary, count, corner, etc.)
+# - Distribution of outcomes (many zeros? censoring?)
+# - Sample selection issues (non-random sample?)
+#
+# ✓ **Use robust standard errors**:
+# - Heteroskedasticity is inherent in limited dependent variable models
+# - Always use HC or clustered standard errors
+#
+# ✓ **Report marginal effects**:
+# - Coefficients alone are hard to interpret
+# - Calculate average marginal effects (AME) or marginal effects at the mean (MEM)
+#
+# ✓ **Check predictions**:
+# - Ensure predictions are in feasible range
+# - Plot fitted vs actual values
+#
+# ✗ **Don't use**:
+# - OLS for binary outcomes (use logit/probit)
+# - OLS for count data (use Poisson)
+# - OLS on selected sample without correction (use Heckman)
+#
+# **Next Steps**: Chapter 18 covers **advanced time series topics** including cointegration, vector autoregressions, and forecasting!
+
+# %%
+# Visual summary
+fig, ax = plt.subplots(figsize=(12, 10))
+ax.axis("off")
+
+# Title
+ax.text(
+    0.5,
+    0.98,
+    "Chapter 17: Limited Dependent Variables - Model Selection Guide",
+    ha="center",
+    fontsize=16,
+    fontweight="bold",
+)
+
+# Decision tree
+y_start = 0.92
+spacing = 0.09
+
+# Question 1: Nature of y
+ax.text(
+    0.5,
+    y_start,
+    "What is the nature of your dependent variable?",
+    ha="center",
+    fontsize=12,
+    fontweight="bold",
+)
+
+# Binary
+ax.add_patch(
+    plt.Rectangle(
+        (0.05, y_start - 0.10), 0.18, 0.07, fill=True, alpha=0.2, color="blue"
+    )
+)
+ax.text(
+    0.14, y_start - 0.065, "Binary (0/1)", ha="center", fontsize=10, fontweight="bold"
+)
+ax.text(
+    0.14, y_start - 0.09, "→ Logit/Probit", ha="center", fontsize=9, color="darkblue"
+)
+
+# Fraction
+ax.add_patch(
+    plt.Rectangle(
+        (0.24, y_start - 0.10), 0.18, 0.07, fill=True, alpha=0.2, color="green"
+    )
+)
+ax.text(
+    0.33, y_start - 0.065, "Fraction (0-1)", ha="center", fontsize=10, fontweight="bold"
+)
+ax.text(
+    0.33,
+    y_start - 0.09,
+    "→ Fractional Logit",
+    ha="center",
+    fontsize=9,
+    color="darkgreen",
+)
+
+# Count
+ax.add_patch(
+    plt.Rectangle(
+        (0.43, y_start - 0.10), 0.18, 0.07, fill=True, alpha=0.2, color="orange"
+    )
+)
+ax.text(
+    0.52,
+    y_start - 0.065,
+    "Count (0,1,2,...)",
+    ha="center",
+    fontsize=10,
+    fontweight="bold",
+)
+ax.text(0.52, y_start - 0.09, "→ Poisson", ha="center", fontsize=9, color="darkorange")
+
+# Corner
+ax.add_patch(
+    plt.Rectangle((0.62, y_start - 0.10), 0.18, 0.07, fill=True, alpha=0.2, color="red")
+)
+ax.text(
+    0.71,
+    y_start - 0.065,
+    "Corner (many 0s)",
+    ha="center",
+    fontsize=10,
+    fontweight="bold",
+)
+ax.text(0.71, y_start - 0.09, "→ Tobit", ha="center", fontsize=9, color="darkred")
+
+# Censored/truncated
+ax.add_patch(
+    plt.Rectangle(
+        (0.81, y_start - 0.10), 0.14, 0.07, fill=True, alpha=0.2, color="purple"
+    )
+)
+ax.text(0.88, y_start - 0.065, "Censored", ha="center", fontsize=10, fontweight="bold")
+ax.text(0.88, y_start - 0.09, "→ Cens. Reg", ha="center", fontsize=9, color="purple")
+
+# Question 2: Sample selection
+y_select = y_start - 0.18
+ax.text(
+    0.5,
+    y_select,
+    "Is your sample randomly selected?",
+    ha="center",
+    fontsize=11,
+    fontweight="bold",
+)
+
+ax.add_patch(
+    plt.Rectangle(
+        (0.2, y_select - 0.08), 0.25, 0.05, fill=True, alpha=0.15, color="green"
+    )
+)
+ax.text(0.325, y_select - 0.055, "YES → Use standard model", ha="center", fontsize=9)
+
+ax.add_patch(
+    plt.Rectangle(
+        (0.55, y_select - 0.08), 0.25, 0.05, fill=True, alpha=0.15, color="red"
+    )
+)
+ax.text(0.675, y_select - 0.055, "NO → Heckman correction", ha="center", fontsize=9)
+
+# Interpretation guide
+y_interp = y_select - 0.18
+ax.text(
+    0.5, y_interp, "INTERPRETATION GUIDE", ha="center", fontsize=12, fontweight="bold"
+)
+
+interp_items = [
+    ("Logit/Probit", "Marginal effects (∂P/∂x), not coefficients"),
+    ("Poisson", "Semi-elasticities (% change in E(y))"),
+    ("Tobit", "Effect on latent y* vs observed y"),
+    ("Heckman", "Test inv. Mills ratio for selection bias"),
+]
+
+y_pos = y_interp - 0.06
+for model, interpretation in interp_items:
+    ax.text(0.15, y_pos, f"{model}:", ha="left", fontsize=9, fontweight="bold")
+    ax.text(0.35, y_pos, interpretation, ha="left", fontsize=8)
+    y_pos -= 0.04
+
+# Common mistakes
+y_mistakes = y_interp - 0.28
+ax.text(
+    0.5,
+    y_mistakes,
+    "⚠️ COMMON MISTAKES TO AVOID",
+    ha="center",
+    fontsize=11,
+    fontweight="bold",
+    color="red",
+)
+
+mistakes = [
+    "✗ Using OLS for binary outcomes (wrong predictions, inefficient)",
+    "✗ Interpreting logit/probit coefficients as marginal effects",
+    "✗ Ignoring sample selection (biased estimates)",
+    "✗ Not using robust standard errors (all LDV models have heteroskedasticity)",
+]
+
+y_pos = y_mistakes - 0.05
+for mistake in mistakes:
+    ax.text(0.5, y_pos, mistake, ha="center", fontsize=8, color="darkred")
+    y_pos -= 0.035
+
+# Best practices
+y_best = y_mistakes - 0.20
+ax.text(
+    0.5,
+    y_best,
+    "✓ BEST PRACTICES",
+    ha="center",
+    fontsize=11,
+    fontweight="bold",
+    color="green",
+)
+
+practices = [
+    "✓ Match model to outcome type (binary→logit, count→Poisson, etc.)",
+    "✓ Always report marginal effects (not raw coefficients)",
+    "✓ Use robust/clustered standard errors",
+    "✓ Check predictions are in feasible range",
+    "✓ Test for specification (overdispersion, selection bias)",
+]
+
+y_pos = y_best - 0.05
+for practice in practices:
+    ax.text(0.5, y_pos, practice, ha="center", fontsize=8, color="darkgreen")
+    y_pos -= 0.035
+
+plt.tight_layout()
+plt.show()
+# %% [markdown]
+#
+#

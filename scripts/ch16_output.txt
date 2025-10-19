@@ -1,0 +1,283 @@
+SIMULATED SUPPLY AND DEMAND DATA
+======================================================================
+
+True Structural Parameters:
+Demand:  Q = 100 - 2·P + 0.5·I + u_D
+Supply:  Q = 50 + 1.5·P + 0.3·W + u_S
+
+Observed equilibrium data (Q*, P*) where supply = demand
+       quantity   price  income  weather
+count    200.00  200.00  200.00   200.00
+mean      82.03   21.25   49.59     0.43
+std        3.10    1.63    9.31     4.94
+min       74.33   17.23   23.80   -16.21
+25%       79.87   20.02   42.95    -3.03
+50%       81.99   21.15   49.96     0.39
+75%       83.89   22.45   55.01     3.44
+max       90.04   26.11   77.20    19.26
+
+SIMULTANEITY BIAS DEMONSTRATION:
+======================================================================
+OLS slope:        0.6188
+True demand slope: -2.0000
+True supply slope:  1.5000
+
+OLS is BIASED: It's between demand and supply, not equal to either!
+OLS traces out the locus of equilibrium points, not a structural curve
+SIMULTANEOUS EQUATIONS: Labor Supply and Wages
+======================================================================
+
+Sample: Married women with observed wages
+Observations: 428
+
+STRUCTURAL EQUATIONS:
+
+1. Labor Supply Equation:
+   hours = β₁₀ + β₁₂·log(wage) + β₁₁·educ + β₁₂·age + β₁₃·kidslt6 + β₁₄·nwifeinc + u₁
+   Endogenous: log(wage)
+   Instruments: exper, exper²
+
+2. Wage Equation:
+   log(wage) = β₂₀ + β₂₁·hours + β₂₂·educ + β₂₃·exper + β₂₄·exper² + u₂
+   Endogenous: hours
+   Instruments: age, kidslt6, nwifeinc
+
+KEY QUESTION: Are hours and wages simultaneously determined?
+- Labor supply theory: Higher wages → More hours worked (substitution effect)
+- Wage determination: More hours → Lower hourly wage? (fatigue, bargaining)
+         hours   lwage    educ     age  kidslt6  nwifeinc   exper
+count   428.00  428.00  428.00  428.00   428.00    428.00  428.00
+mean   1302.93    1.19   12.66   41.97     0.14     18.94   13.04
+std     776.27    0.72    2.29    7.72     0.39     10.59    8.06
+min      12.00   -2.05    5.00   30.00     0.00     -0.03    0.00
+25%     609.50    0.82   12.00   35.00     0.00     12.37    7.00
+50%    1365.50    1.25   12.00   42.00     0.00     17.08   12.00
+75%    1910.50    1.60   14.00   47.25     0.00     23.51   18.00
+max    4950.00    3.22   17.00   60.00     2.00     91.00   38.00
+
+2SLS ESTIMATION (Equation-by-Equation)
+======================================================================
+
+EQUATION 1: Labor Supply
+----------------------------------------------------------------------
+Dependent variable: hours
+Endogenous regressor: log(wage)
+Instruments: exper, exper²
+              Coefficient  Std. Error  t-statistic  p-value
+Intercept       2225.6618    574.5641       3.8737   0.0001
+educ            -183.7513     59.0998      -3.1092   0.0020
+age               -7.8061      9.3780      -0.8324   0.4057
+kidslt6         -198.1543    182.9291      -1.0832   0.2793
+nwifeinc         -10.1696      6.6147      -1.5374   0.1249
+np.log(wage)    1639.5556    470.5757       3.4841   0.0005
+
+R-squared: -2.0076
+First-stage F-stat: Check that instruments are relevant
+
+EQUATION 2: Wage Equation
+----------------------------------------------------------------------
+Dependent variable: log(wage)
+Endogenous regressor: hours
+Instruments: age, kidslt6, nwifeinc
+               Coefficient  Std. Error  t-statistic  p-value
+Intercept          -0.6557      0.3378      -1.9412   0.0529
+educ                0.1103      0.0155       7.1069   0.0000
+exper               0.0346      0.0195       1.7742   0.0767
+I(exper ** 2)      -0.0007      0.0005      -1.5543   0.1209
+hours               0.0001      0.0003       0.4945   0.6212
+
+R-squared: 0.1257
+
+CHECKING CROSS-EQUATION ERROR CORRELATION
+======================================================================
+If residuals are correlated, 3SLS will be more efficient than 2SLS
+
+Correlation between residuals: -0.9038
+✓ Substantial correlation (|-0.9038| > 0.1)
+  → 3SLS will be more efficient than 2SLS
+  → Errors across equations are related
+
+INTERPRETATION OF 2SLS RESULTS
+======================================================================
+
+1. LABOR SUPPLY EQUATION:
+   Effect of wage on hours: 1639.56
+   A 1% increase in wage → 1639.56 more hours worked per year
+   ✓ Positive substitution effect (higher wage → more labor supply)
+
+   Standard error: 470.5757
+   ✓ Statistically significant (t = 3.48)
+
+2. WAGE EQUATION:
+   Effect of hours on log(wage): 0.000126
+   Each additional hour worked → 0.0126% higher wage
+   Interpretation: Positive correlation (more productive workers work more)
+
+   Standard error: 0.000255
+   ✗ Not statistically significant (t = 0.49)
+
+
+3SLS ESTIMATION (System Estimation)
+======================================================================
+Estimates entire system jointly, accounting for cross-equation correlations
+
+3SLS SYSTEM RESULTS
+                           System GLS Estimation Summary                           
+===================================================================================
+Estimator:                        GLS   Overall R-squared:                  -2.3957
+No. Equations.:                     2   McElroy's R-squared:                 0.7846
+No. Observations:                 428   Judge's (OLS) R-squared:            -2.3957
+Date:                Sun, Oct 19 2025   Berndt's R-squared:                  0.5181
+Time:                        18:24:23   Dhrymes's R-squared:                -2.3957
+                                        Cov. Estimator:                  unadjusted
+                                        Num. Constraints:                      None
+               Equation: labor_supply, Dependent Variable: hours                
+================================================================================
+              Parameter  Std. Err.     T-stat    P-value    Lower CI    Upper CI
+--------------------------------------------------------------------------------
+Intercept        2305.9     511.54     4.5077     0.0000      1300.4      3311.3
+educ            -212.82     53.727    -3.9611     0.0001     -318.43     -107.21
+age             -9.5150     7.9609    -1.1952     0.2327     -25.163      6.1331
+kidslt6         -192.36     150.92    -1.2746     0.2032     -489.00      104.28
+nwifeinc        -0.1770     3.5836    -0.0494     0.9606     -7.2210      6.8670
+np.log(wage)     1781.9     439.88     4.0509     0.0001      917.30      2646.6
+                                                                                
+====================
+    Instruments     
+--------------------
+exper, I(exper ** 2)
+                    
+               Equation: wage_eq, Dependent Variable: np.log(wage)               
+=================================================================================
+               Parameter  Std. Err.     T-stat    P-value    Lower CI    Upper CI
+---------------------------------------------------------------------------------
+Intercept        -0.6939     0.3360    -2.0653     0.0395     -1.3543     -0.0335
+educ              0.1127     0.0154     7.3355     0.0000      0.0825      0.1429
+exper             0.0214     0.0154     1.3929     0.1644     -0.0088      0.0517
+I(exper ** 2)    -0.0003     0.0003    -1.1303     0.2590     -0.0008      0.0002
+hours             0.0002     0.0002     0.7707     0.4413     -0.0003      0.0007
+======================
+     Instruments      
+----------------------
+age, kidslt6, nwifeinc
+----------------------
+
+Covariance Estimator:
+Homoskedastic (Unadjusted) Covariance (Debiased: True, GLS: True)
+
+
+COMPARISON: 2SLS vs 3SLS
+======================================================================
+
+Labor Supply Equation (hours):
+----------------------------------------------------------------------
+/Users/alan/Documents/GitHub/alanlujan91/merino/scripts/Ch16. Simultaneous Equations Models.py:896: UserWarning: Glyph 10003 (\N{CHECK MARK}) missing from font(s) Arial.
+  plt.tight_layout()
+/Users/alan/Documents/GitHub/alanlujan91/merino/scripts/Ch16. Simultaneous Equations Models.py:896: UserWarning: Glyph 9888 (\N{WARNING SIGN}) missing from font(s) Arial.
+  plt.tight_layout()
+/Users/alan/Documents/GitHub/alanlujan91/merino/scripts/Ch16. Simultaneous Equations Models.py:896: UserWarning: Glyph 65039 (\N{VARIATION SELECTOR-16}) missing from font(s) Arial.
+  plt.tight_layout()
+/Users/alan/Documents/GitHub/alanlujan91/merino/scripts/Ch16. Simultaneous Equations Models.py:897: UserWarning: Glyph 10003 (\N{CHECK MARK}) missing from font(s) Arial.
+  plt.show()
+/Users/alan/Documents/GitHub/alanlujan91/merino/scripts/Ch16. Simultaneous Equations Models.py:897: UserWarning: Glyph 9888 (\N{WARNING SIGN}) missing from font(s) Arial.
+  plt.show()
+/Users/alan/Documents/GitHub/alanlujan91/merino/scripts/Ch16. Simultaneous Equations Models.py:897: UserWarning: Glyph 65039 (\N{VARIATION SELECTOR-16}) missing from font(s) Arial.
+  plt.show()
+                   2SLS   2SLS SE       3SLS   3SLS SE
+Intercept     2225.6618  574.5641        NaN       NaN
+age             -7.8061    9.3780        NaN       NaN
+educ          -183.7513   59.0998        NaN       NaN
+kidslt6       -198.1543  182.9291        NaN       NaN
+Intercept           NaN       NaN  2305.8575  511.5407
+age                 NaN       NaN    -9.5150    7.9609
+educ                NaN       NaN  -212.8195   53.7270
+kidslt6             NaN       NaN  -192.3591  150.9175
+np.log(wage)        NaN       NaN  1781.9334  439.8842
+nwifeinc            NaN       NaN    -0.1770    3.5836
+np.log(wage)  1639.5556  470.5757        NaN       NaN
+nwifeinc       -10.1696    6.6147        NaN       NaN
+
+Wage Equation (log(wage)):
+----------------------------------------------------------------------
+                 2SLS  2SLS SE    3SLS  3SLS SE
+I(exper ** 2) -0.0007   0.0005     NaN      NaN
+Intercept     -0.6557   0.3378     NaN      NaN
+educ           0.1103   0.0155     NaN      NaN
+exper          0.0346   0.0195     NaN      NaN
+hours          0.0001   0.0003     NaN      NaN
+I(exper ** 2)     NaN      NaN -0.0003   0.0003
+Intercept         NaN      NaN -0.6939   0.3360
+educ              NaN      NaN  0.1127   0.0154
+exper             NaN      NaN  0.0214   0.0154
+hours             NaN      NaN  0.0002   0.0002
+
+KEY INSIGHTS:
+1. Coefficients: 2SLS and 3SLS estimates are similar (as expected)
+2. Standard Errors: 3SLS should have smaller SEs if errors are correlated
+3. Both methods account for simultaneity (unlike OLS which is biased)
+
+WHICH TO USE?
+- 3SLS: More efficient if system is correctly specified
+- 2SLS: More robust to misspecification of individual equations
+- In practice: Report both and compare for robustness
+TIME SERIES SEM: Macroeconomic Model
+======================================================================
+
+IS-LM MODEL (Conceptual)
+
+IS Equation (Goods Market Equilibrium):
+  Y = α₀ + α₁·r + α₂·G + u
+  Output (Y) depends negatively on interest rate (r)
+  Government spending (G) is exogenous policy variable
+
+LM Equation (Money Market Equilibrium):
+  r = β₀ + β₁·Y + β₂·M + v
+  Interest rate (r) depends positively on output (Y)
+  Money supply (M) is exogenous policy variable
+
+IDENTIFICATION:
+✓ IS equation: Use M (excluded from IS) as instrument for r
+✓ LM equation: Use G (excluded from LM) as instrument for Y
+
+ESTIMATION:
+- Apply 2SLS to each equation using appropriate instruments
+- Or use 3SLS for system estimation
+- With time series: Check stationarity, use robust SEs
+
+EXTENSIONS:
+- Add dynamics: Y_{t-1}, r_{t-1} as regressors
+- Use lags as instruments (if predetermined)
+- Model expectations: Forward-looking behavior
+PANEL DATA SEM: Firm Productivity and Training
+======================================================================
+
+STRUCTURAL EQUATIONS:
+
+1. Productivity Equation:
+   log(output)ᵢₜ = β₁·trainingᵢₜ + controls + αᵢ + u₁ᵢₜ
+   Productivity depends on training
+
+2. Training Decision:
+   trainingᵢₜ = β₂·log(output)ᵢₜ₋₁ + controls + cᵢ + u₂ᵢₜ
+   Training depends on past productivity
+
+SIMULTANEITY:
+- Firms choose training based on productivity
+- Training affects future productivity
+- Need to account for both directions of causality
+
+IDENTIFICATION STRATEGY:
+✓ Use lagged productivity as instrument for current training
+✓ Use policy variables (grants) as instrument for training
+✓ Fixed effects control for time-invariant firm heterogeneity
+
+ESTIMATION:
+- First-difference to remove fixed effects
+- Apply 2SLS using lagged variables as instruments
+- Or use system GMM for efficiency
+
+ADVANTAGES OF PANEL SEM:
+✓ More instruments available (lags, differences)
+✓ Control for unobserved heterogeneity (fixed effects)
+✓ Richer identification from time variation
+✓ Can test Granger causality

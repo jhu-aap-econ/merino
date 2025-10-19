@@ -1,0 +1,561 @@
+18.1 INFINITE DISTRIBUTED LAG MODELS
+======================================================================
+
+EXAMPLE: Housing investment and real housing prices
+
+Total observations: 42
+Time period: 1947-1988 (annual data)
+
+VARIABLES:
+  invpc  = real per capita housing investment
+  price  = real housing price index
+  linvpc = log(invpc)
+  gprice = growth rate of real housing prices
+
+QUESTION: How does housing price growth affect investment?
+  - Immediate effect (β₀)
+  - Long-run effect (LRP)
+         invpc    price   linvpc   gprice
+count  42.0000  42.0000  42.0000  41.0000
+mean    0.5213   0.9126  -0.6662   0.0045
+std     0.0927   0.0592   0.1725   0.0199
+min     0.3642   0.8190  -1.0101  -0.0366
+25%     0.4541   0.8712  -0.7894  -0.0078
+50%     0.4947   0.8855  -0.7038   0.0047
+75%     0.5917   0.9721  -0.5250   0.0138
+max     0.7034   1.0432  -0.3518   0.0545
+
+OBSERVATIONS:
+✓ Both investment and prices trend upward over time
+✓ Detrending removes long-run growth pattern
+✓ Price growth is volatile with cyclical patterns
+
+KOYCK MODEL (Geometric Distributed Lag)
+======================================================================
+Model: y_t = γ₀ + γ₁·y_{t-1} + β₀·x_t + v_t
+where y = detrended log investment, x = price growth
+                 Coefficient  Std. Error  t-statistic  p-value
+Intercept            -0.0100      0.0179      -0.5561   0.5814
+linvpc_det_lag1       0.3399      0.1316       2.5831   0.0138
+gprice                3.0948      0.9333       3.3159   0.0020
+
+R-squared: 0.4067
+Observations: 41
+
+INTERPRETATION:
+  β₀ (immediate effect): 3.0948
+    → 1 percentage point increase in price growth → 309.48% immediate increase in investment
+
+  ρ (persistence): 0.3399
+    → Each period, 34.0% of previous period's effect carries over
+
+  LRP (long-run effect): 4.6884
+    → 1 percentage point permanent increase in price growth → 468.84% long-run increase in investment
+    → LRP = β₀/(1-ρ) = 3.0948/(1-0.3399) = 4.6884
+
+
+RATIONAL DISTRIBUTED LAG
+======================================================================
+Model: y_t = γ₀ + γ₁·y_{t-1} + β₀·x_t + δ₁·x_{t-1} + v_t
+More flexible: allows non-monotonic lag pattern
+                 Coefficient  Std. Error  t-statistic  p-value
+Intercept             0.0059      0.0169       0.3466   0.7309
+linvpc_det_lag1       0.5472      0.1517       3.6076   0.0009
+gprice                3.2564      0.9703       3.3559   0.0019
+gprice_lag1          -2.9363      0.9732      -3.0172   0.0047
+
+R-squared: 0.5420
+Observations: 40
+
+INTERPRETATION:
+  β₀ (contemporaneous effect): 3.2564
+  δ₁ (one-period lag effect): -2.9363
+  ρ (persistence): 0.5472
+
+  LRP (long-run effect): 0.7067
+    → LRP = (β₀ + δ₁)/(1-ρ) = (3.2564 + -2.9363)/(1-0.5472) = 0.7067
+
+  ✓ Negative lagged effect: price growth has smaller impact over time
+
+
+COMPARISON: KOYCK vs RATIONAL DISTRIBUTED LAG
+======================================================================
+                 Koyck  Rational
+β₀ (immediate)  3.0948    3.2564
+δ₁ (lagged x)      NaN   -2.9363
+ρ (lagged y)    0.3399    0.5472
+LRP             4.6884    0.7067
+R²              0.4067    0.5420
+
+KEY INSIGHTS:
+1. Both models show positive immediate effect of price growth on investment
+2. Rational DL has slightly better fit (higher R²)
+3. LRP is larger in Koyck (4.6884) than Rational (0.7067)
+4. Rational DL shows negative lagged effect → initial enthusiasm fades
+
+CHOICE OF MODEL:
+✓ Rational DL preferred: better fit, more flexible
+
+18.2 TESTING FOR UNIT ROOTS
+======================================================================
+
+EXAMPLE: Is log GDP stationary or does it have a unit root?
+
+Total observations: 37
+Time period: 1959Q1-2000Q4 (quarterly data)
+
+VARIABLE:
+  gdp  = US real GDP
+  lgdp = log(GDP)
+
+QUESTION: Does log GDP have a unit root?
+  H₀: Unit root (non-stationary, random walk)
+  H₁: Stationary (mean-reverting)
+             gdp     lgdp
+count    37.0000  37.0000
+mean   4336.5865   8.3226
+std    1373.6251   0.3345
+min    2212.3000   7.7018
+25%    3288.6001   8.0982
+50%    4279.2998   8.3615
+75%    5489.8999   8.6107
+max    6742.8999   8.8162
+
+VISUAL INSPECTION:
+✓ Log GDP trends strongly upward → suggests non-stationarity
+✓ Growth rate fluctuates around constant mean → suggests stationarity
+→ Need formal test to confirm!
+
+
+AUGMENTED DICKEY-FULLER (ADF) TEST
+======================================================================
+Test: H₀: θ = 0 (unit root) vs H₁: θ < 0 (stationary)
+Model: Δy_t = α + β·t + θ·y_{t-1} + γ₁·Δy_{t-1} + u_t
+       (with constant and trend)
+
+ADF statistic: -2.4207
+p-value: 0.3687
+Lags used: 1
+Critical values:
+  1%: -4.2438
+  5%: -3.5444
+  10%: -3.2047
+
+ADF REGRESSION OUTPUT:
+ADF test statistic: -2.4207
+p-value: 0.3687
+Lags used: 1
+
+CRITICAL VALUES:
+  1%: -4.2438
+  5%: -3.5444
+  10%: -3.2047
+
+DECISION:
+✗ ADF statistic (-2.4207) > critical value (-3.5444)
+  → FAIL TO REJECT H₀: Log GDP has a unit root
+  → Log GDP is NON-STATIONARY
+
+INTERPRETATION:
+  → Log GDP appears to have a unit root
+  → Shocks to GDP have permanent effects
+  → GDP follows a random walk with drift
+
+
+ADF TEST ON FIRST DIFFERENCE (GDP Growth)
+======================================================================
+If level has unit root, first difference should be stationary
+
+ADF statistic: -4.2803
+p-value: 0.0005
+
+Critical values:
+  1%: -3.6392
+  5%: -2.9512
+  10%: -2.6144
+
+DECISION:
+✓ ADF statistic (-4.2803) < critical value (-2.9512)
+  → REJECT H₀: GDP growth is stationary
+  → Log GDP is I(1): integrated of order 1
+  → First difference is stationary
+
+CONCLUSION:
+✓ Log GDP has a unit root (non-stationary in levels)
+✓ First difference (growth rate) is stationary
+✓ Log GDP is I(1): need to difference once to achieve stationarity
+→ Use growth rates for regression, not levels!
+
+18.3 SPURIOUS REGRESSION
+======================================================================
+
+DEMONSTRATION: Two independent random walks can appear related!
+
+Generated 51 observations of two INDEPENDENT random walks
+  x_t = x_{t-1} + a_t, where a_t ~ N(0,1)
+  y_t = y_{t-1} + e_t, where e_t ~ N(0,1)
+  Cov(a_t, e_t) = 0  → x and y are UNRELATED
+
+OBSERVATION:
+✓ Both series wander randomly (unit roots)
+✓ They may appear to move together by chance
+
+SPURIOUS REGRESSION: y = α + β·x + e
+======================================================================
+           Coefficient  Std. Error  t-statistic  p-value
+Intercept      -6.5100      0.3465     -18.7894      0.0
+x               1.2695      0.0929      13.6607      0.0
+
+R-squared: 0.7920
+Durbin-Watson: 0.5931
+
+SHOCKING RESULT:
+✗ β̂ = 1.2695 appears HIGHLY SIGNIFICANT (t = 13.66, p = 0.0000)
+  → OLS says x and y are related
+  → But we KNOW they are independent!
+  → This is SPURIOUS REGRESSION
+
+✗ WARNING: R² (0.7920) > DW (0.5931)
+  → Granger-Newbold rule suggests spurious regression
+
+
+TESTING RESIDUALS FOR UNIT ROOT
+======================================================================
+If residuals have unit root → spurious regression
+
+ADF statistic on residuals: -4.0660
+p-value: 0.0011
+Critical value (5%): -2.9214
+
+✓ Residuals are stationary
+  → Not spurious (or cointegrated - see next section)
+
+
+CORRECT APPROACH: First Differences
+======================================================================
+Model: Δy_t = β·Δx_t + u_t
+           Coefficient  Std. Error  t-statistic  p-value
+Intercept      -0.3266      0.1300      -2.5126   0.0154
+dx             -0.0760      0.1249      -0.6083   0.5458
+
+R-squared: 0.0077
+Durbin-Watson: 1.9104
+
+CORRECT INFERENCE:
+✓ β̂ = -0.0760 is NOT significant (t = -0.61, p = 0.5458)
+  → Correctly finds NO relationship
+  → First differences avoid spurious regression
+
+
+MULTIPLE SIMULATIONS: Frequency of Spurious Regression
+======================================================================
+
+Simulated 1000 pairs of independent random walks
+Regressed y on x in each simulation
+
+RESULTS:
+  Significant at 5% level: 678 out of 1000
+  Spurious regression rate: 67.8%
+
+EXPECTED if variables were stationary: 5%
+ACTUAL with non-stationary variables: 67.8%
+
+✗ MUCH higher than 5%!
+  → Non-stationary variables produce spurious relationships
+  → ALWAYS test for unit roots before regressing levels
+
+18.4 COINTEGRATION AND ERROR CORRECTION MODELS
+======================================================================
+
+CONCEPT: Cointegration
+Two I(1) variables can have a stationary linear combination
+
+EXAMPLE: Consumption and Income
+  - Both consumption (C) and income (Y) are I(1)
+  - But C_t - β·Y_t might be stationary
+  - Economic theory: long-run consumption proportional to income
+  - Deviations from this relationship are temporary
+
+KEY DIFFERENCE FROM SPURIOUS REGRESSION:
+  Spurious: y and x are unrelated, just both trending
+  Cointegration: y and x share a common trend (genuine relationship)
+
+TESTING PROCEDURE:
+  1. Confirm both y and x are I(1) (unit root tests)
+  2. Regress y_t on x_t → get residuals û_t
+  3. Test if û_t is stationary (ADF test)
+  4. If stationary → cointegrated (long-run relationship exists)
+  5. Estimate error correction model (ECM)
+
+
+SIMULATION: Cointegrated Variables
+======================================================================
+
+OBSERVATION:
+✓ Both variables trend upward (unit roots)
+✓ They move together (share common trend)
+✓ Unlike spurious regression, this is a REAL relationship
+
+STEP 1: Cointegrating Regression
+======================================================================
+Regress: y_t = α + β·x_t + u_t
+           Coefficient  Std. Error  t-statistic  p-value
+Intercept       2.1867      0.1161      18.8421      0.0
+x               1.4170      0.0385      36.8400      0.0
+
+R-squared: 0.9327
+
+LONG-RUN RELATIONSHIP:
+  β̂ = 1.4170
+  → Long-run: y ≈ 2.19 + 1.42·x
+
+STEP 2: Test Residuals for Stationarity (ADF Test)
+======================================================================
+H₀: No cointegration (residuals have unit root)
+H₁: Cointegration (residuals are stationary)
+
+ADF statistic: -10.0789
+p-value: 0.0000
+Critical value (5%): -2.8912
+
+✓ Residuals are stationary
+  → REJECT H₀: Variables are COINTEGRATED
+  → Long-run relationship is genuine, not spurious
+
+
+ALTERNATIVE: Using statsmodels coint() function
+======================================================================
+Cointegration test statistic: -7.9750
+p-value: 0.0000
+Critical values: [-4.01048603 -3.39854434 -3.08756793]
+
+✓ p-value < 0.05 → COINTEGRATED
+  → Can estimate error correction model
+
+
+ERROR CORRECTION MODEL (ECM)
+======================================================================
+Model: Δy_t = γ + θ₁·Δx_t + θ₂·û_{t-1} + error
+where û_{t-1} = y_{t-1} - β̂·x_{t-1} (lagged residual)
+            Coefficient  Std. Error  t-statistic  p-value
+Intercept        0.0074      0.1007       0.0739   0.9412
+dx               1.2911      0.0913      14.1424   0.0000
+resid_lag1      -0.9916      0.1046      -9.4813   0.0000
+
+R-squared: 0.7131
+
+INTERPRETATION:
+  θ₁ (short-run effect): 1.2911
+    → Immediate impact of Δx on Δy
+
+  θ₂ (error correction): -0.9916
+    ✓ Negative (as expected)
+    → If y_{t-1} > β̂·x_{t-1} (above equilibrium), Δy_t decreases
+    → Adjustment speed: 99.2% of deviation corrected per period
+
+  Long-run effect: β̂ = 1.4170
+    → From cointegrating regression
+    → Permanent 1-unit increase in x → 1.42-unit increase in y
+
+18.5 FORECASTING
+======================================================================
+
+EXAMPLE 18-8: Forecasting Unemployment Rate
+
+Total observations: 56
+Time period: 1948-2003 (annual data)
+
+VARIABLES:
+  unem   = Unemployment rate (%)
+  inf    = Inflation rate (%)
+  unem_1 = Lagged unemployment
+  inf_1  = Lagged inflation
+
+ESTIMATION PERIOD: 1948-1996 (49 observations)
+FORECAST PERIOD:   1997-2003 (7 observations)
+
+SUMMARY STATISTICS (Full sample):
+        unem    inf  unem_1  inf_1
+count  56.00  56.00   55.00  55.00
+mean    5.63   3.88    5.63   3.91
+std     1.51   3.04    1.52   3.06
+min     2.90  -1.20    2.90  -1.20
+25%     4.50   1.68    4.50   1.65
+50%     5.55   3.05    5.50   3.10
+75%     6.72   5.43    6.75   5.45
+max     9.70  13.50    9.70  13.50
+
+MODEL 1: AR(1) - Unemployment Only
+======================================================================
+Specification: unem_t = α + β₁·unem_{t-1} + u_t
+           Coefficient  Std. Error  t-statistic  p-value
+Intercept       1.5717      0.5771       2.7234   0.0091
+unem_1          0.7324      0.0969       7.5586   0.0000
+
+R-squared: 0.5540
+Adj. R-squared: 0.5443
+
+INTERPRETATION:
+  β̂₁ = 0.7324
+  → Unemployment is persistent (0 < β₁ < 1)
+  → High unemployment today → high unemployment tomorrow
+  → But mean-reverting (β₁ < 1)
+
+MODEL 2: ARX - Unemployment and Inflation
+======================================================================
+Specification: unem_t = α + β₁·unem_{t-1} + β₂·inf_{t-1} + u_t
+           Coefficient  Std. Error  t-statistic  p-value
+Intercept       1.3038      0.4897       2.6625   0.0107
+unem_1          0.6470      0.0838       7.7206   0.0000
+inf_1           0.1836      0.0412       4.4576   0.0001
+
+R-squared: 0.6906
+Adj. R-squared: 0.6768
+
+INTERPRETATION:
+  β̂₂ (inflation effect): 0.1836
+  ✓ Statistically significant (p = 0.0001)
+  → Higher inflation → higher unemployment
+
+MODEL COMPARISON:
+  Model 1 (AR only):  R² = 0.5540
+  Model 2 (with inf): R² = 0.6906
+  → Model 2 fits better in-sample
+
+OUT-OF-SAMPLE FORECASTS: 1997-2003
+======================================================================
+
+MODEL 1 FORECASTS (AR only):
+      Forecast  Lower 95%  Upper 95%  Actual  Error
+1997      5.53       3.39       7.66     4.9  -0.63
+1998      5.16       3.02       7.30     4.5  -0.66
+1999      4.87       2.72       7.01     4.2  -0.67
+2000      4.65       2.49       6.80     4.0  -0.65
+2001      4.50       2.34       6.66     4.8   0.30
+2002      5.09       2.95       7.23     5.8   0.71
+2003      5.82       3.69       7.95     6.0   0.18
+
+MODEL 2 FORECASTS (with inflation):
+      Forecast  Lower 95%  Upper 95%  Actual  Error
+1997      5.35       3.55       7.15     4.9  -0.45
+1998      4.90       3.09       6.70     4.5  -0.40
+1999      4.51       2.69       6.32     4.2  -0.31
+2000      4.43       2.61       6.24     4.0  -0.43
+2001      4.52       2.70       6.34     4.8   0.28
+2002      4.92       3.12       6.73     5.8   0.88
+2003      5.35       3.54       7.16     6.0   0.65
+
+FORECAST EVALUATION
+======================================================================
+
+ROOT MEAN SQUARED ERROR (RMSE):
+  Model 1 (AR only):  0.5761
+  Model 2 (with inf): 0.5218
+  ✓ Model 2 is better (RMSE 9.4% lower)
+
+MEAN ABSOLUTE ERROR (MAE):
+  Model 1 (AR only):  0.5420
+  Model 2 (with inf): 0.4842
+  ✓ Model 2 is better (MAE 10.7% lower)
+
+KEY INSIGHT:
+  → Model with inflation forecasts better
+  → Inflation provides useful information for forecasting unemployment
+
+VISUALIZATION: Forecasts vs Actual
+
+OBSERVATIONS:
+✓ Forecast intervals widen for multi-step forecasts (cumulative uncertainty)
+✓ Both models track the general trend
+✓ Actual unemployment sometimes falls outside forecast intervals
+  → Unexpected shocks (recessions, policy changes)
+
+18.6 EVENT STUDIES WITH CONTROL GROUPS
+======================================================================
+
+CONCEPT: Difference-in-Differences with Time Series
+
+SETUP:
+  - Treatment group: Affected by policy/event at time T₀
+  - Control group: Not affected
+  - Compare trends before and after T₀
+
+MODEL:
+  y_{it} = α + δ₀·Treat_i + δ₁·Post_t + β·(Treat_i × Post_t) + u_{it}
+
+INTERPRETATION:
+  α: Baseline level (control group, pre-period)
+  δ₀: Pre-treatment difference (treatment - control)
+  δ₁: Time trend (affects both groups)
+  β: TREATMENT EFFECT (difference-in-differences)
+
+KEY ASSUMPTION: Parallel Trends
+  → Without treatment, both groups would follow similar trends
+  → Testable: check if trends are parallel in pre-period
+
+EXAMPLE APPLICATIONS:
+  • Minimum wage increase in one state (control: neighboring state)
+  • Tax policy change in one region
+  • Environmental regulation in one industry
+  • COVID-19 policy (e.g., lockdowns in some regions)
+
+
+SIMULATION: Difference-in-Differences Event Study
+======================================================================
+
+Generated 40 time periods for 2 groups
+Treatment occurs at period 20
+True treatment effect: 2.0
+
+DATA STRUCTURE:
+   time    group         y  treat  post  treat_post
+0     1  Control  5.934024      0     0           0
+1     2  Control  5.568674      0     0           0
+2     3  Control  5.199231      0     0           0
+3     4  Control  5.324544      0     0           0
+4     5  Control  5.958026      0     0           0
+5     6  Control  6.180165      0     0           0
+6     7  Control  4.390019      0     0           0
+7     8  Control  5.137353      0     0           0
+8     9  Control  6.129994      0     0           0
+9    10  Control  6.051026      0     0           0
+
+VISUALIZATION: Parallel Trends and Treatment Effect
+
+OBSERVATIONS:
+✓ Pre-treatment: Both groups follow parallel trends
+✓ Post-treatment: Treatment group jumps up (treatment effect)
+  → Difference-in-differences captures this jump
+
+DIFFERENCE-IN-DIFFERENCES ESTIMATION
+======================================================================
+Model: y = α + δ₀·Treat + δ₁·Post + β·(Treat × Post) + u
+            Coefficient  Std. Error  t-statistic  p-value
+Intercept        6.1303      0.1773      34.5850   0.0000
+treat            0.9927      0.2507       3.9599   0.0002
+post             1.8556      0.2507       7.4027   0.0000
+treat_post       2.0520      0.3545       5.7883   0.0000
+
+R-squared: 0.8491
+
+INTERPRETATION:
+  α̂ (baseline): 6.1303
+    → Control group level in pre-period
+
+  δ̂₀ (group difference): 0.9927
+    → Treatment group 0.99 units higher pre-treatment
+
+  δ̂₁ (time trend): 1.8556
+    → Both groups increase 1.86 units in post-period
+
+  β̂ (treatment effect): 2.0520
+    ✓ CAUSAL EFFECT of treatment
+    → Treatment causes 2.05-unit increase in outcome
+    → True effect = 2.0, estimated = 2.05
+
+✓ Estimated effect close to true effect (2.0)
+
+CONCLUSION:
+  → Difference-in-differences successfully identifies treatment effect
+  → Control group accounts for common time trends
+  → Critical assumption: parallel trends (testable in pre-period)

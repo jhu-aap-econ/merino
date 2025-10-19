@@ -55,17 +55,24 @@ wage1 = wool.data("wage1")
 # Examine the gender variable
 # GENDER DISTRIBUTION IN DATASET
 # Dataset size
-pd.DataFrame({
-    "Metric": ["Total observations"],
-    "Value": [len(wage1)]
-})
+pd.DataFrame(
+    {
+        "Metric": ["Total observations"],
+        "Value": [len(wage1)],
+    }
+)
 
 # Gender distribution details
-gender_dist = pd.DataFrame({
-    "Gender": ["Males (female=0)", "Females (female=1)"],
-    "Count": [(wage1['female'] == 0).sum(), (wage1['female'] == 1).sum()],
-    "Percentage": [f"{(wage1['female'] == 0).mean():.1%}", f"{(wage1['female'] == 1).mean():.1%}"]
-})
+gender_dist = pd.DataFrame(
+    {
+        "Gender": ["Males (female=0)", "Females (female=1)"],
+        "Count": [(wage1["female"] == 0).sum(), (wage1["female"] == 1).sum()],
+        "Percentage": [
+            f"{(wage1['female'] == 0).mean():.1%}",
+            f"{(wage1['female'] == 1).mean():.1%}",
+        ],
+    }
+)
 gender_dist
 
 # Estimate model with dummy variable for gender
@@ -97,10 +104,12 @@ results_table = pd.DataFrame(
 # Reference Category: male (female=0)
 results_table
 # Model statistics
-pd.DataFrame({
-    "Metric": ["R-squared", "Number of observations"],
-    "Value": [f"{dummy_results.rsquared:.4f}", int(dummy_results.nobs)]
-})
+pd.DataFrame(
+    {
+        "Metric": ["R-squared", "Number of observations"],
+        "Value": [f"{dummy_results.rsquared:.4f}", int(dummy_results.nobs)],
+    }
+)
 ```
 
 **Explanation:**

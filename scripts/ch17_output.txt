@@ -1,0 +1,774 @@
+MARRIED WOMEN'S LABOR FORCE PARTICIPATION
+======================================================================
+
+Total observations: 753
+Women in labor force (inlf=1): 428
+Women not in labor force (inlf=0): 325
+Participation rate: 56.8%
+
+DEPENDENT VARIABLE:
+  inlf = 1 if woman worked for a wage in 1975, 0 otherwise
+
+EXPLANATORY VARIABLES:
+  nwifeinc  = husband's income (thousands)
+  educ      = years of education
+  exper     = actual labor market experience (years)
+  age       = age in years
+  kidslt6   = number of children less than 6 years old
+  kidsge6   = number of children 6-18 years old
+         inlf  nwifeinc    educ   exper     age  kidslt6  kidsge6
+count  753.00    753.00  753.00  753.00  753.00   753.00   753.00
+mean     0.57     20.13   12.29   10.63   42.54     0.24     1.35
+std      0.50     11.63    2.28    8.07    8.07     0.52     1.32
+min      0.00     -0.03    5.00    0.00   30.00     0.00     0.00
+25%      0.00     13.03   12.00    4.00   36.00     0.00     0.00
+50%      1.00     17.70   12.00    9.00   43.00     0.00     1.00
+75%      1.00     24.47   13.00   15.00   49.00     0.00     2.00
+max      1.00     96.00   17.00   45.00   60.00     3.00     8.00
+
+17.1.1 LINEAR PROBABILITY MODEL (OLS)
+======================================================================
+Model: P(inlf=1) = β₀ + β₁·nwifeinc + β₂·educ + ... + u
+Uses OLS but with heteroskedasticity-robust standard errors (HC3)
+
+LINEAR PROBABILITY MODEL RESULTS:
+               Coefficient  Std. Error  t-statistic  p-value
+Intercept           0.5855      0.1536       3.8125   0.0001
+nwifeinc           -0.0034      0.0016      -2.1852   0.0289
+educ                0.0380      0.0073       5.1766   0.0000
+exper               0.0395      0.0060       6.6001   0.0000
+I(exper ** 2)      -0.0006      0.0002      -2.9973   0.0027
+age                -0.0161      0.0024      -6.6640   0.0000
+kidslt6            -0.2618      0.0322      -8.1430   0.0000
+kidsge6             0.0130      0.0137       0.9526   0.3408
+
+R-squared: 0.2642
+Observations: 753
+
+INTERPRETATION (coefficients are marginal effects):
+  nwifeinc: -0.0034
+    → $1,000 increase in husband's income → -0.34 percentage point decrease in participation
+  educ: 0.0380
+    → 1 more year of education → 3.80 percentage point increase in participation
+  kidslt6: -0.2618
+    → 1 more young child → -26.18 percentage point decrease in participation
+
+PROBLEM WITH LPM: Predictions can be outside [0, 1]
+======================================================================
+Minimum prediction: -0.3451
+Maximum prediction: 1.1272
+
+Predictions < 0: 16 (2.1%)
+Predictions > 1: 17 (2.3%)
+
+✗ LPM produces invalid probabilities!
+  → Need logit or probit to constrain predictions to [0, 1]
+
+EXTREME CASE PREDICTIONS (LPM)
+======================================================================
+Woman 1: Low education, high husband income, young children
+  Predicted P(inlf=1) = -0.4105
+
+Woman 2: High education, low husband income, no young children
+  Predicted P(inlf=1) = 1.0428
+
+✗ Woman 1: Negative probability! (-0.4105)
+✗ Woman 2: Probability > 1! (1.0428)
+
+
+17.1.3 LOGIT MODEL
+======================================================================
+Model: P(inlf=1) = Λ(β₀ + β₁·nwifeinc + β₂·educ + ...)
+where Λ(z) = exp(z) / [1 + exp(z)] is the logistic CDF
+
+LOGIT MODEL RESULTS:
+                           Logit Regression Results                           
+==============================================================================
+Dep. Variable:                   inlf   No. Observations:                  753
+Model:                          Logit   Df Residuals:                      745
+Method:                           MLE   Df Model:                            7
+Date:                Sun, 19 Oct 2025   Pseudo R-squ.:                  0.2197
+Time:                        18:48:51   Log-Likelihood:                -401.77
+converged:                       True   LL-Null:                       -514.87
+Covariance Type:            nonrobust   LLR p-value:                 3.159e-45
+=================================================================================
+                    coef    std err          z      P>|z|      [0.025      0.975]
+---------------------------------------------------------------------------------
+Intercept         0.4255      0.860      0.494      0.621      -1.261       2.112
+nwifeinc         -0.0213      0.008     -2.535      0.011      -0.038      -0.005
+educ              0.2212      0.043      5.091      0.000       0.136       0.306
+exper             0.2059      0.032      6.422      0.000       0.143       0.269
+I(exper ** 2)    -0.0032      0.001     -3.104      0.002      -0.005      -0.001
+age              -0.0880      0.015     -6.040      0.000      -0.117      -0.059
+kidslt6          -1.4434      0.204     -7.090      0.000      -1.842      -1.044
+kidsge6           0.0601      0.075      0.804      0.422      -0.086       0.207
+=================================================================================
+
+Log-Likelihood: -401.7652
+McFadden's Pseudo R²: 0.2197
+AIC: 819.5303
+
+17.1.4 PROBIT MODEL
+======================================================================
+Model: P(inlf=1) = Φ(β₀ + β₁·nwifeinc + β₂·educ + ...)
+where Φ(z) is the standard normal CDF
+
+PROBIT MODEL RESULTS:
+                          Probit Regression Results                           
+==============================================================================
+Dep. Variable:                   inlf   No. Observations:                  753
+Model:                         Probit   Df Residuals:                      745
+Method:                           MLE   Df Model:                            7
+Date:                Sun, 19 Oct 2025   Pseudo R-squ.:                  0.2206
+Time:                        18:48:51   Log-Likelihood:                -401.30
+converged:                       True   LL-Null:                       -514.87
+Covariance Type:            nonrobust   LLR p-value:                 2.009e-45
+=================================================================================
+                    coef    std err          z      P>|z|      [0.025      0.975]
+---------------------------------------------------------------------------------
+Intercept         0.2701      0.509      0.531      0.595      -0.727       1.267
+nwifeinc         -0.0120      0.005     -2.484      0.013      -0.022      -0.003
+educ              0.1309      0.025      5.183      0.000       0.081       0.180
+exper             0.1233      0.019      6.590      0.000       0.087       0.160
+I(exper ** 2)    -0.0019      0.001     -3.145      0.002      -0.003      -0.001
+age              -0.0529      0.008     -6.235      0.000      -0.069      -0.036
+kidslt6          -0.8683      0.119     -7.326      0.000      -1.101      -0.636
+kidsge6           0.0360      0.043      0.828      0.408      -0.049       0.121
+=================================================================================
+
+Log-Likelihood: -401.3022
+McFadden's Pseudo R²: 0.2206
+AIC: 818.6044
+
+
+COMPARISON: LPM vs LOGIT vs PROBIT
+======================================================================
+                  LPM  LPM SE   Logit  Logit SE  Probit  Probit SE
+Intercept      0.5855  0.1536  0.4255    0.8604  0.2701     0.5086
+nwifeinc      -0.0034  0.0016 -0.0213    0.0084 -0.0120     0.0048
+educ           0.0380  0.0073  0.2212    0.0434  0.1309     0.0253
+exper          0.0395  0.0060  0.2059    0.0321  0.1233     0.0187
+I(exper ** 2) -0.0006  0.0002 -0.0032    0.0010 -0.0019     0.0006
+age           -0.0161  0.0024 -0.0880    0.0146 -0.0529     0.0085
+kidslt6       -0.2618  0.0322 -1.4434    0.2036 -0.8683     0.1185
+kidsge6        0.0130  0.0137  0.0601    0.0748  0.0360     0.0435
+
+KEY INSIGHTS:
+1. COEFFICIENT MAGNITUDES:
+   - LPM coefficients are on probability scale
+   - Logit coefficients are larger (logistic distribution has heavier tails)
+   - Probit coefficients are between LPM and Logit
+   - CANNOT directly compare coefficients across models!
+
+2. STATISTICAL SIGNIFICANCE:
+/Users/alan/Documents/GitHub/alanlujan91/merino/.venv/lib/python3.11/site-packages/statsmodels/discrete/discrete_model.py:530: FutureWarning: linear keyword is deprecated, use which="linear"
+  warnings.warn(msg, FutureWarning)
+   - Pattern of significance is similar across models
+   - Same variables are significant in all three models
+
+3. PREDICTION VALIDITY:
+   - LPM:    min=-0.3451, max=1.1272
+   - Logit:  min=0.0087, max=0.9685
+   - Probit: min=0.0025, max=0.9799
+   ✓ Logit and Probit always give valid probabilities [0, 1]
+
+VISUALIZING THE RESPONSE FUNCTIONS
+======================================================================
+
+KEY OBSERVATIONS:
+✓ LPM is linear - can exceed [0, 1]
+✓ Logit and Probit are S-shaped - always in [0, 1]
+✓ Logit has slightly heavier tails than Probit
+✓ Near the middle (z ≈ 0), all three are similar
+
+
+17.1.5 MARGINAL EFFECTS (PARTIAL EFFECTS)
+======================================================================
+Coefficients in logit/probit are NOT marginal effects!
+Must calculate: ∂P(y=1|x)/∂xⱼ = g(x'β)·βⱼ
+
+LOGIT: Average Marginal Effects (AME)
+----------------------------------------------------------------------
+                  AME  Logit Coef
+nwifeinc      -0.0038     -0.0213
+educ           0.0395      0.2212
+exper          0.0368      0.2059
+I(exper ** 2) -0.0006     -0.0032
+age           -0.0157     -0.0880
+kidslt6       -0.2578     -1.4434
+kidsge6        0.0107      0.0601
+
+INTERPRETATION of Average Marginal Effects:
+  educ AME: 0.0395
+    → 1 more year of education increases participation probability by 3.95 percentage points (on average)
+  kidslt6 AME: -0.2578
+    → 1 more young child decreases participation probability by 25.78 percentage points (on average)
+
+PROBIT: Average Marginal Effects (AME)
+----------------------------------------------------------------------
+                  AME  Probit Coef  Logit AME
+nwifeinc      -0.0036      -0.0120    -0.0038
+educ           0.0394       0.1309     0.0395
+exper          0.0371       0.1233     0.0368
+I(exper ** 2) -0.0006      -0.0019    -0.0006
+age           -0.0159      -0.0529    -0.0157
+kidslt6       -0.2612      -0.8683    -0.2578
+kidsge6        0.0108       0.0360     0.0107
+
+KEY INSIGHTS:
+1. Logit and Probit AMEs are very similar
+2. AMEs are comparable to LPM coefficients
+3. AMEs have intuitive interpretation (percentage point changes)
+4. For small changes, AME ≈ LPM coefficient
+
+MARGINAL EFFECTS DEPEND ON X VALUES!
+======================================================================
+
+KEY TAKEAWAY:
+✓ LPM: Marginal effect is constant (same for all x)
+✓ Logit/Probit: Marginal effect varies with x
+✓ Largest effects near middle, smaller at extremes
+✓ Must specify which x values when reporting marginal effects!
+
+17.2 FRACTIONAL RESPONSE MODELS
+======================================================================
+USE CASE: Dependent variable is a proportion/fraction between 0 and 1
+
+EXAMPLES:
+  - Savings rate: fraction of income saved
+  - Portfolio share: fraction invested in stocks
+  - 401(k) participation rate at firm level
+
+MODEL:
+  E(y|x) = Λ(x'β) where 0 < y < 1
+  Estimated by quasi-MLE (same as logit)
+
+ADVANTAGES:
+  ✓ Predictions automatically in (0, 1)
+  ✓ Handles corner solutions (y = 0 or y = 1) naturally
+  ✓ Consistent estimator even if model misspecified
+
+ESTIMATION:
+  1. Use logit estimation with fractional y
+  2. Must use robust standard errors
+  3. Interpret via average marginal effects
+
+NOTE: In Python/statsmodels, use smf.logit() with continuous y ∈ (0,1)
+      Some observations can be exactly 0 or 1 (corner solutions)
+
+17.3 POISSON REGRESSION FOR COUNT DATA
+======================================================================
+
+EXAMPLE: Number of times arrested in 1986
+
+Total observations: 2725
+
+DEPENDENT VARIABLE:
+  narr86 = number of times arrested in 1986
+
+DISTRIBUTION OF ARRESTS:
+narr86
+0     1970
+1      559
+2      121
+3       42
+4       12
+5       13
+6        4
+7        1
+9        1
+10       1
+Name: count, dtype: int64
+
+Mean arrests: 0.404
+Variance: 0.738
+Variance/Mean ratio: 1.825
+(Poisson assumes variance = mean; ratio > 1 suggests overdispersion)
+
+EXPLANATORY VARIABLES:
+  pcnv     = proportion of prior arrests leading to conviction
+  avgsen   = average sentence length served (months)
+  tottime  = total time served in prison (months)
+  ptime86  = months in prison during 1986
+  qemp86   = quarters employed in 1986
+  inc86    = legal income in 1986 ($100s)
+  black    = 1 if black
+  hispan   = 1 if Hispanic
+  born60   = 1 if born in 1960
+
+LINEAR MODEL (OLS) - For Comparison
+----------------------------------------------------------------------
+           Coefficient  Std. Error  t-statistic  p-value
+Intercept       0.5766      0.0379      15.2150   0.0000
+pcnv           -0.1319      0.0404      -3.2642   0.0011
+avgsen         -0.0113      0.0122      -0.9257   0.3547
+tottime         0.0121      0.0094       1.2790   0.2010
+ptime86        -0.0409      0.0088      -4.6378   0.0000
+qemp86         -0.0513      0.0145      -3.5420   0.0004
+inc86          -0.0015      0.0003      -4.2613   0.0000
+black           0.3270      0.0454       7.1987   0.0000
+hispan          0.1938      0.0397       4.8799   0.0000
+born60         -0.0225      0.0333      -0.6747   0.4999
+
+R-squared: 0.0725
+
+Predictions < 0: 87 (3.2%)
+✗ OLS can predict negative arrests!
+
+
+POISSON REGRESSION MODEL
+======================================================================
+Model: E(narr86|x) = exp(β₀ + β₁·pcnv + β₂·avgsen + ...)
+           Coefficient  Std. Error  z-statistic  p-value
+Intercept      -0.5996      0.0673      -8.9158   0.0000
+pcnv           -0.4016      0.0850      -4.7260   0.0000
+avgsen         -0.0238      0.0199      -1.1918   0.2333
+tottime         0.0245      0.0148       1.6603   0.0969
+ptime86        -0.0986      0.0207      -4.7625   0.0000
+qemp86         -0.0380      0.0290      -1.3099   0.1902
+inc86          -0.0081      0.0010      -7.7624   0.0000
+black           0.6608      0.0738       8.9503   0.0000
+hispan          0.4998      0.0739       6.7609   0.0000
+born60         -0.0510      0.0641      -0.7967   0.4256
+
+Log-Likelihood: -2248.7611
+AIC: 4517.5222
+
+INTERPRETATION (Semi-Elasticities):
+  pcnv: -0.4016
+    → 0.1 increase in conviction rate → -4.02% change in expected arrests
+  qemp86: -0.0380
+    → 1 more quarter employed → -3.80% change in expected arrests
+
+
+QUASI-POISSON (Overdispersion Correction)
+======================================================================
+When Var(y|x) > E(y|x), use quasi-Poisson to adjust standard errors
+           Coefficient  Std. Error  z-statistic  p-value
+Intercept      -0.5996      0.0828      -7.2393   0.0000
+pcnv           -0.4016      0.1046      -3.8373   0.0001
+avgsen         -0.0238      0.0246      -0.9677   0.3332
+tottime         0.0245      0.0182       1.3481   0.1776
+ptime86        -0.0986      0.0255      -3.8670   0.0001
+qemp86         -0.0380      0.0357      -1.0636   0.2875
+inc86          -0.0081      0.0013      -6.3028   0.0000
+black           0.6608      0.0909       7.2673   0.0000
+hispan          0.4998      0.0910       5.4896   0.0000
+born60         -0.0510      0.0789      -0.6469   0.5177
+
+Dispersion parameter: 1.5168
+(> 1 confirms overdispersion)
+
+
+COMPARISON: OLS vs POISSON vs QUASI-POISSON
+======================================================================
+              OLS  OLS SE  Poisson  Poisson SE  Quasi-Poisson  Quasi-Poisson SE
+Intercept  0.5766  0.0379  -0.5996      0.0673        -0.5996            0.0828
+pcnv      -0.1319  0.0404  -0.4016      0.0850        -0.4016            0.1046
+avgsen    -0.0113  0.0122  -0.0238      0.0199        -0.0238            0.0246
+tottime    0.0121  0.0094   0.0245      0.0148         0.0245            0.0182
+ptime86   -0.0409  0.0088  -0.0986      0.0207        -0.0986            0.0255
+qemp86    -0.0513  0.0145  -0.0380      0.0290        -0.0380            0.0357
+inc86     -0.0015  0.0003  -0.0081      0.0010        -0.0081            0.0013
+black      0.3270  0.0454   0.6608      0.0738         0.6608            0.0909
+hispan     0.1938  0.0397   0.4998      0.0739         0.4998            0.0910
+born60    -0.0225  0.0333  -0.0510      0.0641        -0.0510            0.0789
+
+KEY INSIGHTS:
+1. Poisson coefficients are semi-elasticities (not levels like OLS)
+/Users/alan/Documents/GitHub/alanlujan91/merino/.venv/lib/python3.11/site-packages/statsmodels/base/model.py:2748: UserWarning: df_model + k_constant + k_extra differs from k_params
+  warnings.warn("df_model + k_constant + k_extra "
+/Users/alan/Documents/GitHub/alanlujan91/merino/.venv/lib/python3.11/site-packages/statsmodels/base/model.py:2752: UserWarning: df_resid differs from nobs - k_params
+  warnings.warn("df_resid differs from nobs - k_params")
+/Users/alan/Documents/GitHub/alanlujan91/merino/scripts/Ch17. Limited Dependent Variable Models and Sample Selection Corrections.py:1214: RuntimeWarning: divide by zero encountered in log
+  ll[~cens] = np.log(stats.norm.pdf((y - y_hat)[~cens] / sigma)) - np.log(sigma)
+/Users/alan/Documents/GitHub/alanlujan91/merino/.venv/lib/python3.11/site-packages/statsmodels/tools/numdiff.py:157: RuntimeWarning: invalid value encountered in scalar subtract
+  grad[k, :] = (f(*((x+ei,)+args), **kwargs) -
+/Users/alan/Documents/GitHub/alanlujan91/merino/scripts/Ch17. Limited Dependent Variable Models and Sample Selection Corrections.py:1214: RuntimeWarning: divide by zero encountered in log
+  ll[~cens] = np.log(stats.norm.pdf((y - y_hat)[~cens] / sigma)) - np.log(sigma)
+/Users/alan/Documents/GitHub/alanlujan91/merino/.venv/lib/python3.11/site-packages/statsmodels/base/model.py:2748: UserWarning: df_model + k_constant + k_extra differs from k_params
+  warnings.warn("df_model + k_constant + k_extra "
+/Users/alan/Documents/GitHub/alanlujan91/merino/.venv/lib/python3.11/site-packages/statsmodels/base/model.py:2752: UserWarning: df_resid differs from nobs - k_params
+  warnings.warn("df_resid differs from nobs - k_params")
+2. Quasi-Poisson has larger SEs (accounts for overdispersion)
+3. Pattern of significance similar across models
+4. Poisson ensures non-negative predictions
+
+17.4 TOBIT MODEL FOR CORNER SOLUTION RESPONSES
+======================================================================
+
+EXAMPLE: Annual hours worked by married women
+
+Total observations: 753
+Women with hours = 0: 325 (43.2%)
+Women with hours > 0: 428 (56.8%)
+
+DEPENDENT VARIABLE:
+  hours = annual hours worked
+  Corner solution: hours ≥ 0, with many zeros
+
+EXPLANATORY VARIABLES:
+  nwifeinc = husband's income
+  educ     = education
+  exper    = experience
+  age      = age
+  kidslt6  = number of young children
+  kidsge6  = number of older children
+
+Summary statistics (all women):
+count     753.00
+mean      740.58
+std       871.31
+min         0.00
+25%         0.00
+50%       288.00
+75%      1516.00
+max      4950.00
+Name: hours, dtype: float64
+
+Summary statistics (working women only):
+count     428.00
+mean     1302.93
+std       776.27
+min        12.00
+25%       609.50
+50%      1365.50
+75%      1910.50
+max      4950.00
+Name: hours, dtype: float64
+
+OLS REGRESSION (WRONG - Ignores Corner Solution)
+======================================================================
+               Coefficient  Std. Error  t-statistic  p-value
+Intercept        1330.4824    270.7846       4.9134   0.0000
+nwifeinc           -3.4466      2.5440      -1.3548   0.1759
+educ               28.7611     12.9546       2.2201   0.0267
+exper              65.6725      9.9630       6.5917   0.0000
+I(exper ** 2)      -0.7005      0.3246      -2.1584   0.0312
+age               -30.5116      4.3639      -6.9919   0.0000
+kidslt6          -442.0899     58.8466      -7.5126   0.0000
+kidsge6           -32.7792     23.1762      -1.4143   0.1577
+
+R-squared: 0.2656
+
+PROBLEM: OLS treats 0 hours like any other value
+         Doesn't account for corner solution nature of the data
+
+
+TOBIT MODEL
+======================================================================
+Model: y* = x'β + u, u ~ N(0, σ²)
+       y = max(0, y*)
+
+Estimating Tobit model via Maximum Likelihood...
+
+TOBIT MODEL RESULTS:
+                                Tobit Results                                 
+==============================================================================
+Dep. Variable:                  hours   Log-Likelihood:                -3819.1
+Model:                          Tobit   AIC:                             7656.
+Method:            Maximum Likelihood   BIC:                             7698.
+Date:                Sun, 19 Oct 2025                                         
+Time:                        18:49:03                                         
+No. Observations:                 753                                         
+Df Residuals:                     745                                         
+Df Model:                           7                                         
+=================================================================================
+                    coef    std err          z      P>|z|      [0.025      0.975]
+---------------------------------------------------------------------------------
+Intercept       965.3051    446.435      2.162      0.031      90.309    1840.301
+nwifeinc         -8.8142      4.459     -1.977      0.048     -17.554      -0.075
+educ             80.6456     21.583      3.737      0.000      38.343     122.948
+exper           131.5643     17.279      7.614      0.000      97.697     165.431
+I(exper ** 2)    -1.8642      0.538     -3.467      0.001      -2.918      -0.810
+age             -54.4050      7.418     -7.334      0.000     -68.945     -39.865
+kidslt6        -894.0218    111.878     -7.991      0.000   -1113.299    -674.745
+kidsge6         -16.2180     38.641     -0.420      0.675     -91.953      59.517
+par0              7.0229      0.037    189.514      0.000       6.950       7.096
+=================================================================================
+
+Estimated σ: 1122.0216
+
+COMPARISON: OLS vs TOBIT
+======================================================================
+                     OLS    OLS SE     Tobit  Tobit SE
+Intercept      1330.4824  270.7846  965.3051  446.4349
+nwifeinc         -3.4466    2.5440   -8.8142    4.4591
+educ             28.7611   12.9546   80.6456   21.5832
+exper            65.6725    9.9630  131.5643   17.2794
+I(exper ** 2)    -0.7005    0.3246   -1.8642    0.5377
+age             -30.5116    4.3639  -54.4050    7.4185
+kidslt6        -442.0899   58.8466 -894.0218  111.8780
+kidsge6         -32.7792   23.1762  -16.2180   38.6411
+
+KEY INSIGHTS:
+1. Tobit coefficients are typically LARGER than OLS
+2. Tobit accounts for corner solution (selection into working)
+3. OLS suffers from 'attenuation bias' (biased toward zero)
+4. Tobit interpretation: effect on LATENT variable y*
+
+
+TOBIT MARGINAL EFFECTS
+======================================================================
+At sample means:
+  x'β = 296.7653
+  Φ(x'β/σ) = 0.6043
+               Tobit Coef (∂y*/∂x)  ME on E(y|x)   OLS Coef
+Intercept                 965.3051      583.3333  1330.4824
+nwifeinc                   -8.8142       -5.3264    -3.4466
+educ                       80.6456       48.7341    28.7611
+exper                     131.5643       79.5042    65.6725
+I(exper ** 2)              -1.8642       -1.1265    -0.7005
+age                       -54.4050      -32.8769   -30.5116
+kidslt6                  -894.0218     -540.2569  -442.0899
+kidsge6                   -16.2180       -9.8005   -32.7792
+
+INTERPRETATION:
+  educ (Tobit coef): 80.65
+    → 1 more year of education increases y* by 80.65 hours
+  educ (ME on E(y|x)): 48.73
+    → 1 more year of education increases E(hours|x) by 48.73 hours
+    → Accounts for both: (1) more likely to work, (2) work more hours if working
+
+  kidslt6 (Tobit coef): -894.02
+    → 1 more young child decreases y* by 894.02 hours
+  kidslt6 (ME on E(y|x)): -540.26
+    → 1 more young child decreases E(hours|x) by 540.26 hours
+
+17.5 CENSORED AND TRUNCATED REGRESSION
+======================================================================
+
+EXAMPLE 17.4: Duration Until Re-Arrest (Censored Regression)
+
+Total observations: 1445
+
+DEPENDENT VARIABLE:
+  durat = months until re-arrest (or end of study)
+  ldurat = log(durat)
+
+CENSORING:
+  Uncensored (re-arrested): 552 (38.2%)
+  Censored (not re-arrested): 893 (61.8%)
+
+EXPLANATORY VARIABLES:
+  workprg = 1 if participated in work program
+  priors  = number of prior convictions
+  tserved = months served in prison
+  felon   = 1 if felony conviction
+  alcohol = 1 if alcohol problems
+  drugs   = 1 if drug history
+  black   = 1 if black
+  married = 1 if married
+  educ    = years of education
+  age     = age at release
+        ldurat  workprg   priors  tserved    felon      age     educ
+count  1445.00  1445.00  1445.00  1445.00  1445.00  1445.00  1445.00
+mean      3.75     0.47     1.43    19.18     0.31   345.44     9.70
+std       0.93     0.50     2.85    20.96     0.46   121.05     2.44
+min       0.00     0.00     0.00     0.00     0.00   198.00     1.00
+25%       3.30     0.00     0.00     6.00     0.00   258.00     8.00
+50%       4.26     0.00     0.00    12.00     0.00   307.00    10.00
+75%       4.33     1.00     2.00    25.00     1.00   395.00    11.00
+max       4.39     1.00    28.00   219.00     1.00   933.00    19.00
+
+CENSORED REGRESSION MODEL
+======================================================================
+Model: log(duration)* = x'β + u, u ~ N(0, σ²)
+       Observe log(duration) if re-arrested
+       Censored if not re-arrested (duration > study period)
+
+Estimating Censored Regression model...
+
+CENSORED REGRESSION RESULTS:
+/Users/alan/Documents/GitHub/alanlujan91/merino/.venv/lib/python3.11/site-packages/statsmodels/discrete/discrete_model.py:530: FutureWarning: linear keyword is deprecated, use which="linear"
+  warnings.warn(msg, FutureWarning)
+                          CensoredRegression Results                          
+==============================================================================
+Dep. Variable:                 ldurat   Log-Likelihood:                -1597.1
+Model:             CensoredRegression   AIC:                             3218.
+Method:            Maximum Likelihood   BIC:                             3281.
+Date:                Sun, 19 Oct 2025                                         
+Time:                        18:49:07                                         
+No. Observations:                1445                                         
+Df Residuals:                    1434                                         
+Df Model:                          10                                         
+==============================================================================
+                 coef    std err          z      P>|z|      [0.025      0.975]
+------------------------------------------------------------------------------
+Intercept      4.0994      0.348     11.796      0.000       3.418       4.781
+workprg       -0.0626      0.120     -0.521      0.602      -0.298       0.173
+priors        -0.1373      0.021     -6.396      0.000      -0.179      -0.095
+tserved       -0.0193      0.003     -6.491      0.000      -0.025      -0.013
+felon          0.4440      0.145      3.060      0.002       0.160       0.728
+alcohol       -0.6349      0.144     -4.403      0.000      -0.918      -0.352
+drugs         -0.2982      0.133     -2.246      0.025      -0.558      -0.038
+black         -0.5427      0.117     -4.621      0.000      -0.773      -0.313
+married        0.3407      0.140      2.436      0.015       0.067       0.615
+educ           0.0229      0.025      0.902      0.367      -0.027       0.073
+age            0.0039      0.001      6.450      0.000       0.003       0.005
+par0           0.5936      0.034     17.249      0.000       0.526       0.661
+==============================================================================
+
+Estimated σ: 1.8105
+
+COMPARISON: OLS vs CENSORED REGRESSION
+======================================================================
+              OLS  OLS SE  Censored Reg  Censored Reg SE
+Intercept  3.5692  0.1380        4.0994           0.3475
+workprg    0.0088  0.0489       -0.0626           0.1200
+priors    -0.0591  0.0092       -0.1373           0.0215
+tserved   -0.0094  0.0013       -0.0193           0.0030
+felon      0.1785  0.0584        0.4440           0.1451
+alcohol   -0.2628  0.0598       -0.6349           0.1442
+drugs     -0.0907  0.0549       -0.2982           0.1327
+black     -0.1791  0.0474       -0.5427           0.1174
+married    0.1344  0.0554        0.3407           0.1398
+educ       0.0054  0.0099        0.0229           0.0254
+age        0.0013  0.0002        0.0039           0.0006
+
+KEY INSIGHTS:
+1. Censored regression accounts for right-censoring
+2. OLS treats censored observations as if uncensored (biased)
+3. workprg effect: Work program increases time to re-arrest
+4. priors effect: More prior convictions → shorter time to re-arrest
+
+INTERPRETATION:
+  workprg: -0.0626
+    → Work program increases log(duration) by -0.0626
+    → Increases duration by -6.1%
+  priors: -0.1373
+    → 1 more prior conviction decreases log(duration) by 0.1373
+    → Decreases duration by 12.8%
+
+17.6 SAMPLE SELECTION CORRECTIONS
+======================================================================
+
+EXAMPLE: Wage equation for married women with selection correction
+
+Total sample: 753 married women
+Working women (observed wages): 428 (56.8%)
+Non-working women (no wages): 325 (43.2%)
+
+PROBLEM: Can only estimate wage equation for working women
+         But selection into working is non-random!
+         → OLS on working sample is biased (sample selection bias)
+
+SOLUTION: Heckman two-step procedure
+  Step 1: Estimate probit for work decision (all women)
+  Step 2: Estimate wage equation including inverse Mills ratio (working women)
+
+NAIVE OLS (Working Women Only - BIASED)
+======================================================================
+               Coefficient  Std. Error  t-statistic  p-value
+Intercept          -0.5220      0.1986      -2.6282   0.0089
+educ                0.1075      0.0141       7.5983   0.0000
+exper               0.0416      0.0132       3.1549   0.0017
+I(exper ** 2)      -0.0008      0.0004      -2.0628   0.0397
+
+R-squared: 0.1568
+Observations: 428 (working women only)
+
+PROBLEM: This ignores sample selection!
+         Returns to education may be biased
+
+
+HECKMAN STEP 1: Probit Selection Equation
+======================================================================
+Estimate: P(inlf=1) = Φ(γ₀ + γ₁·educ + ... + γₖ·z)
+Using ALL women (workers and non-workers)
+
+PROBIT RESULTS (Selection Equation):
+                          Probit Regression Results                           
+==============================================================================
+Dep. Variable:                   inlf   No. Observations:                  753
+Model:                         Probit   Df Residuals:                      745
+Method:                           MLE   Df Model:                            7
+Date:                Sun, 19 Oct 2025   Pseudo R-squ.:                  0.2206
+Time:                        18:49:07   Log-Likelihood:                -401.30
+converged:                       True   LL-Null:                       -514.87
+Covariance Type:            nonrobust   LLR p-value:                 2.009e-45
+=================================================================================
+                    coef    std err          z      P>|z|      [0.025      0.975]
+---------------------------------------------------------------------------------
+Intercept         0.2701      0.509      0.531      0.595      -0.727       1.267
+educ              0.1309      0.025      5.183      0.000       0.081       0.180
+exper             0.1233      0.019      6.590      0.000       0.087       0.160
+I(exper ** 2)    -0.0019      0.001     -3.145      0.002      -0.003      -0.001
+nwifeinc         -0.0120      0.005     -2.484      0.013      -0.022      -0.003
+age              -0.0529      0.008     -6.235      0.000      -0.069      -0.036
+kidslt6          -0.8683      0.119     -7.326      0.000      -1.101      -0.636
+kidsge6           0.0360      0.043      0.828      0.408      -0.049       0.121
+=================================================================================
+
+Inverse Mills Ratio (λ̂):
+  Mean: 0.7473
+  Std Dev: 0.5007
+  Min: 0.0496
+  Max: 3.1074
+
+
+HECKMAN STEP 2: Wage Equation with Selection Correction
+======================================================================
+Estimate: log(wage) = β₀ + β₁·educ + β₂·exper + β₃·exper² + θ·λ̂ + u
+Using working women only, but including λ̂ to control for selection
+               Coefficient  Std. Error  t-statistic  p-value
+Intercept          -0.5781      0.3067      -1.8848   0.0601
+educ                0.1091      0.0156       6.9871   0.0000
+exper               0.0439      0.0164       2.6837   0.0076
+I(exper ** 2)      -0.0009      0.0004      -1.9464   0.0523
+inv_mills           0.0323      0.1344       0.2401   0.8104
+
+R-squared: 0.1569
+Observations: 428 (working women only)
+
+
+COMPARISON: OLS vs HECKMAN SELECTION CORRECTION
+======================================================================
+               OLS (Biased)  OLS SE  Heckman  Heckman SE
+Intercept           -0.5220  0.1986  -0.5781      0.3067
+educ                 0.1075  0.0141   0.1091      0.0156
+exper                0.0416  0.0132   0.0439      0.0164
+I(exper ** 2)       -0.0008  0.0004  -0.0009      0.0004
+
+INVERSE MILLS RATIO:
+  Coefficient (θ): 0.0323
+  t-statistic: 0.2401
+  p-value: 0.8104
+
+✗ No significant selection bias
+  → Heckman correction not essential
+  → OLS and Heckman give similar results
+
+KEY INSIGHTS:
+1. RETURNS TO EDUCATION:
+   OLS: 10.75% per year
+   Heckman: 10.91% per year
+   → Similar estimates
+
+2. SELECTION BIAS:
+   θ = 0.0323 > 0
+   → Women with HIGH unobserved wage offers are more likely to work
+/Users/alan/Documents/GitHub/alanlujan91/merino/scripts/Ch17. Limited Dependent Variable Models and Sample Selection Corrections.py:1716: UserWarning: Glyph 9888 (\N{WARNING SIGN}) missing from font(s) Arial.
+  plt.tight_layout()
+/Users/alan/Documents/GitHub/alanlujan91/merino/scripts/Ch17. Limited Dependent Variable Models and Sample Selection Corrections.py:1716: UserWarning: Glyph 65039 (\N{VARIATION SELECTOR-16}) missing from font(s) Arial.
+  plt.tight_layout()
+/Users/alan/Documents/GitHub/alanlujan91/merino/scripts/Ch17. Limited Dependent Variable Models and Sample Selection Corrections.py:1716: UserWarning: Glyph 10007 (\N{BALLOT X}) missing from font(s) Arial.
+  plt.tight_layout()
+/Users/alan/Documents/GitHub/alanlujan91/merino/scripts/Ch17. Limited Dependent Variable Models and Sample Selection Corrections.py:1716: UserWarning: Glyph 10003 (\N{CHECK MARK}) missing from font(s) Arial.
+  plt.tight_layout()
+/Users/alan/Documents/GitHub/alanlujan91/merino/scripts/Ch17. Limited Dependent Variable Models and Sample Selection Corrections.py:1717: UserWarning: Glyph 9888 (\N{WARNING SIGN}) missing from font(s) Arial.
+  plt.show()
+/Users/alan/Documents/GitHub/alanlujan91/merino/scripts/Ch17. Limited Dependent Variable Models and Sample Selection Corrections.py:1717: UserWarning: Glyph 65039 (\N{VARIATION SELECTOR-16}) missing from font(s) Arial.
+  plt.show()
+/Users/alan/Documents/GitHub/alanlujan91/merino/scripts/Ch17. Limited Dependent Variable Models and Sample Selection Corrections.py:1717: UserWarning: Glyph 10007 (\N{BALLOT X}) missing from font(s) Arial.
+  plt.show()
+/Users/alan/Documents/GitHub/alanlujan91/merino/scripts/Ch17. Limited Dependent Variable Models and Sample Selection Corrections.py:1717: UserWarning: Glyph 10003 (\N{CHECK MARK}) missing from font(s) Arial.
+  plt.show()
+   → Negative selection: OLS underestimates returns
+
+VISUALIZING SELECTION BIAS
+======================================================================
+
+INTERPRETATION:
+Panel A: λ̂ is higher for working women (higher selection pressure)
+Panel B: Correlation between λ̂ and wages shows selection effect

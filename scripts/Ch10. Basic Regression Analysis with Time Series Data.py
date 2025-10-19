@@ -73,14 +73,16 @@ import wooldridge as wool  # For accessing Wooldridge textbook datasets
 intdef = wool.dataWoo("intdef")
 
 # Display dataset information
-data_info = pd.DataFrame({
-    "Metric": ["Number of years", "Number of variables", "Time span"],
-    "Value": [
-        intdef.shape[0],
-        intdef.shape[1],
-        f"{intdef.index.min()} to {intdef.index.max()}"
-    ]
-})
+data_info = pd.DataFrame(
+    {
+        "Metric": ["Number of years", "Number of variables", "Time span"],
+        "Value": [
+            intdef.shape[0],
+            intdef.shape[1],
+            f"{intdef.index.min()} to {intdef.index.max()}",
+        ],
+    }
+)
 data_info
 
 # Estimate static time series model: i3_t = β₀ + β₁*inf_t + β₂*def_t + u_t

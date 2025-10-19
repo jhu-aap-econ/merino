@@ -1,0 +1,383 @@
+/Users/alan/Documents/GitHub/alanlujan91/merino/scripts/Ch15. Instrumental Variables Estimation and Two Stage Least Squares.py:261: FutureWarning: Series.__getitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To access a value by position, use `ser.iloc[pos]`
+  axes[0].plot(z, first_stage.params[0] + first_stage.params[1] * z, "r-", linewidth=2, label="First Stage")
+/Users/alan/Documents/GitHub/alanlujan91/merino/scripts/Ch15. Instrumental Variables Estimation and Two Stage Least Squares.py:271: FutureWarning: Series.__getitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To access a value by position, use `ser.iloc[pos]`
+  f"Slope = {first_stage.params[1]:.3f}\nt-stat = {first_stage.tvalues[1]:.2f}",
+/Users/alan/Documents/GitHub/alanlujan91/merino/scripts/Ch15. Instrumental Variables Estimation and Two Stage Least Squares.py:271: FutureWarning: Series.__getitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To access a value by position, use `ser.iloc[pos]`
+  f"Slope = {first_stage.params[1]:.3f}\nt-stat = {first_stage.tvalues[1]:.2f}",
+/Users/alan/Documents/GitHub/alanlujan91/merino/scripts/Ch15. Instrumental Variables Estimation and Two Stage Least Squares.py:284: FutureWarning: Series.__getitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To access a value by position, use `ser.iloc[pos]`
+  reduced_form.params[0] + reduced_form.params[1] * z,
+/Users/alan/Documents/GitHub/alanlujan91/merino/scripts/Ch15. Instrumental Variables Estimation and Two Stage Least Squares.py:298: FutureWarning: Series.__getitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To access a value by position, use `ser.iloc[pos]`
+  f"IV = Reduced Form / First Stage\n= {reduced_form.params[1]:.4f} / {first_stage.params[1]:.3f}\n= {b_iv_manual:.4f}",
+/Users/alan/Documents/GitHub/alanlujan91/merino/scripts/Ch15. Instrumental Variables Estimation and Two Stage Least Squares.py:379: SettingWithCopyWarning: 
+A value is trying to be set on a copy of a slice from a DataFrame.
+Try using .loc[row_indexer,col_indexer] = value instead
+
+See the caveats in the documentation: https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html#returning-a-view-versus-a-copy
+  mroz_working["educ_fitted"] = stage1_results.fittedvalues
+/Users/alan/Documents/GitHub/alanlujan91/merino/scripts/Ch15. Instrumental Variables Estimation and Two Stage Least Squares.py:640: SettingWithCopyWarning: 
+A value is trying to be set on a copy of a slice from a DataFrame.
+Try using .loc[row_indexer,col_indexer] = value instead
+
+See the caveats in the documentation: https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html#returning-a-view-versus-a-copy
+  mroz_working["v1_hat"] = first_stage.resid
+/Users/alan/Documents/GitHub/alanlujan91/merino/scripts/Ch15. Instrumental Variables Estimation and Two Stage Least Squares.py:709: SettingWithCopyWarning: 
+A value is trying to be set on a copy of a slice from a DataFrame.
+Try using .loc[row_indexer,col_indexer] = value instead
+
+See the caveats in the documentation: https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html#returning-a-view-versus-a-copy
+  mroz_working["resid_iv"] = iv_auto_results.resids.values
+Dataset Information:
+Total women in sample: 753
+Working women (wage observed): 428
+Labor force participation rate: 56.8%
+
+Key Variables:
+- lwage: log(wage)
+- educ: years of education (potentially endogenous)
+- fatheduc: father's years of education (instrument)
+- motheduc: mother's years of education
+- exper: years of labor market experience
+        lwage    educ  fatheduc  motheduc   exper
+count  428.00  428.00    428.00    428.00  428.00
+mean     1.19   12.66      8.99      9.52   13.04
+std      0.72    2.29      3.52      3.31    8.06
+min     -2.05    5.00      0.00      0.00    0.00
+25%      0.82   12.00      7.00      7.00    7.00
+50%      1.25   12.00      7.00     10.00   12.00
+75%      1.60   14.00     12.00     12.00   18.00
+max      3.22   17.00     17.00     17.00   38.00
+MANUAL IV CALCULATION
+======================================================================
+
+Covariances:
+Cov(y, z) = Cov(lwage, fatheduc) = 0.1979
+Cov(x, z) = Cov(educ, fatheduc) = 3.3450
+Cov(x, y) = Cov(educ, lwage) = 0.5675
+Var(x) = Var(educ) = 5.2229
+
+OLS estimator: β₁ᴼᴸˢ = Cov(x,y) / Var(x) = 0.1086
+IV estimator:  β₁ᴵⱽ = Cov(z,y) / Cov(z,x) = 0.0592
+
+Difference: -0.0495
+IV estimate is HIGHER, suggesting OLS underestimates returns to education
+(Consistent with ability bias: high-ability people get more education and earn more)
+
+OLS REGRESSION RESULTS
+======================================================================
+           Coefficient  Std. Error  t-statistic  p-value
+Intercept      -0.1852      0.1852      -0.9998    0.318
+educ            0.1086      0.0144       7.5451    0.000
+
+R-squared: 0.1179
+Observations: 428
+
+IV REGRESSION RESULTS
+======================================================================
+(Using fatheduc as instrument for educ)
+           Coefficient  Std. Error  t-statistic  p-value
+Intercept       0.4411      0.4461       0.9888   0.3233
+educ            0.0592      0.0351       1.6839   0.0929
+
+R-squared: 0.0934
+Observations: 428
+
+COMPARISON: OLS vs IV
+======================================================================
+           OLS (Biased)  IV (Consistent)  Manual IV  Difference (IV - OLS)
+Intercept       -0.1852           0.4411     0.4411                 0.6263
+educ             0.1086           0.0592     0.0592                -0.0495
+
+INTERPRETATION:
+OLS: Each year of education increases log(wage) by 0.1086
+     ≈ 10.86% increase in wage
+
+IV:  Each year of education increases log(wage) by 0.0592
+     ≈ 5.92% increase in wage
+
+The IV estimate is -45.5% LARGER than OLS
+This suggests OLS suffers from NEGATIVE ability bias
+(Ability is positively correlated with both education and wages)
+MANUAL TWO-STAGE LEAST SQUARES
+======================================================================
+STAGE 1: First-Stage Regression
+Dependent variable: educ
+
+               Coefficient  Std. Error  t-statistic  p-value
+Intercept           9.1026      0.4266      21.3396   0.0000
+exper               0.0452      0.0403       1.1236   0.2618
+I(exper ** 2)      -0.0010      0.0012      -0.8386   0.4022
+motheduc            0.1576      0.0359       4.3906   0.0000
+fatheduc            0.1895      0.0338       5.6152   0.0000
+
+First-stage R-squared: 0.2115
+F-statistic for instruments: 28.36
+
+RELEVANCE CHECK:
+motheduc t-stat: 4.39
+fatheduc t-stat: 5.62
+✓ At least one instrument is statistically significant
+  Instruments are RELEVANT
+
+STAGE 2: Second-Stage Regression (INCORRECT SEs!)
+Dependent variable: log(wage)
+
+               Coefficient  ...  p-value (WRONG)
+Intercept           0.0481  ...           0.9088
+educ_fitted         0.0614  ...           0.0632
+exper               0.0442  ...           0.0018
+I(exper ** 2)      -0.0009  ...           0.0334
+
+[4 rows x 4 columns]
+
+⚠️  WARNING: These standard errors are INCORRECT!
+   They don't account for the generated regressor (educ_fitted)
+   Use automatic 2SLS for correct standard errors
+
+AUTOMATIC 2SLS (CORRECT SEs)
+======================================================================
+               Coefficient  Std. Error  t-statistic  p-value
+Intercept           0.0481      0.4003       0.1202   0.9044
+exper               0.0442      0.0134       3.2883   0.0011
+I(exper ** 2)      -0.0009      0.0004      -2.2380   0.0257
+educ                0.0614      0.0314       1.9530   0.0515
+
+R-squared: 0.1357
+Observations: 428
+
+COMPARISON: Manual vs Automatic 2SLS
+======================================================================
+           Manual (Coef)  ...  Automatic SE (CORRECT)
+Intercept         0.0481  ...                  0.4003
+educ                 NaN  ...                  0.0314
+exper             0.0442  ...                  0.0134
+exper²               NaN  ...                     NaN
+
+[4 rows x 4 columns]
+
+KEY INSIGHT:
+✓ Coefficients are identical (manual and automatic)
+✗ Manual SEs are WRONG - they're too small!
+  Correct SE for educ: 0.0314
+  Wrong SE for educ:   0.0330
+  Ratio: 0.95x larger
+
+INTERPRETATION OF 2SLS RESULTS:
+======================================================================
+
+1. Return to Education: 0.0614
+   Each additional year of education increases log(wage) by 0.0614
+   This is approximately a 6.14% increase in wage
+   Standard error: 0.0314
+   95% CI: [-0.0002, 0.1230]
+
+2. Return to Experience: 0.0442
+   Each year of experience increases log(wage) by 0.0442
+   (Holding education constant)
+
+3. Comparison with OLS:
+   OLS education coefficient:  0.1075
+   2SLS education coefficient: 0.0614
+   Difference: -0.0461
+   2SLS is HIGHER → OLS has negative ability bias
+MEASUREMENT ERROR DEMONSTRATION
+======================================================================
+
+Simulated scenario:
+- educ_true: actual education (unobserved)
+- educ_measured: reported education with error
+- measurement_error: N(0, 1)
+
+Correlation between true and measured: 0.927
+(Less than 1 due to measurement error)
+
+COMPARISON:
+======================================================================
+           True (unobserved)  With Meas. Error  IV (oracle)
+Intercept            -0.1852            0.0028      -0.1443
+Education             0.1086            0.0935       0.1051
+
+ATTENUATION BIAS:
+True coefficient:          0.1086
+With measurement error:    0.0935
+Bias toward zero:          -0.0151
+
+IV recovery:               0.1051
+IV successfully corrects for measurement error!
+TESTING FOR ENDOGENEITY
+======================================================================
+Step 1: First-stage residuals obtained
+
+Step 2: Augmented Regression
+(Testing if first-stage residuals are significant)
+
+               Coefficient  Std. Error  t-statistic  p-value
+Intercept           0.0481      0.3946       0.1219   0.9030
+educ                0.0614      0.0310       1.9815   0.0482
+exper               0.0442      0.0132       3.3363   0.0009
+I(exper ** 2)      -0.0009      0.0004      -2.2706   0.0237
+v1_hat              0.0582      0.0348       1.6711   0.0954
+
+HAUSMAN TEST RESULT:
+======================================================================
+H₀: educ is exogenous (OLS is consistent)
+Hₐ: educ is endogenous (need IV)
+
+Test statistic (t): 1.6711
+p-value: 0.0954
+
+✗ FAIL TO REJECT H₀ (p = 0.0954 ≥ 0.05)
+  No evidence of endogeneity → OLS is preferred
+
+OVERIDENTIFICATION TEST
+======================================================================
+We have 2 instruments (motheduc, fatheduc) for 1 endogenous variable (educ)
+This is overidentified: # instruments > # endogenous variables
+Can test if the 'extra' instrument is valid
+
+Auxiliary Regression R²: 0.000883
+Sample size: 428
+Degrees of freedom: 1 (= 2 instruments - 1 endogenous)
+
+J-statistic: n × R² = 428 × 0.000883 = 0.3781
+p-value: 0.5386
+
+OVERIDENTIFICATION TEST RESULT:
+======================================================================
+H₀: Both instruments are valid (exogenous)
+Hₐ: At least one instrument is invalid (endogenous)
+
+✓ FAIL TO REJECT H₀ (p = 0.5386 ≥ 0.05)
+  No evidence against instrument validity
+  Both instruments appear to be valid
+2SLS WITH HETEROSKEDASTICITY-ROBUST STANDARD ERRORS
+======================================================================
+/Users/alan/Documents/GitHub/alanlujan91/merino/scripts/Ch15. Instrumental Variables Estimation and Two Stage Least Squares.py:1162: UserWarning: Glyph 10003 (\N{CHECK MARK}) missing from font(s) Arial.
+  plt.tight_layout()
+/Users/alan/Documents/GitHub/alanlujan91/merino/scripts/Ch15. Instrumental Variables Estimation and Two Stage Least Squares.py:1162: UserWarning: Glyph 9888 (\N{WARNING SIGN}) missing from font(s) Arial.
+  plt.tight_layout()
+/Users/alan/Documents/GitHub/alanlujan91/merino/scripts/Ch15. Instrumental Variables Estimation and Two Stage Least Squares.py:1162: UserWarning: Glyph 65039 (\N{VARIATION SELECTOR-16}) missing from font(s) Arial.
+  plt.tight_layout()
+/Users/alan/Documents/GitHub/alanlujan91/merino/scripts/Ch15. Instrumental Variables Estimation and Two Stage Least Squares.py:1163: UserWarning: Glyph 10003 (\N{CHECK MARK}) missing from font(s) Arial.
+  plt.show()
+/Users/alan/Documents/GitHub/alanlujan91/merino/scripts/Ch15. Instrumental Variables Estimation and Two Stage Least Squares.py:1163: UserWarning: Glyph 9888 (\N{WARNING SIGN}) missing from font(s) Arial.
+  plt.show()
+/Users/alan/Documents/GitHub/alanlujan91/merino/scripts/Ch15. Instrumental Variables Estimation and Two Stage Least Squares.py:1163: UserWarning: Glyph 65039 (\N{VARIATION SELECTOR-16}) missing from font(s) Arial.
+  plt.show()
+Dataset: Card (1995) - Effect of college proximity on education and wages
+Observations: 3010
+
+Key Variables:
+- lwage: log(wage)
+- educ: years of education
+- nearc4: =1 if grew up near 4-year college (instrument)
+- Controls: experience, race, geography
+
+STEP 1: CHECK INSTRUMENT RELEVANCE
+======================================================================
+First-Stage Regression: educ ~ nearc4 + controls
+
+nearc4 coefficient: 0.3199
+nearc4 t-statistic: 3.64
+nearc4 p-value: 0.0003
+
+✓ STRONG INSTRUMENT: t-stat > 3
+  Growing up near college significantly increases education
+
+STEP 2: OLS ESTIMATION (Potentially Biased)
+======================================================================
+OLS education coefficient: 0.0747
+OLS standard error:        0.0035
+
+STEP 3: 2SLS WITH STANDARD SEs
+======================================================================
+2SLS education coefficient: 0.1315
+Standard SE:                0.0550
+
+STEP 4: 2SLS WITH ROBUST SEs (Recommended)
+======================================================================
+2SLS education coefficient: 0.1315
+Robust SE:                  0.0541
+
+COMPARISON: OLS vs 2SLS (Standard vs Robust SEs)
+======================================================================
+                OLS  2SLS (Standard SE)  2SLS (Robust SE)
+Coefficient  0.0747              0.1315            0.1315
+Std. Error   0.0035              0.0550            0.0541
+t-statistic     NaN              2.3926            2.4288
+
+KEY INSIGHTS:
+1. 2SLS coefficient (0.1315) > OLS (0.0747)
+   → Suggests OLS has negative ability bias
+
+2. Robust SE (0.0541) vs Standard SE (0.0550)
+   → Ratio: 0.985
+   → Difference is small, but still use robust SEs for safety
+
+3. ALWAYS use heteroskedasticity-robust SEs with 2SLS!
+   (Just like with OLS)
+TIME SERIES APPLICATION: Phillips Curve
+======================================================================
+
+Phillips Curve: Δinf_t = β₀ + β₁·unem_t + u_t
+
+Problem: unemployment (unem_t) may be endogenous
+Solution: Use lagged unemployment as instrument
+          unem_{t-1} is predetermined (not affected by current inflation shock)
+
+Instrument validity:
+✓ Relevant: unem_t and unem_{t-1} are highly correlated
+✓ Exogenous: unem_{t-1} predetermined, uncorrelated with u_t
+PANEL DATA IV APPLICATION
+======================================================================
+
+Job Training and Firm Scrap Rates
+Years: 1987-1988 (2 periods)
+Firms: 54
+Observations: 108
+
+Structural Equation:
+  Δlscrap = β₀ + β₁·Δhrsemp + u
+
+Problem: Firms choose training (hrsemp) based on expected productivity
+         → hrsemp is potentially endogenous
+
+IV Solution: Use grant (training grant received) as instrument
+  ✓ Relevant: Grants increase training hours
+  ✓ Exogenous: Grants assigned by external agency
+
+First Differences:
+Valid observations (1988): 45
+       lscrap_diff  hrsemp_diff  grant_diff
+count      45.0000      45.0000     45.0000
+mean       -0.1857      10.8123      0.3778
+std         0.6269      20.5238      0.4903
+min        -2.5022     -19.8502      0.0000
+25%        -0.3558       0.0000      0.0000
+50%        -0.1671       1.8462      0.0000
+75%         0.0541      15.3333      1.0000
+max         2.3979      80.0000      1.0000
+
+FIRST-DIFFERENCED IV ESTIMATION
+======================================================================
+             Coefficient  Std. Error  t-statistic  p-value
+Intercept        -0.0327      0.1270      -0.2573   0.7982
+hrsemp_diff      -0.0142      0.0079      -1.7882   0.0808
+
+INTERPRETATION:
+
+Effect of training hours on scrap rate: -0.0142
+Each additional hour of training per employee REDUCES log(scrap) by 0.0142
+This is approximately a 1.42% reduction in scrap rate
+
+Standard error: 0.0079
+95% CI: [-0.0297, 0.0014]
+
+✗ Effect is NOT statistically significant (|t| = 1.79 < 1.96)
+
+POLICY IMPLICATION:
+By using the training grant as an IV, we get a causal estimate
+of training's effect on productivity (via scrap rates)
+This controls for:
+  - Firms' endogenous training decisions
+  - Reverse causality (productive firms → more training)
+  - Unobserved firm characteristics (via first-differencing)
