@@ -224,40 +224,47 @@ Using a boolean variable (`isfemale`) that evaluates to `True` or `False` is fun
 
 Categorical variables represent groups or categories, and they can have more than two categories. Examples include occupation, industry, region, or education levels (e.g., high school, bachelor's, master's, PhD). To include categorical variables in a regression model, we typically use dummy variable encoding. If a categorical variable has _k_ categories, we include _k-1_ dummy variables in the regression to avoid perfect multicollinearity (the dummy variable trap). One category is chosen as the "reference" or "baseline" category, and the coefficients on the dummy variables represent the difference in the dependent variable between each category and the reference category, holding other regressors constant.
 
-In this section, we will use the `CPS1985.csv` dataset, which contains data from the Current Population Survey in 1985. We will investigate how gender and occupation affect wages, controlling for education and experience.
+In this section, we will use the `cps78_85` dataset from the Wooldridge package, which contains data from the Current Population Survey for 1978 and 1985. We will investigate how gender, region (south/non-south), and union membership affect wages, controlling for education and experience.
 
 ```python
-CPS1985 = pd.read_csv("../data/CPS1985.csv")
-# rename variable to make outputs more compact:
-CPS1985["oc"] = CPS1985["occupation"]
+cps = wool.data("cps78_85")
 
-# table of categories and frequencies for two categorical variables:
-freq_gender = pd.crosstab(CPS1985["gender"], columns="count")
+# Create categorical gender variable for clearer output
+cps["gender"] = cps["female"].map({0: "male", 1: "female"})
+cps["region"] = cps["south"].map({0: "non-south", 1: "south"})
+cps["union_member"] = cps["union"].map({0: "non-union", 1: "union"})
+
+# table of categories and frequencies for categorical variables:
+freq_gender = pd.crosstab(cps["gender"], columns="count")
 # Gender distribution
 freq_gender
 
-freq_occupation = pd.crosstab(CPS1985["oc"], columns="count")
-# Occupation distribution
-freq_occupation
+freq_region = pd.crosstab(cps["region"], columns="count")
+# Region distribution
+freq_region
+
+freq_union = pd.crosstab(cps["union_member"], columns="count")
+# Union membership distribution
+freq_union
 ```
 
 **Explanation:**
 
-- `CPS1985 = pd.read_csv("../data/CPS1985.csv")`: Loads the dataset from a CSV file. You might need to adjust the path `../data/CPS1985.csv` depending on where you have saved the data file relative to your notebook.
-- `CPS1985["oc"] = CPS1985["occupation"]`: Creates a shorter alias `oc` for the `occupation` variable for more compact output in regression tables.
+- `cps = wool.data("cps78_85")`: Loads the CPS dataset from the Wooldridge package containing data from 1978 and 1985.
+- `cps["gender"] = cps["female"].map({0: "male", 1: "female"})`: Creates a categorical gender variable from the binary `female` indicator for more readable output.
+- `cps["region"] = cps["south"].map({0: "non-south", 1: "south"})`: Creates a categorical region variable from the binary `south` indicator.
+- `cps["union_member"] = cps["union"].map({0: "non-union", 1: "union"})`: Creates a categorical union membership variable.
 - `pd.crosstab(...)`: This pandas function creates cross-tabulation tables, which are useful for displaying the frequency of each category in categorical variables.
-  - `freq_gender = pd.crosstab(CPS1985["gender"], columns="count")`: Counts the occurrences of each gender category.
-  - `freq_occupation = pd.crosstab(CPS1985["oc"], columns="count")`: Counts the occurrences of each occupation category.
 
 **Output:**
 
-The `freq_gender` output shows the counts for 'female' and 'male' in the dataset. The `freq_occupation` output shows the counts for each occupation category present in the dataset (e.g., 'admin', 'clerical', 'management', etc.). This gives us an overview of the distribution of these categorical variables.
+The frequency tables show the counts for each category in the dataset, giving us an overview of the distribution of these categorical variables across the sample.
 
 ```python
 # directly using categorical variables in regression formula:
 reg = smf.ols(
-    formula="np.log(wage) ~ education +experience + C(gender) + C(oc)",
-    data=CPS1985,
+    formula="lwage ~ educ + exper + C(gender) + C(region) + C(union_member)",
+    data=cps,
 )
 results = reg.fit()
 
@@ -275,26 +282,25 @@ table  # Display regression results
 
 **Explanation:**
 
-- `formula="np.log(wage) ~ education +experience + C(gender) + C(oc)"`:
-  - `C(gender)` and `C(oc)`: The `C()` function in `statsmodels` formula language tells the regression function to treat `gender` and `oc` (occupation) as categorical variables. `statsmodels` will automatically create dummy variables for each category except for the reference category. By default, `statsmodels` will choose the first category in alphabetical order as the reference category. For `gender`, 'female' will likely be the reference (if categories are 'female', 'male'), and for `oc`, it will be the first occupation in alphabetical order.
+- `formula="lwage ~ educ + exper + C(gender) + C(region) + C(union_member)"`:
+  - `C(gender)`, `C(region)`, and `C(union_member)`: The `C()` function in `statsmodels` formula language tells the regression function to treat these as categorical variables. `statsmodels` will automatically create dummy variables for each category except for the reference category. By default, `statsmodels` will choose the first category in alphabetical order as the reference category. For `gender`, 'female' will be the reference; for `region`, 'non-south' will be the reference; and for `union_member`, 'non-union' will be the reference.
 
 **Interpretation of Results:**
 
-- **Reference Categories:** Let's assume 'female' is the reference category for gender and 'admin' is the reference category for occupation (check the alphabetical order in your dataset to confirm).
-- **C(gender)[T.male]:** The coefficient for `C(gender)[T.male]` represents the log wage difference between males and females, holding education, experience, and occupation constant. If the coefficient is positive and significant, it means males in the reference occupation category earn significantly more than females in the reference occupation category, controlling for education and experience.
-- **C(oc)[T.category_name]:** For each occupation category (except the reference category 'admin'), there will be a coefficient like `C(oc)[T.clerical]`, `C(oc)[T.management]`, etc. `C(oc)[T.clerical]` represents the log wage difference between individuals in 'clerical' occupations and individuals in the reference occupation ('admin'), holding gender, education, and experience constant.
-
-- **education and experience:** The coefficients for `education` and `experience` are interpreted as before, representing the effect of each additional year of education or experience on log wage, holding gender, occupation, and the other variable constant.
-
-- **P-values:** P-values help assess the statistical significance of each coefficient. Small p-values indicate that the corresponding variable is a statistically significant predictor of log wage.
+- **Reference Categories:** The reference categories are 'female' for gender, 'non-south' for region, and 'non-union' for union membership.
+- **C(gender)[T.male]:** The coefficient represents the log wage difference between males and females, holding education, experience, region, and union membership constant. If positive and significant, males earn more than females on average.
+- **C(region)[T.south]:** Represents the log wage difference between individuals in the south and non-south regions, holding other variables constant.
+- **C(union_member)[T.union]:** Represents the log wage difference between union and non-union workers, holding other variables constant. This is often called the "union wage premium."
+- **educ and exper:** The coefficients represent the effect of each additional year of education or experience on log wage, holding gender, region, union membership, and the other variable constant.
+- **P-values:** Small p-values indicate that the corresponding variable is a statistically significant predictor of log wage.
 
 ```python
 # rerun regression with different reference category:
 reg_newref = smf.ols(
-    formula="np.log(wage) ~ education + experience + "
+    formula="lwage ~ educ + exper + "
     'C(gender, Treatment("male")) + '
-    'C(oc, Treatment("technical"))',
-    data=CPS1985,
+    'C(region, Treatment("south"))',
+    data=cps,
 )
 results_newref = reg_newref.fit()
 
@@ -314,13 +320,14 @@ table_newref
 **Explanation:**
 
 - `C(gender, Treatment("male"))`: Here, we explicitly specify "male" as the reference category for the `gender` variable using `Treatment("male")` within the `C()` function. Now, the coefficient for `C(gender)[T.female]` will represent the log wage difference between females and males (with males as the baseline).
-- `C(oc, Treatment("technical"))`: Similarly, we set "technical" as the reference category for the `oc` (occupation) variable. Coefficients for other occupation categories will now be interpreted relative to the 'technical' occupation group.
+- `C(region, Treatment("south"))`: Similarly, we set "south" as the reference category for the `region` variable. The coefficient for `C(region)[T.non-south]` will now represent the log wage difference between non-south and south regions.
 
 **Interpretation of Results:**
 
-- **Reference Categories (Changed):** Now, 'male' is the reference category for gender, and 'technical' is the reference category for occupation.
-- **C(gender)[T.female]:** The coefficient for `C(gender)[T.female]` now represents the log wage difference between females and males, with males being the reference group.
-- **C(oc)[T.category_name]:** For each occupation category (except 'technical'), the coefficient `C(oc)[T.category_name]` represents the log wage difference between that occupation and the 'technical' occupation, holding gender, education, and experience constant. For example, `C(oc)[T.admin]` will now represent the log wage difference between 'admin' and 'technical' occupations.
+- **Reference Categories (Changed):** Now, 'male' is the reference category for gender, and 'south' is the reference category for region.
+- **C(gender)[T.female]:** The coefficient now represents the log wage difference between females and males, with males being the reference group. This will have the opposite sign compared to the `C(gender)[T.male]` coefficient from the previous regression.
+- **C(region)[T.non-south]:** The coefficient represents the log wage difference between non-south and south regions, with south being the reference group.
+- **educ and exper:** The coefficients remain unchanged regardless of which reference category is chosen for the categorical variables.
 
 **Key takeaway:**
 
@@ -331,12 +338,15 @@ By using `C()` and `Treatment()`, we can easily incorporate categorical variable
 ANOVA (Analysis of Variance) tables in regression context help to assess the overall significance of groups of regressors. They decompose the total variance in the dependent variable into components attributable to different sets of regressors. In the context of categorical variables, ANOVA tables can be used to test the joint significance of all dummy variables representing a categorical variable.
 
 ```python
-CPS1985 = pd.read_csv("../data/CPS1985.csv")
+cps = wool.data("cps78_85")
+# Create categorical variables
+cps["gender"] = cps["female"].map({0: "male", 1: "female"})
+cps["region"] = cps["south"].map({0: "non-south", 1: "south"})
 
 # run regression:
 reg = smf.ols(
-    formula="np.log(wage) ~ education + experience + gender + occupation",
-    data=CPS1985,
+    formula="lwage ~ educ + exper + gender + region + union",
+    data=cps,
 )
 results = reg.fit()
 
@@ -354,7 +364,7 @@ table_reg  # Display regression results
 
 **Explanation:**
 
-- `formula="np.log(wage) ~ education + experience + gender + occupation"`: In this formula, we are directly using `gender` and `occupation` as categorical variables without explicitly using `C()`. `statsmodels` can often automatically detect categorical variables (especially string or object type columns) and treat them as such in the regression formula, creating dummy variables behind the scenes. However, it is generally better to be explicit and use `C()` for clarity and control, especially when you want to specify reference categories.
+- `formula="lwage ~ educ + exper + gender + region + union"`: In this formula, we are directly using `gender` and `region` as categorical variables without explicitly using `C()`. `statsmodels` can automatically detect categorical variables (especially string or object type columns) and treat them as such in the regression formula, creating dummy variables behind the scenes. The `union` variable is binary (0/1), so it enters directly as a dummy variable. However, it is generally better to be explicit and use `C()` for clarity and control, especially when you want to specify reference categories.
 
 ```python
 # ANOVA table:
@@ -379,9 +389,10 @@ The ANOVA table output will typically include columns like:
 
 **For example, in the ANOVA table output:**
 
-- **gender:** The row for `gender` will give you an F-statistic and a p-value. This tests the null hypothesis that _gender has no effect on wage, once education, experience, and occupation are controlled for_. A small p-value (e.g., < 0.05) would suggest that gender is a statistically significant factor in explaining wage variation, even after controlling for other variables.
-- **occupation:** Similarly, the row for `occupation` will test the joint significance of all occupation dummy variables. It tests the null hypothesis that _occupation has no effect on wage, once education, experience, and gender are controlled for_. A small p-value would indicate that occupation is a significant factor.
-- **education and experience:** ANOVA table also provides F-tests for `education` and `experience`, testing their significance in the model.
+- **gender:** The row for `gender` will give you an F-statistic and a p-value. This tests the null hypothesis that _gender has no effect on log wage, once education, experience, region, and union membership are controlled for_. A small p-value (e.g., < 0.05) would suggest that gender is a statistically significant factor in explaining wage variation, even after controlling for other variables.
+- **region:** Similarly, the row for `region` will test the significance of the region indicator. It tests the null hypothesis that _region has no effect on log wage, once education, experience, gender, and union membership are controlled for_. A small p-value would indicate that region is a significant factor.
+- **union:** The row for `union` tests whether union membership significantly affects log wages after controlling for other variables.
+- **educ and exper:** ANOVA table also provides F-tests for `educ` and `exper`, testing their significance in the model.
 - **Residual:** This row represents the unexplained variance (residuals) in the model.
 
 **Key takeaway:**
