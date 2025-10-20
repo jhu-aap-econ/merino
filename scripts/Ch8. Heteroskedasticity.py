@@ -14,9 +14,11 @@
 # ---
 
 # %% [markdown]
-# # 8. Heteroskedasticity
+# # Chapter 8: Heteroskedasticity
 #
-# This notebook explores the issue of **heteroskedasticity** in the context of linear regression models estimated using Ordinary Least Squares (OLS). Heteroskedasticity occurs when the variance of the error term, conditional on the explanatory variables, is not constant across observations. This violates one of the Gauss-Markov assumptions required for OLS to be the Best Linear Unbiased Estimator (BLUE).
+# Non-constant error variance (heteroskedasticity) represents one of the most common violations of classical regression assumptions in applied econometric work. This chapter examines the consequences of heteroskedasticity for OLS estimation and inference, develops formal tests for detecting its presence, and presents both robust inference methods and efficient estimation procedures that account for non-constant variance.
+#
+# The development proceeds from diagnosis to correction strategies. We establish that heteroskedasticity preserves consistency and unbiasedness of OLS but invalidates standard inference procedures (Section 8.1), introduce heteroskedasticity-robust standard errors as a general solution (Section 8.2), develop formal tests for detecting heteroskedasticity including the Breusch-Pagan and White tests (Section 8.3), examine the linear probability model as a context where heteroskedasticity is inherent (Section 8.4), and conclude with weighted least squares (WLS) as an efficient estimation method when the form of heteroskedasticity is known (Section 8.5). Throughout, we emphasize practical implementation and interpretation using Python's statsmodels library.
 #
 # **Consequences of Heteroskedasticity:**
 #
@@ -677,4 +679,498 @@ table_fgls_wls  # Display FGLS estimates
 # One could also compute robust standard errors for the FGLS estimates as a further check.
 
 # %% [markdown]
-# This notebook covered the detection of heteroskedasticity (Breusch-Pagan, White tests), inference robust to heteroskedasticity (White/HC standard errors), and estimation via Weighted Least Squares (WLS/FGLS) to potentially gain efficiency when heteroskedasticity is present. Choosing between OLS with robust SEs and WLS/FGLS often depends on whether efficiency gains are a primary concern and how confident one is in specifying the variance function for WLS/FGLS.
+# ## 8.4 The Linear Probability Model Revisited
+#
+# In Chapter 7, we introduced the **linear probability model (LPM)** for binary dependent variables, where the outcome $y_i \in \{0, 1\}$. We noted that LPM has heteroskedastic errors by construction. In this section, we examine the form of this heteroskedasticity and explore appropriate estimation and inference methods.
+#
+# ### 8.4.1 Why the LPM Has Heteroskedasticity
+#
+# Recall the LPM specification:
+#
+# $$
+# y_i = \beta_0 + \beta_1 x_{i1} + \cdots + \beta_k x_{ik} + u_i
+# $$
+#
+# where $y_i$ is binary (0 or 1). Since $E(y_i | \mathbf{x}_i) = P(y_i = 1 | \mathbf{x}_i) = p_i$, we can write:
+#
+# $$
+# u_i = y_i - p_i
+# $$
+#
+# The error term $u_i$ can only take two values:
+#
+# - When $y_i = 1$: $u_i = 1 - p_i$ with probability $p_i$
+# - When $y_i = 0$: $u_i = -p_i$ with probability $1 - p_i$
+#
+# **Variance of the error:**
+#
+# $$
+# \text{Var}(u_i | \mathbf{x}_i) = E(u_i^2 | \mathbf{x}_i) = p_i(1 - p_i)^2 + (1-p_i)p_i^2 = p_i(1-p_i)
+# $$
+#
+# Since $p_i = \beta_0 + \beta_1 x_{i1} + \cdots + \beta_k x_{ik}$ varies across observations (depends on $\mathbf{x}_i$), the variance $\text{Var}(u_i | \mathbf{x}_i) = p_i(1-p_i)$ is **not constant**. This is heteroskedasticity.
+#
+# **Implications:**
+#
+# 1. **OLS is still unbiased and consistent** for $\boldsymbol{\beta}$
+# 2. **OLS standard errors are incorrect** - must use robust SEs
+# 3. **WLS can improve efficiency** if we model the variance correctly
+#
+# ### 8.4.2 Heteroskedasticity-Robust Inference for LPM
+#
+# The standard practice for LPM is to estimate with OLS and use **heteroskedasticity-robust standard errors**:
+
+# %%
+# Example: Labor force participation from Ch7
+mroz = wool.data("mroz")
+
+# Estimate LPM with OLS
+lpm_ols = smf.ols(
+    formula="inlf ~ nwifeinc + educ + exper + I(exper**2) + age + kidslt6 + kidsge6",
+    data=mroz,
+)
+results_lpm_ols = lpm_ols.fit()
+
+# Usual (incorrect) standard errors
+table_usual = pd.DataFrame(
+    {
+        "b": round(results_lpm_ols.params, 6),
+        "se_usual": round(results_lpm_ols.bse, 6),
+        "t_usual": round(results_lpm_ols.tvalues, 4),
+    },
+)
+
+# Robust standard errors (HC3)
+results_lpm_robust = lpm_ols.fit(cov_type="HC3")
+table_robust = pd.DataFrame(
+    {
+        "b": round(results_lpm_robust.params, 6),
+        "se_robust": round(results_lpm_robust.bse, 6),
+        "t_robust": round(results_lpm_robust.tvalues, 4),
+    },
+)
+
+# Compare
+comparison_lpm = pd.DataFrame(
+    {
+        "Coefficient": results_lpm_ols.params.index,
+        "Estimate": round(results_lpm_ols.params, 6),
+        "SE (usual)": round(results_lpm_ols.bse, 6),
+        "SE (robust)": round(results_lpm_robust.bse, 6),
+        "Ratio": round(results_lpm_robust.bse / results_lpm_ols.bse, 3),
+    },
+)
+print("LPM: Comparison of Usual vs Robust Standard Errors")
+comparison_lpm
+
+# %% [markdown]
+# **Interpretation:**
+#
+# - The robust SEs can be either larger or smaller than usual SEs
+# - For LPM, always report robust SEs and use them for t-tests and confidence intervals
+# - The "Ratio" column shows how much the SEs change when accounting for heteroskedasticity
+#
+# ### 8.4.3 Weighted Least Squares for LPM
+#
+# Since we know the form of heteroskedasticity in LPM, we can use **WLS** to potentially improve efficiency. The variance is:
+#
+# $$
+# \text{Var}(u_i | \mathbf{x}_i) = p_i(1-p_i)
+# $$
+#
+# where $p_i = \mathbf{x}_i' \boldsymbol{\beta}$ is unknown. The **feasible WLS** procedure is:
+#
+# 1. Estimate LPM with OLS to get $\hat{p}_i = \hat{\beta}_0 + \hat{\beta}_1 x_{i1} + \cdots$
+# 2. Compute estimated variance: $\hat{h}_i = \hat{p}_i(1 - \hat{p}_i)$
+# 3. Use weights $w_i = 1/\hat{h}_i$ for WLS estimation
+#
+# **Implementation:**
+
+# %%
+# Step 1: Get fitted probabilities from OLS
+mroz["p_hat"] = results_lpm_ols.fittedvalues
+
+# Step 2: Compute estimated variance h_hat = p_hat * (1 - p_hat)
+# To avoid division by zero or negative weights if p_hat is outside [0,1],
+# we can either:
+# (a) Trim predictions to (0.01, 0.99), or
+# (b) Only use observations where 0 < p_hat < 1
+mroz["h_hat"] = mroz["p_hat"] * (1 - mroz["p_hat"])
+
+# Remove observations where h_hat <= 0 (would give invalid weights)
+mroz_wls = mroz[mroz["h_hat"] > 0].copy()
+print(f"Observations with valid weights: {len(mroz_wls)} out of {len(mroz)}")
+
+# Step 3: WLS estimation with weights = 1/h_hat
+lpm_wls = smf.wls(
+    formula="inlf ~ nwifeinc + educ + exper + I(exper**2) + age + kidslt6 + kidsge6",
+    weights=1 / mroz_wls["h_hat"],
+    data=mroz_wls,
+)
+results_lpm_wls = lpm_wls.fit()
+
+# Compare OLS and WLS estimates
+comparison_ols_wls = pd.DataFrame(
+    {
+        "Variable": results_lpm_ols.params.index,
+        "OLS_coef": round(results_lpm_ols.params, 6),
+        "OLS_se_robust": round(results_lpm_robust.bse, 6),
+        "WLS_coef": round(results_lpm_wls.params, 6),
+        "WLS_se": round(results_lpm_wls.bse, 6),
+    },
+)
+print("\nLPM: OLS vs WLS Estimation")
+comparison_ols_wls
+
+# %% [markdown]
+# **Interpretation:**
+#
+# - WLS coefficients should be similar to OLS if the model is correctly specified
+# - WLS standard errors may be smaller (efficiency gain) if variance model is correct
+# - If OLS and WLS give very different coefficient estimates, this suggests model misspecification
+#
+# ### 8.4.4 Potential Problems with WLS for LPM
+#
+# While WLS addresses the known heteroskedasticity in LPM, there are practical issues:
+#
+# **1. Predicted probabilities outside [0, 1]:**
+
+# %%
+# Check range of fitted probabilities
+print(f"Range of OLS fitted values: [{results_lpm_ols.fittedvalues.min():.4f}, {results_lpm_ols.fittedvalues.max():.4f}]")
+print(
+    f"Observations with p_hat < 0: {(results_lpm_ols.fittedvalues < 0).sum()}",
+)
+print(
+    f"Observations with p_hat > 1: {(results_lpm_ols.fittedvalues > 1).sum()}",
+)
+
+# For these observations, h_hat = p_hat(1-p_hat) can be negative or problematic
+# This violates the assumption that we know the form of heteroskedasticity
+
+# %% [markdown]
+# **2. Variance model misspecification:**
+#
+# - The assumed form $h_i = p_i(1-p_i)$ is only correct if the LPM is the true model
+# - But LPM is a linear approximation to inherently nonlinear probability models
+# - If the true model is probit or logit, the variance formula is different
+# - Using incorrect weights can lead to **less** efficient estimates than OLS
+#
+# **3. WLS standard errors may still be incorrect:**
+
+# %%
+# Even WLS should use robust SEs as a precaution
+results_lpm_wls_robust = lpm_wls.fit(cov_type="HC3")
+
+comparison_wls_se = pd.DataFrame(
+    {
+        "Variable": results_lpm_wls.params.index,
+        "WLS_se_usual": round(results_lpm_wls.bse, 6),
+        "WLS_se_robust": round(results_lpm_wls_robust.bse, 6),
+        "Ratio": round(results_lpm_wls_robust.bse / results_lpm_wls.bse, 3),
+    },
+)
+print("\nWLS Standard Errors: Usual vs Robust")
+comparison_wls_se
+
+# %% [markdown]
+# **Interpretation:**
+#
+# - If WLS standard errors (usual vs robust) differ substantially, the variance model is likely misspecified
+# - Safest approach: Use WLS with robust SEs, or just use OLS with robust SEs
+#
+# ### 8.4.5 Practical Recommendations for LPM
+#
+# Based on the analysis above, here are practical guidelines:
+#
+# **Simple and reliable approach:**
+#
+# 1. Estimate LPM with OLS
+# 2. **Always use heteroskedasticity-robust standard errors** (HC3)
+# 3. Check fitted values - if many fall outside [0, 1], consider probit/logit (Chapter 17)
+#
+# **WLS approach (if seeking efficiency):**
+#
+# 1. Estimate WLS using $w_i = 1/[\hat{p}_i(1-\hat{p}_i)]$
+# 2. **Use robust standard errors** for the WLS estimates
+# 3. Compare OLS and WLS coefficients - if very different, model may be misspecified
+# 4. Report both OLS-robust and WLS-robust results for transparency
+#
+# **When to avoid LPM altogether:**
+#
+# - If most fitted probabilities fall outside [0, 0.8] or [0.2, 1]
+# - If the relationship is clearly nonlinear
+# - For policy analysis requiring precise probability estimates
+# - $\to$ Use probit or logit models instead (Chapter 17)
+
+# %%
+# Summary comparison: Which method to use?
+methods_comparison = pd.DataFrame(
+    {
+        "Method": [
+            "OLS (usual SE)",
+            "OLS (robust SE)",
+            "WLS (usual SE)",
+            "WLS (robust SE)",
+        ],
+        "Valid Inference?": ["No (heteroskedasticity)", "Yes", "Maybe", "Yes"],
+        "Efficiency": ["No (not BLUE)", "No (not BLUE)", "Yes (if correct)", "Yes (if correct)"],
+        "Recommendation": [
+            "Never use",
+            "Standard practice",
+            "Use with caution",
+            "Best if WLS desired",
+        ],
+    },
+)
+print("\nLPM Estimation Methods Comparison")
+display(methods_comparison)
+
+# %% [markdown]
+# **Key Takeaway:**
+#
+# The LPM has heteroskedasticity by construction with known form $\text{Var}(u_i|\mathbf{x}_i) = p_i(1-p_i)$. While WLS can exploit this structure for potential efficiency gains, practical problems (predictions outside [0,1], model misspecification) mean that **OLS with robust standard errors** remains the most reliable approach for LPM. For better modeling of binary outcomes, consider probit or logit models covered in Chapter 17.
+#
+# ## Chapter Summary
+#
+# Chapter 8 addressed **heteroskedasticity** - the violation of the constant error variance assumption (MLR.5) in linear regression. While heteroskedasticity does not bias OLS coefficient estimates, it invalidates standard inference procedures and reduces efficiency.
+#
+# ### Key Concepts
+#
+# **Heteroskedasticity Definition:**
+#
+# - **Homoskedasticity (MLR.5):** $\text{Var}(u_i | \mathbf{x}_i) = \sigma^2$ for all $i$ (constant variance)
+# - **Heteroskedasticity:** $\text{Var}(u_i | \mathbf{x}_i) = \sigma_i^2$ varies across observations
+# - Common in cross-sectional data, especially with:
+#   - Grouped data (firm-level, city-level aggregates)
+#   - Income or wealth variables (variance increases with level)
+#   - Binary dependent variables (LPM)
+#   - Count data
+#
+# **Consequences of Heteroskedasticity for OLS:**
+#
+# 1. **Unbiasedness and consistency preserved:**
+#    - $E(\hat{\beta}_j) = \beta_j$ (unbiased under MLR.1-4)
+#    - $\hat{\beta}_j \xrightarrow{p} \beta_j$ (consistent)
+#    - Point estimates are still valid
+#
+# 2. **Invalid standard errors and inference:**
+#    - Usual OLS standard errors $\widehat{\text{SE}}(\hat{\beta}_j)$ are biased and inconsistent
+#    - Can be either too small (over-rejection) or too large (under-rejection)
+#    - t-statistics, F-statistics, confidence intervals, p-values all invalid
+#    - **Solution:** Use heteroskedasticity-robust standard errors
+#
+# 3. **Loss of efficiency (not BLUE):**
+#    - OLS no longer has minimum variance among linear unbiased estimators
+#    - Weighted Least Squares (WLS) with correct weights is more efficient
+#    - Efficiency loss may be small in practice
+#
+# **Heteroskedasticity-Robust Inference:**
+#
+# - **White standard errors (HC):** Asymptotically valid regardless of heteroskedasticity form
+# - Variants: HC0 (original White), HC1, HC2, HC3 (finite-sample corrections)
+# - **HC3 recommended** for general use (best small-sample properties)
+# - In statsmodels: `model.fit(cov_type="HC3")`
+# - Applies to: t-tests, F-tests, confidence intervals
+# - **Practical guideline:** Always report robust SEs in cross-sectional regressions
+#
+# **Testing for Heteroskedasticity:**
+#
+# 1. **Breusch-Pagan (BP) Test:**
+#    - Tests $H_0: \text{Var}(u_i|\mathbf{x}_i) = \sigma^2$ (homoskedasticity)
+#    - Regress squared OLS residuals on independent variables: $\hat{u}_i^2 = \delta_0 + \delta_1 x_{i1} + \cdots + \delta_k x_{ik} + v_i$
+#    - Test statistic: $LM = nR^2_{\hat{u}^2}$ where $R^2_{\hat{u}^2}$ is from this auxiliary regression
+#    - $LM \sim \chi^2_k$ under $H_0$ (approximately)
+#    - Rejects if variance depends on any $x$ variables
+#
+# 2. **White Test:**
+#    - More general - includes squares and cross-products of regressors
+#    - Auxiliary regression: $\hat{u}_i^2 = \delta_0 + \delta_1 x_{i1} + \delta_2 x_{i1}^2 + \delta_3 x_{i1}x_{i2} + \cdots + v_i$
+#    - Test statistic: $LM = nR^2_{\hat{u}^2} \sim \chi^2_q$ where $q$ = number of regressors in auxiliary regression
+#    - Detects heteroskedasticity of unknown form
+#    - Can also detect functional form misspecification
+#
+# 3. **Interpretation:**
+#    - Rejecting $H_0$ indicates heteroskedasticity is present
+#    - Failing to reject doesn't prove homoskedasticity
+#    - With large $n$, tests may detect economically insignificant heteroskedasticity
+#    - **Practical approach:** Use robust SEs regardless of test results
+#
+# **Weighted Least Squares (WLS):**
+#
+# - **Idea:** Give less weight to observations with higher variance
+# - Transforms model to satisfy homoskedasticity: $y_i/\sqrt{h_i} = \beta_0/\sqrt{h_i} + \beta_1 x_{i1}/\sqrt{h_i} + \cdots + u_i/\sqrt{h_i}$
+# - Equivalent to minimizing: $\sum_{i=1}^n w_i (y_i - \beta_0 - \beta_1 x_{i1} - \cdots)^2$ with $w_i = 1/h_i$
+# - If $h_i$ known: WLS is BLUE (most efficient linear unbiased estimator)
+# - **Problem:** $h_i$ rarely known in practice
+#
+# **Feasible GLS (FGLS):**
+#
+# - **Step 1:** Estimate OLS to get residuals $\hat{u}_i$
+# - **Step 2:** Model variance function: $\log(\hat{u}_i^2) = \delta_0 + \delta_1 z_{i1} + \cdots + v_i$
+#   - $z$ variables can be original $x$'s, squares, interactions
+# - **Step 3:** Get fitted values $\widehat{\log(h_i)}$ and compute $\hat{h}_i = \exp(\widehat{\log(h_i)})$
+# - **Step 4:** Estimate WLS with weights $w_i = 1/\hat{h}_i$
+# - **Result:** FGLS estimates are consistent and potentially more efficient than OLS
+#
+# **FGLS Caveats:**
+#
+# - Efficiency gain depends on correctly specifying variance function
+# - Misspecified $h_i$ can give **worse** estimates than OLS
+# - FGLS standard errors assume correct variance model
+# - **Best practice:** Compute robust SEs even for FGLS estimates
+# - If OLS and FGLS differ substantially $\to$ model misspecification
+#
+# **Linear Probability Model (LPM) and Heteroskedasticity:**
+#
+# - LPM has heteroskedasticity **by construction:**
+#   - $\text{Var}(u_i | \mathbf{x}_i) = p_i(1 - p_i)$ where $p_i = E(y_i|\mathbf{x}_i)$
+#   - Variance is quadratic function of predicted probability
+# - **Robust inference mandatory:** Always use HC standard errors
+# - **WLS for LPM:**
+#   - Known variance form allows FGLS: $w_i = 1/[\hat{p}_i(1-\hat{p}_i)]$
+#   - But predictions outside [0,1] cause problems
+#   - Variance model only correct if LPM is true model
+# - **Practical recommendation:** OLS with robust SEs is most reliable
+# - **Better alternatives:** Probit or logit models (Chapter 17)
+#
+# ### Python Implementation Patterns
+#
+# **Heteroskedasticity-robust standard errors:**
+#
+# - Fit with robust SEs: `results_robust = model.fit(cov_type="HC3")` (HC3 recommended)
+# - Access robust SEs: `robust_se = results_robust.bse`
+# - Other options: `cov_type="HC0"`, `"HC1"`, `"HC2"`
+#
+# **F-tests with robust inference:**
+#
+# - Define hypotheses: `hypotheses = "x1 = 0, x2 = 0"`
+# - Robust F-test: `f_test = results_robust.f_test(hypotheses)`
+#
+# **Breusch-Pagan test:**
+#
+# - Import: `from statsmodels.stats.diagnostic import het_breuschpagan`
+# - Test: `bp_test = het_breuschpagan(results.resid, results.model.exog)`
+#
+# **White test:**
+#
+# - Import: `from statsmodels.stats.diagnostic import het_white`
+# - Test: `white_test = het_white(results.resid, results.model.exog)`
+#
+# **Weighted Least Squares:**
+#
+# - With known weights: `results_wls = smf.wls(formula="y ~ x1 + x2", weights=weights, data=df).fit()`
+# - FGLS procedure:
+#   1. Estimate OLS: `results_ols = smf.ols(...).fit()`
+#   2. Model variance: Regress `log(resid**2)` on explanatory variables
+#   3. Compute weights: `weights_fgls = 1 / exp(fitted_values)`
+#   4. FGLS estimation: `results_fgls = smf.wls(..., weights=weights_fgls).fit()`
+#   5. Robust SEs: Use `cov_type="HC3"` in WLS fit
+#
+# ### Common Pitfalls
+#
+# 1. **Using usual OLS SEs with heteroskedasticity:**
+#    - Leads to invalid inference (wrong p-values, confidence intervals)
+#    - **Fix:** Always use robust SEs in cross-sectional data
+#
+# 2. **Over-interpreting heteroskedasticity tests:**
+#    - Rejection with large $n$ may indicate trivial heteroskedasticity
+#    - Non-rejection doesn't guarantee homoskedasticity
+#    - **Fix:** Use robust SEs regardless of test results
+#
+# 3. **Misspecifying variance function in FGLS:**
+#    - Can result in less efficient estimates than OLS
+#    - Standard FGLS SEs invalid if model wrong
+#    - **Fix:** Use robust SEs even for FGLS; compare OLS and FGLS
+#
+# 4. **Forgetting robust SEs for WLS:**
+#    - WLS assumes variance model is correct
+#    - If wrong, usual WLS SEs invalid
+#    - **Fix:** Report WLS estimates with robust SEs
+#
+# 5. **Using LPM without robust SEs:**
+#    - LPM always has heteroskedasticity
+#    - **Fix:** Mandatory robust SEs for LPM
+#
+# 6. **Pursuing efficiency at all costs:**
+#    - Small efficiency gains may not justify complexity of FGLS
+#    - Risk of misspecification
+#    - **Fix:** OLS + robust SEs is simple, robust, and often sufficient
+#
+# ### Decision Framework
+#
+# **When should you use each approach?**
+#
+# | Situation | Recommendation | Reasoning |
+# |-----------|---------------|-----------|
+# | Default for cross-sectional data | OLS + robust SEs (HC3) | Simple, valid, robust to misspecification |
+# | Heteroskedasticity confirmed, efficiency important | FGLS + robust SEs | Potential efficiency gains if variance modeled well |
+# | Known variance structure (rare) | WLS with true weights | Optimal (BLUE) |
+# | Linear probability model | OLS + robust SEs | Most reliable for LPM |
+# | Large differences OLS vs FGLS | Investigate model | Suggests misspecification |
+# | Time series data | Different methods | See Chapters 10-12 |
+#
+# ### Connections
+#
+# **To previous chapters:**
+#
+# - **Chapter 3:** Heteroskedasticity violates Gauss-Markov assumption MLR.5
+# - **Chapter 4:** Invalidates usual t-tests and F-tests
+# - **Chapter 5:** OLS still consistent, but not asymptotically efficient
+# - **Chapter 7:** LPM has heteroskedasticity by construction
+#
+# **To later chapters:**
+#
+# - **Chapter 9:** Heteroskedasticity tests can signal functional form problems
+# - **Chapter 12:** Heteroskedasticity in time series contexts
+# - **Chapter 15:** Robust SEs important for IV estimation
+# - **Chapter 17:** Probit and logit as alternatives to LPM
+#
+# ### Practical Guidance
+#
+# **Research workflow:**
+#
+# 1. **Estimate OLS** with usual SEs (for comparison)
+# 2. **Compute robust SEs** (HC3) - always report these
+# 3. **Test for heteroskedasticity** (BP, White) - informative but not decisive
+# 4. **Consider FGLS** if:
+#    - Efficiency is important (small sample)
+#    - You can plausibly model variance structure
+#    - You'll use robust SEs for FGLS too
+# 5. **Compare OLS and FGLS:**
+#    - Similar coefficients $\to$ heteroskedasticity not severe
+#    - Very different $\to$ possible misspecification
+# 6. **Report both** OLS-robust and FGLS-robust for transparency
+#
+# **What to report in papers:**
+#
+# - Coefficient estimates (OLS or FGLS)
+# - **Robust standard errors** in parentheses (specify HC0/HC1/HC3)
+# - Note: "Heteroskedasticity-robust standard errors in parentheses"
+# - Optionally: Results of BP or White test in footnote
+# - If using FGLS: Describe variance model specification
+#
+# **Red flags:**
+#
+# - OLS and FGLS coefficients differ by more than 1-2 standard errors
+# - FGLS SEs much larger than OLS SEs (suggests misspecification)
+# - Many LPM fitted values outside [0, 1] (use probit/logit instead)
+# - Heteroskedasticity test rejects but robust SEs similar to usual SEs
+#
+# ### Learning Objectives Covered
+#
+# 1. **8.1:** Understand consequences of heteroskedasticity for OLS (unbiased but invalid inference, not BLUE)
+# 2. **8.2:** Explain homoskedasticity assumption and why it matters
+# 3. **8.3:** Compute heteroskedasticity-robust standard errors (HC0, HC1, HC3)
+# 4. **8.4:** Conduct valid t-tests and F-tests using robust SEs
+# 5. **8.5:** Test for heteroskedasticity using Breusch-Pagan and White tests
+# 6. **8.6:** Obtain and interpret p-values from heteroskedasticity tests
+# 7. **8.7:** Explain when and why WLS can improve upon OLS (efficiency gains)
+# 8. **8.8:** Estimate FGLS by modeling variance function
+# 9. **8.9:** Interpret differences between OLS and WLS estimates (misspecification indicator)
+# 10. **8.10:** Understand consequences of misspecifying variance in WLS (inefficiency, invalid SEs)
+# 11. **8.11:** Apply WLS to LPM and understand its shortcomings (predictions outside [0,1], model uncertainty)
+#
+# ### Key Takeaway
+#
+# Heteroskedasticity is pervasive in cross-sectional economic data but easily addressed through robust inference. **The most important practical lesson: Always use heteroskedasticity-robust standard errors (HC3) for cross-sectional regressions.** This ensures valid inference regardless of whether heteroskedasticity is present. FGLS can improve efficiency but requires careful specification of the variance function and should always be accompanied by robust standard errors. For binary dependent variables, prefer probit or logit models over LPM when possible.

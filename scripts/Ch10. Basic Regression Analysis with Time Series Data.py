@@ -14,9 +14,11 @@
 # ---
 
 # %% [markdown]
-# # 10. Basic Regression Analysis with Time Series Data
+# # Chapter 10: Basic Regression Analysis with Time Series Data
 #
-# This notebook introduces fundamental concepts and techniques for applying regression analysis to time series data. **Time series data** consists of observations on the same variables recorded sequentially over time (e.g., daily stock prices, monthly unemployment rates, annual GDP). This contrasts with **cross-sectional data** (observations on different units at a single point in time) studied in earlier chapters.
+# Time series data present unique opportunities and challenges for regression analysis, requiring modifications to both estimation procedures and inference methods developed for cross-sectional applications. This chapter introduces fundamental concepts for analyzing sequential observations recorded over time, establishing the theoretical foundations and practical techniques needed to apply OLS methods when temporal ordering and dependence structure matter.
+#
+# The presentation develops time series regression systematically. We establish notation and key distinctions from cross-sectional analysis, emphasizing the importance of temporal ordering (Section 10.1). We then examine examples of static and finite distributed lag models (Section 10.2), develop assumptions appropriate for time series contexts including stationarity and weak dependence (Section 10.3), establish conditions for unbiasedness and consistency of OLS estimators (Section 10.4), and analyze properties of OLS under time series assumptions including serial correlation and its consequences (Section 10.5). Throughout, we implement methods using Python and illustrate applications with macroeconomic and financial time series datasets.
 #
 # **Key Differences from Cross-Sectional Analysis:**
 #

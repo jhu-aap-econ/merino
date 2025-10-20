@@ -14,9 +14,11 @@
 # ---
 
 # %% [markdown]
-# # 4. Multiple Regression Analysis: Inference
+# # Chapter 4: Multiple Regression Analysis - Inference
 #
-# This notebook delves into the crucial aspect of **inference** in the context of multiple regression analysis. Building upon the concepts of estimation from previous chapters, we will now focus on drawing conclusions about the population parameters based on our sample data. This involves hypothesis testing and constructing confidence intervals, allowing us to assess the statistical significance and practical importance of our regression results.
+# Statistical inference extends multiple regression analysis beyond point estimation to hypothesis testing and interval estimation. This chapter develops the theoretical and practical foundations for drawing conclusions about population parameters from sample data, enabling researchers to assess both statistical significance and practical importance of regression results.
+#
+# The organization proceeds systematically through the essential components of inference. We begin with the sampling distribution of OLS estimators and construction of standard errors (Section 4.1), develop hypothesis testing procedures for single coefficients (Section 4.2), extend to joint hypothesis tests involving multiple restrictions (Section 4.3), and examine confidence intervals alongside practical considerations for specification and reporting (Section 4.4-4.7). Throughout, we emphasize both theoretical foundations and computational implementation in Python.
 
 # %%
 import numpy as np
@@ -598,4 +600,412 @@ pd.DataFrame(
 # *   A large $F$ statistic (or small p-value) provides evidence against the null hypothesis.
 # *   $F$ tests are essential for testing the joint significance of sets of variables and for testing more complex linear restrictions on regression coefficients.
 #
-# This notebook has provided a comprehensive overview of inference in multiple regression analysis, covering $t$ tests for individual coefficients, confidence intervals, and $F$ tests for joint hypotheses. These tools are fundamental for drawing meaningful conclusions from regression models and for rigorously testing economic and statistical hypotheses.
+# ## 4.5 Reporting Regression Results
+#
+# When presenting regression results in academic papers, policy reports, or data science projects, clarity and completeness are essential. This section discusses best practices for reporting regression output in a way that allows readers to understand and evaluate your analysis.
+#
+# ### 4.5.1 Essential Components of Regression Tables
+#
+# A well-constructed regression table should include:
+#
+# 1. **Coefficient estimates** with appropriate precision (typically 3-4 significant digits)
+# 2. **Standard errors** in parentheses below each coefficient (or t-statistics, clearly labeled)
+# 3. **Significance indicators** (stars: *** for p < 0.01, ** for p < 0.05, * for p < 0.10)
+# 4. **Sample size** (n)
+# 5. **R-squared** and adjusted R-squared
+# 6. **F-statistic** for overall model significance
+# 7. **Degrees of freedom** for the residuals
+#
+# **Example: Properly Formatted Regression Table**
+
+# %%
+# Create a formatted regression table for the wage equation
+wage1 = wool.data("wage1")
+reg_wage = smf.ols("np.log(wage) ~ educ + exper + tenure", data=wage1).fit()
+
+# Extract key statistics
+coef_table = pd.DataFrame(
+    {
+        "Variable": ["Intercept", "educ", "exper", "tenure"],
+        "Coefficient": reg_wage.params.values,
+        "Std Error": reg_wage.bse.values,
+        "t-statistic": reg_wage.tvalues.values,
+        "p-value": reg_wage.pvalues.values,
+        "Significance": [
+            "***" if p < 0.01 else "**" if p < 0.05 else "*" if p < 0.10 else ""
+            for p in reg_wage.pvalues.values
+        ],
+    },
+)
+
+display(coef_table.round(4))
+
+# Model statistics
+model_stats = pd.DataFrame(
+    {
+        "Statistic": ["Observations", "R-squared", "Adjusted R-squared", "F-statistic", "Prob(F)"],
+        "Value": [
+            reg_wage.nobs,
+            reg_wage.rsquared,
+            reg_wage.rsquared_adj,
+            reg_wage.fvalue,
+            reg_wage.f_pvalue,
+        ],
+    },
+)
+
+display(model_stats.round(4))
+
+# %% [markdown]
+# :::{note} Significance Stars Convention
+# :class: dropdown
+#
+# The convention for significance stars:
+# - `***` indicates p < 0.01 (significant at the 1% level)
+# - `**` indicates p < 0.05 (significant at the 5% level)  
+# - `*` indicates p < 0.10 (significant at the 10% level)
+# - No star means not statistically significant at conventional levels
+#
+# Always include a note at the bottom of your table explaining this convention!
+# :::
+#
+# ### 4.5.2 Standard Errors vs t-Statistics
+#
+# There are two common ways to report uncertainty:
+#
+# **Option 1: Standard Errors (more common)**
+# ```
+# Coefficient:  0.092***
+#              (0.007)
+# ```
+#
+# **Option 2: t-Statistics**
+# ```
+# Coefficient:  0.092***
+#              [13.14]
+# ```
+#
+# **Most econometric journals prefer standard errors** because they allow readers to:
+# - Construct confidence intervals at any confidence level
+# - Test hypotheses against any null value (not just zero)
+# - Better assess economic vs statistical significance
+#
+# ### 4.5.3 Comparing Multiple Specifications
+#
+# Often you'll want to present several model specifications side-by-side to show robustness of results or the effect of adding controls:
+
+# %%
+# Estimate three specifications with progressively more controls
+gpa1 = wool.data("gpa1")
+
+# Model 1: Simple regression
+m1 = smf.ols("colGPA ~ hsGPA", data=gpa1).fit()
+
+# Model 2: Add ACT score
+m2 = smf.ols("colGPA ~ hsGPA + ACT", data=gpa1).fit()
+
+# Model 3: Full model with skipped classes
+m3 = smf.ols("colGPA ~ hsGPA + ACT + skipped", data=gpa1).fit()
+
+# Create comparison table
+comparison_table = pd.DataFrame(
+    {
+        "Variable": ["Intercept", "hsGPA", "ACT", "skipped"],
+        "Model 1": [f"{m1.params[0]:.3f}", f"{m1.params[1]:.3f}***", "-", "-"],
+        "Model 2": [
+            f"{m2.params[0]:.3f}",
+            f"{m2.params[1]:.3f}***",
+            f"{m2.params[2]:.3f}",
+            "-",
+        ],
+        "Model 3": [
+            f"{m3.params[0]:.3f}",
+            f"{m3.params[1]:.3f}***",
+            f"{m3.params[2]:.3f}",
+            f"{m3.params[3]:.3f}***",
+        ],
+    },
+)
+
+display(comparison_table)
+
+# Add model statistics
+stats_table = pd.DataFrame(
+    {
+        "Statistic": ["N", "R-squared", "Adj R-squared"],
+        "Model 1": [m1.nobs, f"{m1.rsquared:.3f}", f"{m1.rsquared_adj:.3f}"],
+        "Model 2": [m2.nobs, f"{m2.rsquared:.3f}", f"{m2.rsquared_adj:.3f}"],
+        "Model 3": [m3.nobs, f"{m3.rsquared:.3f}", f"{m3.rsquared_adj:.3f}"],
+    },
+)
+
+display(stats_table)
+
+# %% [markdown]
+# **Interpretation**: Comparing multiple models shows:
+# - How coefficient estimates change when adding controls
+# - Whether the variable of interest is robust to different specifications
+# - How R-squared improves with additional variables
+# - Whether new variables are jointly significant
+#
+# ### 4.5.4 What NOT to Report
+#
+# **Avoid these common mistakes:**
+#
+# 1. **Don't report too many decimal places**: 0.0912847323 -> 0.092
+# 2. **Don't omit standard errors**: Readers can't assess significance without them
+# 3. **Don't forget to specify the dependent variable**: Always clearly state what you're modeling
+# 4. **Don't report correlation matrices as regressions**: Show actual regression output
+# 5. **Don't neglect to describe your sample**: State the dataset, time period, and any sample restrictions
+#
+# :::{warning} Publication Standards
+# :class: dropdown
+#
+# Most economics journals require:
+# - Robust standard errors (heteroskedasticity-consistent)
+# - Clear indication of which variables are controls vs variables of interest  
+# - Discussion of economic significance, not just statistical significance
+# - Sensitivity analysis or robustness checks
+# - Full replication data and code (increasingly common)
+#
+# Always check journal-specific requirements!
+# :::
+#
+# ## 4.6 Revisiting Causal Effects and Policy Analysis
+#
+# Throughout this chapter, we've focused on statistical inference - testing hypotheses and constructing confidence intervals. But the ultimate goal of regression analysis in economics and policy evaluation is often to estimate **causal effects**. This section revisits the conditions under which regression estimates can be interpreted causally and discusses the limitations.
+#
+# ### 4.6.1 From Association to Causation
+#
+# **Key Distinction:**
+# - **Association**: $x$ and $y$ are correlated
+# - **Causation**: Changes in $x$ **cause** changes in $y$
+#
+# **Statistical significance alone does NOT imply causation!**
+#
+# A coefficient can be:
+# - Statistically significant (t-statistic > 2, p-value < 0.05)
+# - Precisely estimated (narrow confidence interval)
+# - **Yet still not represent a causal effect**
+#
+# ### 4.6.2 The Fundamental Problem: Omitted Variable Bias
+#
+# Recall from Chapter 3 that for OLS to estimate a causal effect, we need:
+#
+# $$E(u | x_1, x_2, \ldots, x_k) = 0$$
+#
+# This means the error term must be **uncorrelated with all included variables**.
+#
+# **This fails when:**
+# 1. **Omitted variables** affect both treatment and outcome (confounding)
+# 2. **Simultaneity**: $y$ affects $x$ while $x$ affects $y$ (reverse causality)
+# 3. **Measurement error** in key variables
+#
+# **Example: Returns to Education - Causal or Not?**
+#
+# Consider the wage equation:
+# $$\log(\text{wage}) = \beta_0 + \beta_1 \text{educ} + \beta_2 \text{exper} + \beta_3 \text{tenure} + u$$
+
+# %%
+# Estimate wage equation
+wage1 = wool.data("wage1")
+wage_reg = smf.ols("np.log(wage) ~ educ + exper + tenure", data=wage1).fit()
+
+# Display results
+results_df = pd.DataFrame(
+    {
+        "Variable": ["educ", "exper", "tenure"],
+        "Coefficient": wage_reg.params[1:].values,
+        "Std Error": wage_reg.bse[1:].values,
+        "95% CI Lower": wage_reg.conf_int().iloc[1:, 0].values,
+        "95% CI Upper": wage_reg.conf_int().iloc[1:, 1].values,
+        "Interpretation": [
+            "1 year educ -> 9.2% higher wage",
+            "1 year exper -> 0.4% higher wage",
+            "1 year tenure -> 1.7% higher wage",
+        ],
+    },
+)
+
+display(results_df.round(4))
+
+# %% [markdown]
+# **Question**: Does $\hat{\beta}_1 = 0.092$ represent the **causal effect** of education on wages?
+#
+# **Potential Problems:**
+# 1. **Ability bias**: Unobserved ability affects both education choices and wages
+#    - $\text{Cov}(\text{ability}, \text{educ}) > 0$ (smarter people get more education)
+#    - $\text{Cov}(\text{ability}, \text{wage}) > 0$ (smarter people earn higher wages)
+#    - Result: $\hat{\beta}_1$ **overestimates** the causal effect
+#
+# 2. **Family background**: Wealthy families provide both more education and job connections
+#    - Omitted variable creates upward bias
+#
+# 3. **Measurement error** in education: Survey responses may be inaccurate
+#    - Creates **attenuation bias** (underestimates true effect)
+#
+# **Conclusion**: The coefficient 0.092 represents an **association**, not necessarily a causal effect. The true causal effect might be smaller if ability bias dominates.
+#
+# ### 4.6.3 When Can We Claim Causality?
+#
+# To credibly claim a causal interpretation, you need one of the following:
+#
+# **1. Randomized Controlled Trials (RCTs) - The Gold Standard**
+#
+# - Treatment is **randomly assigned** to subjects
+# - Randomization ensures $E(u | \text{treatment}) = 0$
+# - Example: Job training program with random selection
+#
+# **2. Natural Experiments**
+#
+# - Some external event creates "as-if random" variation
+# - Example: Draft lottery, policy changes affecting some regions but not others
+# - Requires careful argument that assignment is exogenous
+#
+# **3. Instrumental Variables (Chapter 15)**
+#
+# - Find a variable (instrument) that affects treatment but not outcome directly
+# - Example: Distance to college as instrument for education
+# - Requires strong assumptions (instrument exogeneity, relevance)
+#
+# **4. Regression Discontinuity Design**
+#
+# - Treatment assignment based on threshold of a running variable
+# - Compare units just above vs just below the threshold
+# - Example: Scholarship eligibility based on test score cutoff
+#
+# **5. Difference-in-Differences**
+#
+# - Compare changes over time between treatment and control groups
+# - Example: Minimum wage increase in one state but not neighboring state
+# - Requires parallel trends assumption
+#
+# ### 4.6.4 Policy Analysis Example: Minimum Wage and Employment
+
+# %%
+# Simulate a policy analysis scenario
+np.random.seed(1234)
+n_states = 50
+n_years = 10
+
+# Create panel data
+states = np.repeat(np.arange(1, n_states + 1), n_years)
+years = np.tile(np.arange(2010, 2020), n_states)
+
+# State fixed effects (some states have higher employment naturally)
+state_effects = np.repeat(stats.norm.rvs(50, 10, size=n_states), n_years)
+
+# Treatment: Some states raise minimum wage in 2015
+treatment = ((states <= 25) & (years >= 2015)).astype(int)
+
+# Outcome: Employment rate
+# True causal effect: min wage reduces employment by 2 percentage points
+employment = state_effects + 2 * years - 2 * treatment + stats.norm.rvs(0, 5, size=n_states * n_years)
+
+policy_data = pd.DataFrame(
+    {"state": states, "year": years, "min_wage_increase": treatment, "employment": employment}
+)
+
+# Naive regression (WRONG - omits state fixed effects)
+naive_reg = smf.ols("employment ~ min_wage_increase", data=policy_data).fit()
+
+# Correct regression with state fixed effects
+correct_reg = smf.ols("employment ~ min_wage_increase + C(state)", data=policy_data).fit()
+
+# Compare results
+comparison = pd.DataFrame(
+    {
+        "Model": ["Naive (No Controls)", "With State Fixed Effects", "True Causal Effect"],
+        "Min Wage Coefficient": [
+            naive_reg.params["min_wage_increase"],
+            correct_reg.params["min_wage_increase"],
+            -2.0,
+        ],
+        "Std Error": [
+            naive_reg.bse["min_wage_increase"],
+            correct_reg.bse["min_wage_increase"],
+            "-",
+        ],
+        "Interpretation": [
+            "BIASED (omitted state effects)",
+            "Unbiased estimate",
+            "True parameter",
+        ],
+    },
+)
+
+display(comparison.round(3))
+
+# %% [markdown]
+# **Lesson**: Without controlling for confounding factors (state fixed effects), the naive regression gives a **biased estimate** of the policy effect. Proper causal inference requires thinking carefully about what variables to include and what identification strategy to use.
+#
+# ### 4.6.5 Practical Guidelines for Causal Claims
+#
+# **DO**:
+# - ✓ State your identification assumptions explicitly
+# - ✓ Discuss potential sources of bias
+# - ✓ Conduct robustness checks with alternative specifications
+# - ✓ Compare your estimates to previous research
+# - ✓ Be honest about limitations
+#
+# **DON'T**:
+# - ✗ Claim causality based solely on statistical significance
+# - ✗ Ignore obvious omitted variables
+# - ✗ Overstate your findings
+# - ✗ Cherry-pick specifications that support your hypothesis
+# - ✗ Forget that "controlling for X" doesn't solve endogeneity
+#
+# :::{important} The Gold Standard
+# :class: dropdown
+#
+# **Causal inference is hard!** 
+#
+# Even with all the right controls and a statistically significant coefficient, you may only have established an **association**. True causal identification requires:
+# 1. Careful economic reasoning about potential confounders
+# 2. Credible identification strategy (RCT, IV, RD, DID, etc.)
+# 3. Transparent reporting of assumptions and limitations
+# 4. Robustness checks to alternative specifications
+#
+# When in doubt, use cautious language: "associated with" rather than "causes" or "affects."
+# :::
+#
+# ## Chapter Summary
+#
+# This chapter has provided a comprehensive exploration of statistical inference in multiple regression analysis. We've covered the essential tools for testing hypotheses, constructing confidence intervals, and evaluating the significance of our regression estimates.
+#
+# **Key Concepts Covered:**
+#
+# **1. Classical Linear Model Assumptions**: For exact inference in finite samples, we require the Gauss-Markov assumptions (MLR.1-MLR.5) plus normality of the error term (MLR.6). Under these assumptions, the OLS estimators follow a t-distribution, enabling hypothesis testing and confidence interval construction.
+#
+# **2. The t Test**: We use t tests to test hypotheses about individual regression coefficients. The t statistic is calculated as:
+# $$t = \frac{\hat{\beta}_j - a_j}{\text{se}(\hat{\beta}_j)}$$
+# where $a_j$ is the hypothesized value (usually zero). We reject the null hypothesis if $|t| > c$ where $c$ is the critical value from the t-distribution.
+#
+# **3. p-values**: The p-value represents the probability of observing a test statistic as extreme as the one calculated, assuming the null hypothesis is true. Small p-values (typically < 0.05) provide evidence against the null hypothesis.
+#
+# **4. Confidence Intervals**: A 95% confidence interval for $\beta_j$ is:
+# $$\hat{\beta}_j \pm t_{0.025} \cdot \text{se}(\hat{\beta}_j)$$
+# This interval contains the true parameter value in 95% of samples.
+#
+# **5. F Tests**: F tests allow us to test joint hypotheses about multiple coefficients simultaneously. The F statistic compares the fit of an unrestricted model to a restricted model that imposes the null hypothesis constraints.
+#
+# **6. Statistical vs Economic Significance**: A coefficient can be statistically significant (different from zero) yet economically insignificant (too small to matter in practice). Always interpret both the magnitude and the precision of estimates.
+#
+# **7. Reporting Regression Results**: Proper regression tables should include coefficient estimates, standard errors, significance indicators, sample size, R-squared, and model fit statistics. Present multiple specifications to demonstrate robustness.
+#
+# **8. Causal Inference Challenges**: Statistical significance does not imply causation. To make causal claims, we need credible identification strategies that address omitted variable bias, reverse causality, and measurement error. Randomized experiments provide the gold standard, but quasi-experimental methods (natural experiments, instrumental variables, regression discontinuity, difference-in-differences) can also establish causality under appropriate assumptions.
+#
+# **Practical Applications:**
+#
+# The tools developed in this chapter are fundamental for:
+# - Hypothesis testing in economic research
+# - Policy evaluation and impact assessment  
+# - Forecasting and prediction with quantified uncertainty
+# - Model comparison and specification testing
+# - Drawing causal inferences from observational data
+#
+# **Looking Forward:**
+#
+# In Chapter 5, we'll explore the **asymptotic properties** of OLS estimators, which allow us to make valid inferences even when the normality assumption fails or the sample is large. We'll also discuss **consistency**, **asymptotic normality**, and **large sample inference**, providing tools for situations where the classical linear model assumptions are violated.
+#
+# **Critical Reminder**: Always think carefully about the **economic interpretation** and **causal validity** of your regression estimates. Statistical techniques are powerful tools, but they cannot substitute for sound economic reasoning and careful identification of causal relationships.

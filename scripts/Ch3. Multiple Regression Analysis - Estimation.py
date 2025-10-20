@@ -41,11 +41,9 @@
 # **3.10** Integrate multiple regression concepts by conducting comprehensive empirical analysis that includes model specification, estimation, interpretation, assumption checking, and policy or economic insights from real-world applications.
 # :::
 #
-# Welcome to this comprehensive exploration of Multiple Regression Analysis. While simple linear regression provides valuable insights into the relationship between two variables, real-world phenomena are rarely determined by a single factor. Multiple regression allows us to analyze how several independent variables simultaneously influence a dependent variable, providing more realistic and nuanced insights.
+# Multiple regression analysis extends simple linear regression to accommodate multiple explanatory variables, reflecting the reality that economic outcomes depend on numerous simultaneous factors rather than a single cause. This chapter develops the theoretical foundations and practical implementation of Ordinary Least Squares (OLS) estimation in the multiple regression framework, establishing the conditions under which OLS provides unbiased, consistent estimates with desirable statistical properties.
 #
-# This chapter builds upon the foundation of simple linear regression to introduce the powerful framework of multiple regression. We'll explore the mechanics of Ordinary Least Squares (OLS) estimation in the multiple regression context, understand the crucial concept of ceteris paribus interpretation, and examine the assumptions that underpin the validity of our estimates. Through practical examples using real-world datasets from the Wooldridge package, we'll demonstrate how multiple regression is applied across economics and behavioral sciences.
-#
-# Let's begin by setting up our environment with the necessary libraries.
+# The presentation proceeds hierarchically through the essential components of multiple regression. We begin with motivation and mathematical specification of the multiple regression model (Section 3.1), derive the OLS estimators through matrix algebra and geometric intuition (Section 3.2), develop the crucial concept of ceteris paribus interpretation holding other factors constant (Section 3.3), examine the Gauss-Markov assumptions required for unbiasedness and establish OLS as BLUE under these conditions (Section 3.4-3.5), and address practical issues including multicollinearity, variance estimation, and model specification (Section 3.6-3.10). Throughout, we implement methods using Python's scientific computing libraries and demonstrate applications with real econometric datasets from labor economics, education, and wage determination.
 
 # %%
 import numpy as np
@@ -55,6 +53,7 @@ import statsmodels.formula.api as smf
 import statsmodels.stats.outliers_influence as smo
 import wooldridge as wool
 from IPython.display import display
+from scipy import stats
 
 # %% [markdown]
 # ## 3.1 Multiple Regression in Practice
@@ -111,6 +110,72 @@ results.summary()
 # * **ACT ($\hat{\beta}_2 = 0.009$):** Holding high school GPA constant, a one-point increase in ACT score is associated with a 0.009-point increase in college GPA.
 #
 # **Key Insight:** Multiple regression allows us to isolate the effect of each variable while controlling for others. The coefficient on `hsGPA` represents its effect *after* accounting for the influence of `ACT` scores, and vice versa. This is the fundamental advantage of multiple regression over simple regression.
+# :::
+#
+# ### Example 3.2: Hourly Wage Equation (Simple Version)
+#
+# Before exploring more complex wage models, let's start with a baseline specification that examines how education, experience, and tenure affect wages.
+#
+# **Model:** We model the log of hourly wage as a function of three human capital variables:
+#
+# $$ \log(\text{wage}) = \beta_0 + \beta_1 \text{educ} + \beta_2 \text{exper} + \beta_3 \text{tenure} + u$$
+#
+# This is one of the most fundamental equations in labor economics. The log transformation has two key advantages:
+# 1. **Percentage interpretation**: Coefficients represent approximate percentage changes
+# 2. **Better fit**: Wage distributions are typically right-skewed; logs normalize them
+
+# %%
+# Load wage data
+wage1 = wool.data("wage1")
+
+# Estimate the log wage equation
+wage_model = smf.ols(formula="np.log(wage) ~ educ + exper + tenure", data=wage1)
+wage_results = wage_model.fit()
+
+# Display results in a clean table
+coef_table = pd.DataFrame(
+    {
+        "Variable": wage_results.params.index,
+        "Coefficient": wage_results.params.values,
+        "Std Error": wage_results.bse.values,
+        "t-statistic": wage_results.tvalues.values,
+        "P-value": wage_results.pvalues.values,
+    }
+)
+
+# Display model statistics
+model_stats = pd.DataFrame(
+    {
+        "Statistic": [
+            "R-squared",
+            "Adjusted R-squared",
+            "F-statistic",
+            "Observations",
+        ],
+        "Value": [
+            f"{wage_results.rsquared:.4f}",
+            f"{wage_results.rsquared_adj:.4f}",
+            f"{wage_results.fvalue:.2f}",
+            f"{int(wage_results.nobs)}",
+        ],
+    }
+)
+
+display(coef_table.round(4))
+display(model_stats)
+
+# %% [markdown]
+# :::{note} Interpretation of Example 3.2
+# :class: dropdown
+#
+# The coefficients in this log-linear model have a convenient interpretation:
+# - **Education ($\beta_1$)**: A one-year increase in education is associated with approximately a $\beta_1 \times 100$% increase in wage, holding experience and tenure constant
+# - **Experience ($\beta_2$)**: A one-year increase in experience is associated with approximately a $\beta_2 \times 100$% increase in wage, ceteris paribus  
+# - **Tenure ($\beta_3$)**: A one-year increase in tenure is associated with approximately a $\beta_3 \times 100$% increase in wage, ceteris paribus
+#
+# For example, if $\hat{\beta}_1 = 0.09$, this means that each additional year of education is associated with approximately a 9% increase in hourly wage.
+#
+# The R-squared tells us what fraction of the variation in log(wage) is explained by these three variables. While useful, remember that a low R-squared doesn't necessarily mean the model is bad - individual wages are influenced by many unobserved factors!
 # :::
 #
 # ### Example 3.3 Hourly Wage Equation
@@ -726,14 +791,11 @@ y, X = pt.dmatrices(
     return_type="dataframe",
 )
 
-# get VIFs for all regressors (including intercept):
+# Calculate VIFs for all regressors (vectorized approach)
 K = X.shape[1]  # Number of columns in X (including intercept)
-VIF = np.empty(K)  # Initialize an array to store VIFs
-for i in range(K):
-    VIF[i] = smo.variance_inflation_factor(
-        X.values,
-        i,
-    )  # Calculate VIF for each regressor
+VIF = np.array(
+    [smo.variance_inflation_factor(X.values, i) for i in range(K)]
+)  # List comprehension (pythonic)
 
 # VIFs for independent variables only (excluding intercept):
 VIF_no_intercept = VIF[1:]  # Slice VIF array to exclude intercept's VIF (index 0)
@@ -788,6 +850,314 @@ vif_df  # Display VIFs for independent variables
 # :::
 #
 # **In summary,** standard errors quantify the uncertainty in our coefficient estimates. Multicollinearity, a condition of high correlation among independent variables, can inflate standard errors, reducing the precision of our estimates. VIF is a useful tool for detecting and assessing the severity of multicollinearity in multiple regression models.
+#
+# ## 3.6 The Language of Multiple Regression Analysis
+#
+# As you delve deeper into econometrics and read empirical research, you'll encounter various terms used to describe the variables and relationships in multiple regression models. Understanding this terminology is crucial for clear communication and proper interpretation of results.
+#
+# ### 3.6.1 Terminology for Variables
+#
+# Different disciplines and contexts use different terms for the same concepts:
+#
+# **Dependent Variable** (the outcome we're trying to explain):
+# - Also called: response variable, regressand, explained variable, outcome variable, left-hand side (LHS) variable
+# - Denoted: $y$
+# - Example: wage, GPA, crime rate
+#
+# **Independent Variables** (the explanatory factors):
+# - Also called: regressors, covariates, explanatory variables, predictors, right-hand side (RHS) variables, control variables
+# - Denoted: $x_1, x_2, \ldots, x_k$
+# - Example: education, experience, tenure
+#
+# **Key Distinction - Controls vs Variables of Interest:**
+#
+# Not all independent variables play the same role in your analysis:
+#
+# - **Variable of Interest (Treatment Variable)**: The main variable whose effect you want to measure
+#   - Example: In a study of education returns, `educ` is the variable of interest
+#   
+# - **Control Variables**: Variables included to isolate the effect of the variable of interest
+#   - Example: `exper` and `tenure` are controls when studying returns to education
+#   - Purpose: Reduce omitted variable bias, improve precision
+
+# %%
+# Illustrate the distinction between variable of interest and controls
+np.random.seed(42)
+n = 1000
+
+# Generate data where education is the treatment of interest
+ability = stats.norm.rvs(0, 1, size=n)
+education = 12 + 2 * ability + stats.norm.rvs(0, 2, size=n)
+experience = 10 + stats.norm.rvs(0, 5, size=n)
+wage = 5 + 1.5 * education + 0.5 * experience + 3 * ability + stats.norm.rvs(0, 5, size=n)
+
+df_wage = pd.DataFrame({"wage": wage, "education": education, "experience": experience})
+
+# Regression 1: Education only (omitting controls)
+model_no_control = smf.ols("wage ~ education", data=df_wage).fit()
+
+# Regression 2: Education with experience control
+model_with_control = smf.ols("wage ~ education + experience", data=df_wage).fit()
+
+# Compare the education coefficient (variable of interest)
+comparison = pd.DataFrame(
+    {
+        "Specification": ["No Controls", "With Experience Control"],
+        "Education Coef": [
+            model_no_control.params["education"],
+            model_with_control.params["education"],
+        ],
+        "Std Error": [model_no_control.bse["education"], model_with_control.bse["education"]],
+        "Interpretation": [
+            "Unconditional effect (biased)",
+            "Conditional on experience (less biased)",
+        ],
+    }
+)
+
+display(comparison.round(4))
+
+# %% [markdown]
+# ### 3.6.2 Conditional vs Unconditional Effects
+#
+# This distinction is fundamental to understanding regression coefficients:
+#
+# **Unconditional Effect (Simple Regression)**:
+# - The total association between $x$ and $y$
+# - Includes both direct and indirect effects through other variables
+# - Formula: $\frac{\text{Cov}(x,y)}{\text{Var}(x)}$
+#
+# **Conditional Effect (Multiple Regression)**:
+# - The partial effect of $x$ on $y$, **holding other variables constant**
+# - Attempts to isolate the direct effect
+# - This is what the coefficient represents in multiple regression
+#
+# ### 3.6.3 Careful Language: Effect, Impact, Association
+#
+# Econometricians are increasingly careful about the language used to describe regression coefficients:
+#
+# **"Association" or "Relationship"**:
+# - Always safe to use
+# - Makes no causal claims
+# - Example: "Education is associated with higher wages"
+#
+# **"Effect" or "Impact"**:
+# - Implies causality
+# - Should only be used when causal identification is credible
+# - Example: "The effect of education on wages" (requires strong assumptions)
+#
+# **"Predictive Relationship"**:
+# - Appropriate for forecasting models
+# - Doesn't imply causality
+# - Example: "Education helps predict wages"
+#
+# :::{warning} Causation vs Correlation
+# :class: dropdown
+#
+# **Key Principle**: Regression estimates **associations**, not necessarily **causal effects**.
+#
+# To claim a causal interpretation, you need:
+# 1. **Randomization** (experiments)
+# 2. **Quasi-experimental variation** (natural experiments)
+# 3. **Strong identification assumptions** (instrumental variables, etc.)
+#
+# Without these, stick to language like "associated with" or "correlated with" rather than "causes" or "affects."
+# :::
+#
+# ## 3.7 Including "Bad Controls"
+#
+# Not all control variables improve your regression. Some variables, when included, can actually **introduce bias** rather than reduce it. Understanding which variables to include (and exclude) is crucial for credible empirical analysis.
+#
+# ### 3.7.1 What Makes a Control "Bad"?
+#
+# A control variable is "bad" when including it:
+# 1. **Blocks the causal path** you're trying to estimate (post-treatment bias)
+# 2. **Opens a non-causal path** (collider bias)
+# 3. **Introduces measurement error** or other problems
+#
+# ### 3.7.2 Post-Treatment Bias (Controlling for Outcomes)
+#
+# **The Problem**: If you control for a variable that is itself **affected by your treatment**, you'll underestimate (or completely miss) the true effect.
+#
+# **Classic Example: Returns to Education**
+#
+# Suppose we want to estimate the effect of education on income. Consider this regression:
+#
+# $$ \text{income} = \beta_0 + \beta_1 \text{education} + \beta_2 \text{occupation} + u $$
+#
+# **Problem**: Occupation is **determined by education**! 
+# - Education $\to$ Better occupation $\to$ Higher income
+# - By controlling for occupation, we block part of education's effect
+# - The coefficient $\beta_1$ now only captures the **direct** effect of education, not the total effect
+
+# %%
+# Demonstrate post-treatment bias
+np.random.seed(123)
+n = 1000
+
+# Generate data with causal chain: education -> occupation -> income
+education = stats.norm.rvs(12, 3, size=n)
+occupation_quality = 0.5 * education + stats.norm.rvs(0, 2, size=n)  # Occupation CAUSED by education
+income = (
+    20 + 2 * education + 3 * occupation_quality + stats.norm.rvs(0, 5, size=n)
+)  # Income from both
+
+df_posttreat = pd.DataFrame(
+    {"income": income, "education": education, "occupation": occupation_quality}
+)
+
+# Correct model: Don't control for post-treatment variable
+model_correct = smf.ols("income ~ education", data=df_posttreat).fit()
+
+# Bad model: Control for occupation (post-treatment variable)
+model_bad = smf.ols("income ~ education + occupation", data=df_posttreat).fit()
+
+# Compare
+posttreat_comparison = pd.DataFrame(
+    {
+        "Model": ["Correct (No Occupation)", "Bad (With Occupation)", "True Total Effect"],
+        "Education Coefficient": [
+            model_correct.params["education"],
+            model_bad.params["education"],
+            2 + 3 * 0.5,
+        ],  # True: direct + indirect
+        "Interpretation": [
+            "Total effect (direct + indirect)",
+            "Only direct effect (BIASED LOW)",
+            "True value = 2 + 3*0.5 = 3.5",
+        ],
+    }
+)
+
+display(posttreat_comparison.round(3))
+
+# %% [markdown]
+# :::{important} The Lesson
+# :class: dropdown
+#
+# **Don't control for variables that are outcomes or consequences of your treatment!**
+#
+# This applies to:
+# - Occupation (determined by education)
+# - Current employment (determined by job training programs)
+# - Health behaviors (determined by health insurance)
+#
+# You'll systematically **underestimate** the treatment effect by blocking its indirect pathways.
+# :::
+#
+# ### 3.7.3 Collider Bias (Over-Controlling)
+#
+# **The Problem**: Controlling for a variable that is **caused by both** your treatment and outcome can create spurious associations.
+#
+# **Example: Discrimination in Hiring**
+#
+# Suppose we want to know if there's discrimination in promotion decisions based on race. Consider:
+#
+# $$ \text{promoted} = \beta_0 + \beta_1 \text{minority} + \beta_2 \text{performance} + u $$
+#
+# If we control for job performance, but:
+# - Minority status affects hiring (discrimination in hiring)
+# - Only high-performing minorities get hired (selection)
+#
+# Then performance is a **collider** - it's affected by both minority status and promotion potential. Controlling for it induces bias!
+#
+# ### 3.7.4 Proxy Controls and Measurement Error
+#
+# Sometimes we want to control for unobserved variables (like ability) and use **proxies** instead:
+#
+# **Example**: Using IQ test scores as a proxy for ability
+#
+# **Problems**:
+# - If the proxy is **imperfect**, you won't fully eliminate omitted variable bias
+# - If the proxy has **measurement error**, it can introduce new bias
+# - You might introduce **post-treatment bias** if the proxy itself is affected by treatment
+#
+# ### 3.7.5 General Principles for Selecting Controls
+#
+# **✓ DO include controls that**:
+# 1. Affect both treatment and outcome (confounders)
+# 2. Reduce unexplained variation (improve precision)
+# 3. Were determined **before** treatment
+#
+# **✗ DON'T include controls that**:
+# 1. Are **outcomes** of the treatment (post-treatment variables)
+# 2. Are **colliders** (affected by both treatment and outcome)
+# 3. Have severe measurement error
+# 4. Create perfect multicollinearity
+
+# %%
+# Demonstrate good vs bad control selection
+np.random.seed(456)
+n = 1000
+
+# Causal structure:
+# ability -> education & income (confounder - GOOD control)
+# education -> occupation -> income (occupation is post-treatment - BAD control)
+
+ability = stats.norm.rvs(0, 1, size=n)
+education = 12 + 2 * ability + stats.norm.rvs(0, 2, size=n)
+occupation = 0.5 * education + stats.norm.rvs(0, 1, size=n)  # POST-TREATMENT
+income = 20 + 1.5 * education + 3 * ability + 2 * occupation + stats.norm.rvs(0, 5, size=n)
+
+df_controls = pd.DataFrame(
+    {"income": income, "education": education, "ability": ability, "occupation": occupation}
+)
+
+# Model 1: No controls (omitted variable bias)
+m1 = smf.ols("income ~ education", data=df_controls).fit()
+
+# Model 2: Good control (ability - confounder)
+m2 = smf.ols("income ~ education + ability", data=df_controls).fit()
+
+# Model 3: Bad control (occupation - post-treatment)
+m3 = smf.ols("income ~ education + occupation", data=df_controls).fit()
+
+# Model 4: Both controls (ability is good, occupation is bad)
+m4 = smf.ols("income ~ education + ability + occupation", data=df_controls).fit()
+
+# Compare education coefficients
+control_comparison = pd.DataFrame(
+    {
+        "Model": [
+            "No Controls",
+            "Ability Only (GOOD)",
+            "Occupation Only (BAD)",
+            "Both Controls",
+            "True Direct Effect",
+        ],
+        "Educ Coefficient": [
+            m1.params["education"],
+            m2.params["education"],
+            m3.params["education"],
+            m4.params["education"],
+            1.5 + 2 * 0.5,
+        ],  # True total
+        "Assessment": [
+            "Biased (confounding)",
+            "Good estimate",
+            "Biased (post-treatment)",
+            "Biased (post-treatment dominates)",
+            "True = 1.5 + 2*0.5 = 2.5",
+        ],
+    }
+)
+
+display(control_comparison.round(3))
+
+# %% [markdown]
+# :::{warning} The Central Lesson on Bad Controls
+# :class: dropdown
+#
+# **Think causally about what determines what:**
+#
+# 1. **Draw a causal diagram** (DAG) showing relationships between variables
+# 2. **Control for confounders** (variables that affect both treatment and outcome)
+# 3. **Don't control for mediators** (variables on the causal path)
+# 4. **Don't control for colliders** (variables affected by both treatment and outcome)
+# 5. **When in doubt**, report results with and without the questionable control
+#
+# The goal is to isolate the causal effect, not to maximize R-squared by throwing in every available variable!
+# :::
 #
 # ## Chapter Summary
 #

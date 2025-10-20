@@ -33,14 +33,9 @@
 # **16.6** Extend SEM techniques to panel data for richer micro-econometric applications.
 # :::
 #
-# Welcome to Chapter 16, where we study **simultaneous equations models (SEMs)**--systems where multiple variables are determined jointly. Unlike previous chapters where we had one equation with clearly defined dependent and independent variables, SEMs recognize that economic variables are often **mutually determined**.
+# Simultaneous equations models (SEMs) formalize the economic reality that many variables are determined jointly through systems of interdependent relationships rather than through unidirectional causal chains. This chapter develops the theory and practice of estimating structural equation systems, addressing the fundamental identification problem that arises when variables simultaneously determine one another and establishing conditions under which structural parameters can be consistently estimated despite this simultaneity.
 #
-# Classic examples include:
-# - **Supply and Demand**: Price and quantity are simultaneously determined
-# - **Labor Supply and Wages**: Hours worked and wage rates are jointly determined
-# - **Macro Models**: GDP, consumption, and investment are interdependent
-#
-# The key challenge: When variables are simultaneously determined, **OLS is biased and inconsistent** because explanatory variables are correlated with the error term. We need **instrumental variables** and **system estimation methods** like **2SLS** and **3SLS** (three-stage least squares).
+# The development proceeds from motivation through identification to estimation. We establish the nature of simultaneity bias and why OLS fails in systems where endogenous variables appear as regressors (Section 16.1), introduce the distinction between structural and reduced form equations that transforms simultaneous systems into estimable forms (Section 16.2), develop the rank and order conditions for identification that determine whether structural parameters are recoverable from the data (Section 16.3), present estimation methods including equation-by-equation 2SLS and system methods like three-stage least squares (3SLS) that exploit cross-equation restrictions for efficiency (Section 16.4), and extend SEM techniques to time series and panel data contexts (Section 16.5-16.6). Throughout, we implement methods using Python's linearmodels package and demonstrate applications to supply and demand systems, labor market equilibrium, and macroeconomic models with multiple equations.
 
 # %%
 # # %pip install matplotlib numpy pandas statsmodels wooldridge linearmodels scipy -q

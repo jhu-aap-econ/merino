@@ -38,11 +38,11 @@ By the end of this chapter, you should be able to:
 **2.9** Describe the potential outcomes framework for causal inference and explain how experimental interventions (randomized controlled trials) can be analyzed using simple regression.
 :::
 
-Welcome to this notebook, which delves into the fundamental concepts of the Simple Linear Regression model. This model is a cornerstone of econometrics and statistical analysis, used to understand the relationship between two variables. In this chapter, we will explore the mechanics of Ordinary Least Squares (OLS) regression, learn how to interpret its results, and understand the crucial assumptions that underpin its validity.
+The Simple Linear Regression model provides a cornerstone for econometric and statistical analysis, establishing foundational methods for understanding relationships between two variables. This chapter explores the mechanics of Ordinary Least Squares (OLS) regression, develops intuition for interpreting results, and examines the crucial assumptions that underpin validity of inference.
 
-We will use real-world datasets from the popular Wooldridge package to illustrate these concepts, making the theory come alive with practical examples. By the end of this notebook, you will have a solid grasp of simple regression, its properties, and how to apply it in Python.
+The presentation follows a hierarchical development from basic concepts to advanced applications. We demonstrate theoretical results using real-world datasets from the Wooldridge package, illustrating how abstract econometric principles manifest in practical examples. The chapter proceeds through derivation of OLS estimators (Section 2.1-2.2), analysis of their statistical properties (Section 2.3-2.4), and examination of units of measurement and functional forms (Section 2.5). We conclude with expected values, variance decomposition, and an introduction to causal inference through randomized experiments (Section 2.6-2.9).
 
-Let's start by importing the necessary libraries and setting up our environment.
+Throughout this chapter, we implement concepts using Python's scientific computing stack, building intuition through numerical examples and visualization.
 
 ```python
 # Import required libraries
@@ -1163,11 +1163,267 @@ This code estimates the regression model, calculates the SER and standard errors
 By comparing the manually calculated SER and standard errors with those reported in the `statsmodels` summary table, you can verify that they are consistent. The standard errors provide a measure of the uncertainty associated with our coefficient estimates. Smaller standard errors mean our estimates are more precise. The regression plot with confidence intervals visually shows the range of plausible regression lines, given the uncertainty in our estimates.
 :::
 
-## 2.7 Monte Carlo Simulations
+## 2.7. Causal Inference and Limitations
+
+While simple regression is powerful for describing relationships between variables, we must be careful when making **causal** interpretations. The slope coefficient $\beta_1$ tells us the association between $x$ and $y$, but correlation does not imply causation. To interpret $\beta_1$ as a causal effect requires strong assumptions that often don't hold with observational data.
+
+### 2.7.1. The Ceteris Paribus Interpretation
+
+The regression coefficient $\beta_1$ represents the change in $y$ associated with a one-unit change in $x$, **holding all other factors constant** (ceteris paribus). However, in reality, when $x$ changes, other factors may also change, confounding our ability to isolate the true effect of $x$ on $y$.
+
+For example, in our wage-education regression:
+- More education (higher $x$) is associated with higher wages (higher $y$)
+- But education is correlated with ability, family background, motivation, etc.
+- These omitted factors affect both education and wages
+
+```python
+# Illustrate the omitted variable problem
+np.random.seed(42)
+n = 1000
+
+# Generate data with an omitted variable (ability)
+ability = stats.norm.rvs(0, 1, size=n)  # Unmeasured ability
+education = 12 + 2 * ability + stats.norm.rvs(0, 2, size=n)  # Ability affects education
+wage = 5 + 1.5 * education + 3 * ability + stats.norm.rvs(0, 5, size=n)  # Ability affects wages
+
+# Create DataFrame
+df_omitted = pd.DataFrame({"wage": wage, "education": education, "ability": ability})
+
+# Regression WITHOUT controlling for ability (omitted variable bias)
+model_biased = smf.ols("wage ~ education", data=df_omitted).fit()
+
+# Regression WITH controlling for ability (closer to true effect)
+model_unbiased = smf.ols("wage ~ education + ability", data=df_omitted).fit()
+
+# Compare results
+comparison = pd.DataFrame(
+    {
+        "Model": ["Without Ability (Biased)", "With Ability (Unbiased)", "True Value"],
+        "Education Coefficient": [
+            model_biased.params["education"],
+            model_unbiased.params["education"],
+            1.5,
+        ],
+        "Interpretation": [
+            "Overestimates effect (includes ability)",
+            "Closer to true causal effect",
+            "True causal effect of education",
+        ],
+    }
+)
+
+display(comparison.round(3))
+
+# Visualize the bias
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
+
+# Biased regression (omitting ability)
+ax1.scatter(education, wage, alpha=0.3, s=20)
+ax1.plot(
+    education,
+    model_biased.predict(),
+    "r-",
+    linewidth=2,
+    label=f"Slope = {model_biased.params['education']:.2f}",
+)
+ax1.set_xlabel("Education (years)")
+ax1.set_ylabel("Wage")
+ax1.set_title("Omitted Variable Bias\n(Ability not controlled)")
+ax1.legend()
+
+# Color by ability to show the confounding
+scatter = ax2.scatter(education, wage, c=ability, cmap="viridis", alpha=0.5, s=20)
+ax2.plot(
+    education,
+    model_biased.predict(),
+    "r--",
+    linewidth=2,
+    label=f"Biased: {model_biased.params['education']:.2f}",
+)
+# Note: For true line, we'd need to fix ability at its mean
+ax2.set_xlabel("Education (years)")
+ax2.set_ylabel("Wage")
+ax2.set_title("Wage colored by Ability\n(showing confounding)")
+ax2.legend()
+plt.colorbar(scatter, ax=ax2, label="Ability")
+
+plt.tight_layout()
+```
+
+:::{warning} Key Limitation
+:class: dropdown
+
+**Omitted variable bias** occurs when a variable that affects both $x$ and $y$ is left out of the regression. This causes the estimated coefficient to capture not just the effect of $x$, but also the indirect effect through the omitted variable. Multiple regression (Chapter 3) helps address this by including additional control variables, but we can never be sure we've controlled for everything.
+:::
+
+### 2.7.2. Requirements for Causal Interpretation
+
+For $\beta_1$ to represent a **causal effect** of $x$ on $y$, we need:
+
+1. **Exogeneity**: $E(u|x) = 0$ - The error term must be uncorrelated with $x$
+   - All other factors affecting $y$ must be independent of $x$
+   - Difficult to achieve with observational data
+
+2. **No reverse causality**: $x$ causes $y$, not the other way around
+   - Example: Does income cause health, or does health cause income?
+
+3. **No measurement error**: Both $x$ and $y$ are measured accurately
+   - Measurement error in $x$ causes attenuation bias
+
+4. **Correct functional form**: The linear model is appropriate
+   - Relationship may be nonlinear in reality
+
+These conditions are rarely satisfied with observational data, which is why economists often seek **natural experiments** or use more advanced techniques (instrumental variables, difference-in-differences, regression discontinuity) to credibly estimate causal effects.
+
+## 2.8. Potential Outcomes and Randomized Experiments
+
+Modern causal inference uses the **potential outcomes framework**, which provides a rigorous way to think about causality and connects directly to regression analysis.
+
+### 2.8.1. The Potential Outcomes Framework
+
+Suppose we want to estimate the effect of a treatment (e.g., job training program) on an outcome (e.g., earnings). Each individual $i$ has two **potential outcomes**:
+
+- $y_i(1)$: Outcome if individual $i$ receives treatment ($x_i = 1$)
+- $y_i(0)$: Outcome if individual $i$ does not receive treatment ($x_i = 0$)
+
+The **individual treatment effect** is: $y_i(1) - y_i(0)$
+
+The fundamental problem: We can only observe ONE of these potential outcomes for each person!
+- If person $i$ receives treatment, we observe $y_i(1)$ but not $y_i(0)$
+- If person $i$ doesn't receive treatment, we observe $y_i(0)$ but not $y_i(1)$
+
+We can, however, estimate the **Average Treatment Effect (ATE)**:
+
+$$\text{ATE} = E[y_i(1) - y_i(0)] = E[y_i(1)] - E[y_i(0)]$$
+
+### 2.8.2. Randomized Controlled Trials (RCTs)
+
+**Randomization** solves the fundamental problem by ensuring that treatment and control groups are comparable on average:
+
+$$E[y_i(1)|x_i=1] = E[y_i(1)] \quad \text{and} \quad E[y_i(0)|x_i=0] = E[y_i(0)]$$
+
+With randomization, the ATE can be estimated by comparing average outcomes:
+
+$$\widehat{\text{ATE}} = \bar{y}_{\text{treated}} - \bar{y}_{\text{control}}$$
+
+**Connection to regression**: When $x$ is binary (0/1), the regression coefficient equals the ATE!
+
+```python
+# Simulate a randomized controlled trial
+np.random.seed(123)
+n = 500
+
+# Generate potential outcomes (both exist for everyone, but we only observe one)
+y0 = 50 + stats.norm.rvs(0, 10, size=n)  # Potential outcome without treatment
+treatment_effect = 15  # True ATE
+y1 = y0 + treatment_effect  # Potential outcome with treatment
+
+# RANDOM assignment to treatment
+treatment = stats.bernoulli.rvs(0.5, size=n)  # 50% get treatment
+
+# Observed outcome (fundamental problem: we only see one potential outcome)
+y_observed = treatment * y1 + (1 - treatment) * y0
+
+# Create DataFrame
+rct_data = pd.DataFrame(
+    {
+        "outcome": y_observed,
+        "treatment": treatment,
+        "y0": y0,  # Normally unobserved!
+        "y1": y1,  # Normally unobserved!
+    }
+)
+
+# Method 1: Difference in means (simple comparison)
+ate_diff_means = rct_data[rct_data["treatment"] == 1]["outcome"].mean() - rct_data[
+    rct_data["treatment"] == 0
+]["outcome"].mean()
+
+# Method 2: Regression (equivalent with binary treatment!)
+model_rct = smf.ols("outcome ~ treatment", data=rct_data).fit()
+ate_regression = model_rct.params["treatment"]
+
+# Display results
+ate_results = pd.DataFrame(
+    {
+        "Method": [
+            "True ATE",
+            "Difference in Means",
+            "Regression Coefficient",
+            "Standard Error (Regression)",
+        ],
+        "Estimate": [
+            treatment_effect,
+            ate_diff_means,
+            ate_regression,
+            model_rct.bse["treatment"],
+        ],
+        "95% CI": [
+            "N/A",
+            "N/A",
+            f"[{model_rct.conf_int().loc['treatment', 0]:.2f}, {model_rct.conf_int().loc['treatment', 1]:.2f}]",
+            "N/A",
+        ],
+    }
+)
+
+display(ate_results.round(3))
+
+# Visualize the RCT results
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
+
+# Box plot comparing treatment and control
+rct_data.boxplot(column="outcome", by="treatment", ax=ax1)
+ax1.set_xlabel("Treatment Status")
+ax1.set_ylabel("Outcome")
+ax1.set_title("RCT: Treatment vs Control\n(Randomization ensures comparability)")
+ax1.set_xticklabels(["Control", "Treatment"])
+plt.sca(ax1)
+plt.xticks([1, 2], ["Control (x=0)", "Treatment (x=1)"])
+
+# Regression visualization
+plot_regression(
+    rct_data,
+    "treatment",
+    "outcome",
+    model_rct,
+    "Regression with Binary Treatment\n(Slope = Average Treatment Effect)",
+    ax=ax2,
+)
+
+plt.tight_layout()
+```
+
+:::{important} Key Insights
+:class: dropdown
+
+1. **With randomization**, the regression coefficient on a binary treatment variable equals the ATE
+2. **Randomization** makes treatment assignment independent of potential outcomes: $\{y_i(0), y_i(1)\} \perp x_i$
+3. This is why RCTs are the "gold standard" for causal inference
+4. **Without randomization** (observational data), selection bias can occur if treatment is correlated with potential outcomes
+:::
+
+### 2.8.3. Limitations and Extensions
+
+Even with RCTs, challenges remain:
+- **External validity**: Results may not generalize beyond the study population
+- **Compliance**: Not everyone assigned to treatment actually receives it
+- **Attrition**: People drop out of the study
+- **Spillovers**: Treatment of some affects outcomes of others
+
+When RCTs are not feasible, econometricians use **quasi-experimental methods**:
+- Instrumental variables (Chapter 15)
+- Difference-in-differences  
+- Regression discontinuity
+- Matching methods
+
+These methods attempt to mimic randomization using observational data, but require strong assumptions.
+
+## 2.9 Monte Carlo Simulations
 
 Monte Carlo simulations are powerful tools for understanding the statistical properties of estimators, like the OLS estimators. They involve repeatedly generating random samples from a known population model, estimating the parameters using OLS in each sample, and then examining the distribution of these estimates. This helps us to empirically verify properties like unbiasedness and understand the sampling variability of estimators.
 
-### 2.7.1. One Sample
+### 2.9.1. One Sample
 
 Let's start by simulating a single sample from a population regression model. We will define a true population model, generate random data based on this model, estimate the model using OLS on this sample, and compare the estimated coefficients with the true population parameters.
 
@@ -1254,7 +1510,7 @@ This code simulates a dataset from a simple linear regression model with known p
 By running this code, you will see that the estimated coefficients $\hat{\beta}_0$ and $\hat{\beta}_1$ are close to, but not exactly equal to, the true values $\beta_0$ and $\beta_1$. This is because we are using a single random sample, and there is sampling variability. The regression plot shows the scatter of data points around the true population regression line, and the estimated regression line is an approximation based on this sample. The error distribution histogram should resemble the true normal distribution of errors.
 :::
 
-### 2.7.2. Many Samples
+### 2.9.2. Many Samples
 
 To better understand the sampling properties of OLS estimators, we need to repeat the simulation process many times. This will allow us to observe the distribution of the OLS estimates across different samples, which is known as the **sampling distribution**. We can then check if the estimators are unbiased by looking at the mean of these estimates and examine their variability.
 
@@ -1262,29 +1518,27 @@ To better understand the sampling properties of OLS estimators, we need to repea
 # Set parameters - Simulation parameters (number of replications increased)
 np.random.seed(1234567)  # Set seed
 n = 1000  # sample size
-r = 100  # number of replications (reduced from 10000 for faster execution)
+r = 10000  # number of replications (vectorized for efficiency)
 beta0 = 1  # true intercept
 beta1 = 0.5  # true slope
 sigma_u = 2  # standard deviation of error term
 
-# Initialize arrays to store results - Arrays to store estimated beta_0 and beta_1 from each replication
-b0 = np.empty(r)  # Array for intercept estimates
-b1 = np.empty(r)  # Array for slope estimates
-
 # Generate fixed x values - Keep x values constant across replications to isolate variability from error term
 x = stats.norm.rvs(4, 1, size=n)  # Fixed x values from normal distribution
 
-# Perform Monte Carlo simulation - Loop through replications, generate y, estimate model, store coefficients
-for i in range(r):  # Loop for r replications
-    # Generate new error terms and y values for each replication - Generate new u and y for each sample
-    u = stats.norm.rvs(0, sigma_u, size=n)  # New error terms for each replication
-    y = beta0 + beta1 * x + u  # Generate y based on fixed x and new u
-    df = pd.DataFrame({"y": y, "x": x})  # Create DataFrame
+# Vectorized Monte Carlo simulation - Generate all error terms at once (r x n matrix)
+u = stats.norm.rvs(0, sigma_u, size=(r, n))  # All error terms: r replications x n observations
 
-    # Estimate model and store coefficients - Fit OLS and store estimated coefficients
-    results = smf.ols(formula="y ~ x", data=df).fit()  # Fit OLS model
-    b0[i] = results.params.iloc[0]  # Store estimated intercept, using iloc for position
-    b1[i] = results.params.iloc[1]  # Store estimated slope, using iloc for position
+# Generate all y values at once using broadcasting - Efficient vectorized computation
+y = beta0 + beta1 * x + u  # Shape: (r, n) - all samples simultaneously
+
+# Compute OLS coefficients using vectorized formulas - Direct calculation without loops
+x_centered = x - x.mean()  # Center x values
+y_centered = y - y.mean(axis=1, keepdims=True)  # Center y values (each replication)
+
+# Vectorized OLS formulas applied to all replications at once
+b1 = (x_centered * y_centered).sum(axis=1) / (x_centered**2).sum()  # Slope estimates
+b0 = y.mean(axis=1) - b1 * x.mean()  # Intercept estimates
 
 # Display Monte Carlo results
 monte_carlo_results = pd.DataFrame(
@@ -1323,7 +1577,7 @@ axes[1].legend()
 plt.tight_layout()
 ```
 
-This code performs a Monte Carlo simulation with a large number of replications (e.g., 10000). In each replication, it generates new error terms and $y$ values while keeping the $x$ values fixed. It estimates the OLS regression and stores the estimated coefficients. After all replications, it calculates the mean and standard deviation of the estimated coefficients and plots histograms of their sampling distributions.
+This vectorized code performs a Monte Carlo simulation efficiently with 10,000 replications. Instead of looping through each replication, we generate all error terms at once as an $(r \times n)$ matrix and use broadcasting to compute all $y$ values simultaneously. The OLS formulas are then applied directly to the entire matrix using vectorized operations, which is much faster than iterating. After computing all coefficient estimates, we calculate summary statistics and visualize the sampling distributions.
 
 :::{note} Interpretation of Example 2.13.2
 :class: dropdown
@@ -1331,7 +1585,7 @@ This code performs a Monte Carlo simulation with a large number of replications 
 By running this code, you will observe the sampling distributions of $\hat{\beta}_0$ and $\hat{\beta}_1$. The histograms should be roughly bell-shaped (approximating normal distributions, due to the Central Limit Theorem). Importantly, you should see that the mean of the estimated coefficients (vertical green dashed line in the histograms) is very close to the true population parameters (vertical red dashed line). This empirically demonstrates the unbiasedness of the OLS estimators under the SLR assumptions. The standard deviations of the estimated coefficients provide a measure of their sampling variability.
 :::
 
-### 2.7.3. Violation of SLR.4 (Zero Conditional Mean)
+### 2.9.3. Violation of SLR.4 (Zero Conditional Mean)
 
 Now, let's investigate what happens when one of the key assumptions is violated. Consider the violation of SLR.4, the zero conditional mean assumption, i.e., $\text{E}(u|x) \neq 0$. This means that the error term is correlated with $x$. In this case, we expect OLS estimators to be biased. Let's simulate a scenario where this assumption is violated and see the results.
 
@@ -1339,34 +1593,29 @@ Now, let's investigate what happens when one of the key assumptions is violated.
 # Set parameters - Simulation parameters (same as before)
 np.random.seed(1234567)  # Set seed
 n = 1000
-r = 100  # reduced from 10000 for faster execution
+r = 10000  # full replications with vectorization
 beta0 = 1
 beta1 = 0.5
 sigma_u = 2
 
-# Initialize arrays - Arrays to store estimated coefficients
-b0 = np.empty(r)
-b1 = np.empty(r)
-
 # Generate fixed x values - Fixed x values
 x = stats.norm.rvs(4, 1, size=n)
 
-# Perform Monte Carlo simulation with E(u|x) $\neq$ 0 - Simulation loop with violation of SLR.4
-for i in range(r):  # Loop for replications
-    # Generate errors with non-zero conditional mean - Error term depends on x, violating SLR.4
-    u_mean = (x - 4) / 5  # E(u|x) = (x - 4)/5 - Conditional mean of error depends on x
-    u = stats.norm.rvs(
-        u_mean,
-        sigma_u,
-        size=n,
-    )  # Error term with non-zero conditional mean
-    y = beta0 + beta1 * x + u  # Generate y with biased error term
-    df = pd.DataFrame({"y": y, "x": x})  # Create DataFrame
+# Vectorized simulation with E(u|x) != 0 - Efficient violation of SLR.4
+u_mean = (x - 4) / 5  # E(u|x) = (x - 4)/5 - Conditional mean of error depends on x
 
-    # Estimate model - Fit OLS model
-    results = smf.ols(formula="y ~ x", data=df).fit()  # Fit OLS model
-    b0[i] = results.params.iloc[0]  # Store estimated intercept, using iloc for position
-    b1[i] = results.params.iloc[1]  # Store estimated slope, using iloc for position
+# Generate all error terms with non-zero conditional mean using broadcasting
+u = stats.norm.rvs(size=(r, n)) * sigma_u + u_mean  # Broadcasting u_mean across r replications
+
+# Generate all y values at once - Vectorized computation
+y = beta0 + beta1 * x + u  # Shape: (r, n)
+
+# Compute OLS coefficients using vectorized formulas
+x_centered = x - x.mean()
+y_centered = y - y.mean(axis=1, keepdims=True)
+
+b1 = (x_centered * y_centered).sum(axis=1) / (x_centered**2).sum()  # Slope estimates
+b0 = y.mean(axis=1) - b1 * x.mean()  # Intercept estimates
 
 # Display Monte Carlo results with bias analysis
 bias_results = pd.DataFrame(
@@ -1405,7 +1654,7 @@ axes[1].legend()
 plt.tight_layout()
 ```
 
-In this code, we intentionally violate the zero conditional mean assumption by setting the mean of the error term to be dependent on $x$: $\text{E}(u|x) = (x - 4)/5$. We then perform the Monte Carlo simulation and examine the results.
+In this vectorized code, we intentionally violate the zero conditional mean assumption by setting the mean of the error term to depend on $x$: $\text{E}(u|x) = (x - 4)/5$. Instead of looping, we use broadcasting to add the conditional mean to all replications at once, then perform the vectorized Monte Carlo simulation.
 
 :::{note} Interpretation of Example 2.13.3
 :class: dropdown
@@ -1413,7 +1662,7 @@ In this code, we intentionally violate the zero conditional mean assumption by s
 By running this simulation, you will observe that the mean of the estimated coefficients $\hat{\beta}_0$ and $\hat{\beta}_1$ are no longer close to the true values $\beta_0$ and $\beta_1$. The bias, calculated as the difference between the mean estimate and the true value, will be noticeably different from zero. This empirically demonstrates that when the zero conditional mean assumption (SLR.4) is violated, the OLS estimators become biased. The histograms of the sampling distributions will be centered around the biased mean estimates, not the true values.
 :::
 
-### 2.7.4. Violation of SLR.5 (Homoscedasticity)
+### 2.9.4. Violation of SLR.5 (Homoscedasticity)
 
 Finally, let's consider the violation of SLR.5, the homoscedasticity assumption, i.e., $\text{var}(u|x) \neq \sigma^2$. This means that the variance of the error term is not constant across values of $x$ (heteroscedasticity). While heteroscedasticity does not cause bias in OLS estimators, it affects their efficiency and the validity of standard errors and inference. Let's simulate a scenario with heteroscedasticity.
 
@@ -1421,35 +1670,28 @@ Finally, let's consider the violation of SLR.5, the homoscedasticity assumption,
 # Set parameters - Simulation parameters (same as before)
 np.random.seed(1234567)  # Set seed
 n = 1000
-r = 100  # reduced from 10000 for faster execution
+r = 10000  # full replications with vectorization
 beta0 = 1
 beta1 = 0.5
-
-# Initialize arrays - Arrays to store estimated coefficients
-b0 = np.empty(r)
-b1 = np.empty(r)
 
 # Generate fixed x values - Fixed x values
 x = stats.norm.rvs(4, 1, size=n)
 
-# Perform Monte Carlo simulation with heteroscedasticity - Simulation loop with violation of SLR.5
-for i in range(r):  # Loop for replications
-    # Generate errors with variance depending on x - Error variance depends on x, violating SLR.5
-    u_var = (
-        4 / np.exp(4.5) * np.exp(x)
-    )  # var(u|x) = 4e^(x-4.5) - Conditional variance depends on x
-    u = stats.norm.rvs(
-        0,
-        np.sqrt(u_var),
-        size=n,
-    )  # Error term with heteroscedastic variance
-    y = beta0 + beta1 * x + u  # Generate y with heteroscedastic errors
-    df = pd.DataFrame({"y": y, "x": x})  # Create DataFrame
+# Vectorized simulation with heteroscedasticity - Efficient violation of SLR.5
+u_std = np.sqrt(4 / np.exp(4.5) * np.exp(x))  # var(u|x) = 4e^(x-4.5) -> std(u|x)
 
-    # Estimate model - Fit OLS model
-    results = smf.ols(formula="y ~ x", data=df).fit()  # Fit OLS model
-    b0[i] = results.params.iloc[0]  # Store estimated intercept, using iloc for position
-    b1[i] = results.params.iloc[1]  # Store estimated slope, using iloc for position
+# Generate all error terms with variance depending on x using broadcasting
+u = stats.norm.rvs(size=(r, n)) * u_std  # Broadcasting u_std across r replications
+
+# Generate all y values at once - Vectorized computation
+y = beta0 + beta1 * x + u  # Shape: (r, n)
+
+# Compute OLS coefficients using vectorized formulas
+x_centered = x - x.mean()
+y_centered = y - y.mean(axis=1, keepdims=True)
+
+b1 = (x_centered * y_centered).sum(axis=1) / (x_centered**2).sum()  # Slope estimates
+b0 = y.mean(axis=1) - b1 * x.mean()  # Intercept estimates
 
 # Display Monte Carlo results with heteroscedasticity
 heteroscedasticity_results = pd.DataFrame(
@@ -1466,11 +1708,14 @@ heteroscedasticity_results = pd.DataFrame(
 )
 heteroscedasticity_results[["Parameter", "Summary"]]
 
-# Create heteroscedasticity visualization with seaborn defaults
+# Create heteroscedasticity visualization - Use last replication for visualization
 fig, axes = plt.subplots(1, 2, figsize=(12, 5))
 
-# Simple scatter plot with heteroscedasticity
-sns.scatterplot(x=x, y=y, ax=axes[0])
+# Simple scatter plot with heteroscedasticity - Use last replication
+y_last = y[-1]  # Last replication for visualization
+u_last = u[-1]  # Last replication errors
+
+sns.scatterplot(x=x, y=y_last, ax=axes[0])
 x_range = np.linspace(x.min(), x.max(), 100)
 axes[0].plot(x_range, beta0 + beta1 * x_range, "--", label="True Regression Line")
 axes[0].set_title("Sample Data with Heteroscedasticity")
@@ -1479,7 +1724,7 @@ axes[0].set_ylabel("y")
 axes[0].legend()
 
 # Error term visualization
-sns.scatterplot(x=x, y=u, ax=axes[1])
+sns.scatterplot(x=x, y=u_last, ax=axes[1])
 axes[1].axhline(y=0, linestyle="--", label="E(u|x) = 0")
 axes[1].set_title("Error Terms vs. x")
 axes[1].set_xlabel("x")
@@ -1489,7 +1734,7 @@ axes[1].legend()
 plt.tight_layout()
 ```
 
-In this code, we introduce heteroscedasticity by making the variance of the error term dependent on $x$: $\text{var}(u|x) = 4e^{(x-4.5)}$. We then perform the Monte Carlo simulation.
+In this vectorized code, we introduce heteroscedasticity by making the variance of the error term dependent on $x$: $\text{var}(u|x) = 4e^{(x-4.5)}$. We compute the standard deviation and use broadcasting to scale the standard normal error terms across all replications simultaneously, making the simulation much more efficient.
 
 :::{note} Interpretation of Example 2.13.4
 :class: dropdown

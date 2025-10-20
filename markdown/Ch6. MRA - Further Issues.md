@@ -13,9 +13,11 @@ jupyter:
     name: python3
 ---
 
-# 6. Multiple Regression Analysis: Further Issues
+# Chapter 6: Multiple Regression Analysis - Further Issues
 
-This notebook delves into further issues in multiple regression analysis, expanding on the foundational concepts. We will explore various aspects of model specification, including the use of different functional forms and interaction terms, as well as prediction and its associated uncertainties.  We will use the `statsmodels` library in Python to implement these techniques and the `wooldridge` package for example datasets from Wooldridge's "Introductory Econometrics."
+Advanced applications of multiple regression require careful attention to model specification, functional form selection, and prediction methodology. This chapter extends foundational regression concepts to address practical challenges in empirical research: choosing appropriate transformations of variables, modeling interaction effects, incorporating quadratic relationships, and constructing prediction intervals that account for multiple sources of uncertainty.
+
+The development proceeds hierarchically from data scaling considerations to sophisticated modeling techniques. We examine how changes in measurement units affect coefficient interpretation (Section 6.1), introduce logarithmic transformations for modeling percentage effects and elasticities (Section 6.2), develop methods for incorporating quadratic and interaction terms (Section 6.3), address challenges in standardized coefficients and goodness-of-fit measures (Section 6.4), and conclude with prediction theory and interval construction (Section 6.5-6.6). Throughout, we implement these methods using Python's statsmodels library and illustrate applications with real datasets from econometric research.
 
 ```python
 import matplotlib.pyplot as plt
@@ -23,6 +25,7 @@ import numpy as np
 import pandas as pd
 import statsmodels.formula.api as smf
 import wooldridge as wool
+from scipy import stats
 ```
 
 ## 6.1 Model Formulae
@@ -713,3 +716,556 @@ plt.show()
 **Interpretation of Effect Plot:**
 
 The plot visually represents the inverted U-shaped relationship between the number of rooms and the log of housing price, as suggested by the regression coefficients.  The shaded area between the dashed lines represents the 95% confidence interval for the mean prediction.  This plot helps to understand the nonlinear effect of `rooms` on `lprice` and the uncertainty associated with these predictions. Effect plots are valuable tools for interpreting and presenting results from regression models with nonlinear specifications.
+
+## 6.3 Goodness-of-Fit and Model Selection
+
+When working with multiple regression models, we often need to compare different specifications to determine which provides the best fit or explanatory power. This section covers tools for assessing model fit and selecting among competing models.
+
+### 6.3.1 Adjusted R-Squared
+
+Recall that the **R-squared** measures the proportion of variation in $y$ explained by the regression:
+
+$$R^2 = 1 - \frac{SSR}{SST} = 1 - \frac{\sum_{i=1}^n \hat{u}_i^2}{\sum_{i=1}^n (y_i - \bar{y})^2}$$
+
+**Problem with R-squared**: It **never decreases** when adding variables, even irrelevant ones! This creates a bias toward including more variables.
+
+**Solution: Adjusted R-squared**
+
+$$\bar{R}^2 = 1 - \frac{SSR/(n-k-1)}{SST/(n-1)} = 1 - \frac{n-1}{n-k-1}(1 - R^2)$$
+
+where:
+- $n$ = sample size
+- $k$ = number of independent variables (not including intercept)
+- $SSR/(n-k-1) = \hat{\sigma}^2$ = unbiased estimate of error variance
+
+**Key Properties:**
+
+1. **Penalizes for adding variables**: $\bar{R}^2$ can decrease when adding a variable
+2. **Compares models**: Higher $\bar{R}^2$ suggests better model (among nested models)
+3. **Can be negative**: Unlike $R^2$, $\bar{R}^2$ can be negative if model fits poorly
+4. **Formula insight**: $\bar{R}^2 < R^2$ always, with gap increasing as more variables are added
+
+**When to Prefer Adjusted R-squared:**
+
+- Comparing models with **different numbers of variables**
+- Assessing whether an added variable improves fit enough to justify complexity
+- Avoiding overfitting in model selection
+
+**Example: Comparing Models with Adjusted R-squared**
+
+```python
+# Compare models with different numbers of variables
+import wooldridge as woo
+
+# Load data
+hprice1 = woo.data('hprice1')
+
+# Model 1: Simple model with key variables
+model1 = smf.ols('np.log(price) ~ np.log(lotsize) + np.log(sqrft) + bdrms', data=hprice1).fit()
+
+# Model 2: Add more variables
+model2 = smf.ols('np.log(price) ~ np.log(lotsize) + np.log(sqrft) + bdrms + colonial + lprice', data=hprice1).fit()
+
+# Model 3: Add even more variables
+model3 = smf.ols('np.log(price) ~ np.log(lotsize) + np.log(sqrft) + bdrms + colonial + lprice + np.log(lotsize):bdrms', data=hprice1).fit()
+
+# Compare fit statistics
+comparison = pd.DataFrame({
+    'Model': ['Model 1 (3 vars)', 'Model 2 (5 vars)', 'Model 3 (6 vars)'],
+    'R-squared': [model1.rsquared, model2.rsquared, model3.rsquared],
+    'Adj R-squared': [model1.rsquared_adj, model2.rsquared_adj, model3.rsquared_adj],
+    'n': [model1.nobs, model2.nobs, model3.nobs],
+    'k': [model1.df_model, model2.df_model, model3.df_model],
+    'Assessment': [
+        'Baseline',
+        'Better' if model2.rsquared_adj > model1.rsquared_adj else 'Worse',
+        'Better' if model3.rsquared_adj > model2.rsquared_adj else 'Worse'
+    ]
+})
+
+display(comparison.round(4))
+```
+
+**Interpretation**: 
+- R-squared increases with every variable added (mechanical property)
+- Adjusted R-squared may decrease if added variable doesn't improve fit enough
+- Choose model with highest adjusted R-squared among reasonable specifications
+
+### 6.3.2 Model Selection Criteria: AIC and BIC
+
+While adjusted R-squared is intuitive, more sophisticated model selection criteria are often preferred in practice.
+
+**Akaike Information Criterion (AIC)**:
+
+$$AIC = n \ln(SSR/n) + 2(k+1)$$
+
+**Bayesian Information Criterion (BIC)**:
+
+$$BIC = n \ln(SSR/n) + \ln(n)(k+1)$$
+
+**Key Differences:**
+
+1. **Penalty strength**: BIC penalizes model complexity more heavily than AIC (when $n > 7$)
+2. **Interpretation**: Lower values indicate better models (opposite of R-squared!)
+3. **Consistency**: BIC is consistent (selects true model as $n \to \infty$), AIC is not
+4. **Practical use**: BIC tends to select simpler models than AIC
+
+**Example: Model Selection with AIC and BIC**
+
+```python
+# Calculate AIC and BIC for models
+model_selection = pd.DataFrame({
+    'Model': ['Model 1', 'Model 2', 'Model 3'],
+    'AIC': [model1.aic, model2.aic, model3.aic],
+    'BIC': [model1.bic, model2.bic, model3.bic],
+    'Adj R-sq': [model1.rsquared_adj, model2.rsquared_adj, model3.rsquared_adj],
+    'Best by AIC': ['YES' if model1.aic == min([model1.aic, model2.aic, model3.aic]) else 'NO',
+                     'YES' if model2.aic == min([model1.aic, model2.aic, model3.aic]) else 'NO',
+                     'YES' if model3.aic == min([model1.aic, model2.aic, model3.aic]) else 'NO'],
+    'Best by BIC': ['YES' if model1.bic == min([model1.bic, model2.bic, model3.bic]) else 'NO',
+                     'YES' if model2.bic == min([model1.bic, model2.bic, model3.bic]) else 'NO',
+                     'YES' if model3.bic == min([model1.bic, model2.bic, model3.bic]) else 'NO']
+})
+
+display(model_selection.round(2))
+```
+
+**When Criteria Disagree:**
+
+- AIC may prefer more complex model (lower penalty for parameters)
+- BIC may prefer simpler model (higher penalty for parameters)
+- Consider: economic theory, out-of-sample performance, interpretability
+
+### 6.3.3 The Problem of Controlling for Too Many Variables
+
+**More variables is not always better!** Over-controlling can cause problems:
+
+**1. Multicollinearity**: 
+- Adding many correlated variables inflates standard errors
+- Reduces statistical power to detect effects
+- Makes estimates unstable across samples
+
+**2. Post-treatment bias** (from Chapter 3):
+- Including variables affected by treatment blocks causal pathways
+- Underestimates total effects
+
+**3. Overfitting**:
+- Model fits sample noise instead of population relationship
+- Poor out-of-sample prediction
+- False sense of precision
+
+**4. Degrees of freedom loss**:
+- With $k$ close to $n$, little information for estimation
+- Standard errors become unreliable
+- R-squared artificially high
+
+**Example: Overfitting Demonstration**
+
+```python
+# Demonstrate overfitting with too many variables
+np.random.seed(42)
+n = 50  # Small sample
+
+# True DGP: y depends only on x1
+x1 = stats.norm.rvs(0, 1, size=n)
+x_noise = stats.norm.rvs(0, 1, size=(n, 10))  # 10 irrelevant variables
+y_true = 2 + 3 * x1
+y = y_true + stats.norm.rvs(0, 2, size=n)
+
+# Create dataframe
+data_overfit = pd.DataFrame({'y': y, 'x1': x1})
+for i in range(10):
+    data_overfit[f'noise{i+1}'] = x_noise[:, i]
+
+# Simple model (correct specification)
+simple_model = smf.ols('y ~ x1', data=data_overfit).fit()
+
+# Overfit model (includes irrelevant variables)
+overfit_formula = 'y ~ x1 + ' + ' + '.join([f'noise{i+1}' for i in range(10)])
+overfit_model = smf.ols(overfit_formula, data=data_overfit).fit()
+
+# Compare
+overfit_comparison = pd.DataFrame({
+    'Model': ['Simple (True)', 'Overfit (11 vars)'],
+    'R-squared': [simple_model.rsquared, overfit_model.rsquared],
+    'Adj R-squared': [simple_model.rsquared_adj, overfit_model.rsquared_adj],
+    'AIC': [simple_model.aic, overfit_model.aic],
+    'BIC': [simple_model.bic, overfit_model.bic],
+    'SE(x1)': [simple_model.bse['x1'], overfit_model.bse['x1']],
+    'Assessment': ['Better (simpler, more precise)', 'Worse (overfit, imprecise)']
+})
+
+display(overfit_comparison.round(4))
+```
+
+**Lessons:**
+- R-squared higher in overfit model (misleading!)
+- Adjusted R-squared, AIC, BIC all prefer simple model
+- Standard error on x1 inflated in overfit model (less precision)
+- **Occam's Razor**: Prefer simpler models when in doubt
+
+:::{warning} Guidelines for Variable Inclusion
+:class: dropdown
+
+**DO include variables if:**
+- Economic theory suggests they're important confounders
+- Omitting them would cause bias in key coefficient
+- They significantly improve fit (F-test, adjusted R-squared)
+- They're needed for policy evaluation
+
+**DON'T include variables if:**
+- They're post-treatment outcomes
+- They're perfectly correlated with other variables
+- They're only included to maximize R-squared
+- You're on a "fishing expedition" for significance
+
+**Rule of Thumb**: Aim for roughly $n/10$ to $n/20$ variables maximum. With $n=100$, keep $k \leq 5-10$.
+:::
+
+### 6.3.4 Log Transformation Special Cases
+
+**Problem with log(0):**
+
+Variables like income, sales, or participation rates can be zero. Taking $\log(0)$ is undefined!
+
+**Common "Solution": log(1 + y)**
+
+Some researchers use $\log(1 + y)$ to handle zeros:
+
+```python
+# Example with zeros
+income = np.array([0, 1000, 5000, 10000, 50000])
+log_income_plus1 = np.log(1 + income)
+```
+
+**Problems with log(1 + y):**
+
+1. **Interpretation changes**: Coefficient no longer represents percentage change
+   - With $\log(y)$: 1-unit change in $x$ → $100\beta$ percent change in $y$
+   - With $\log(1+y)$: Interpretation unclear, especially when $y$ is large
+
+2. **Asymmetry**: Works differently for small vs large values
+   - $\log(1 + 1) = 0.693$
+   - $\log(1 + 1000) = 6.908$
+   - Transformation more dramatic for small values
+
+3. **Economic implausibility**: Adding 1 to income or sales lacks economic meaning
+
+**Better Alternatives:**
+
+1. **Inverse hyperbolic sine (IHS)**: $\text{asinh}(y) = \log(y + \sqrt{y^2 + 1})$
+   - Handles zeros and negatives
+   - Approximately $\log(y)$ for large $y$
+   - More interpretable than $\log(1+y)$
+
+2. **Tobit model** (Chapter 17): Explicitly model zeros as censoring
+
+3. **Two-part model**: Model (1) whether $y > 0$ and (2) level of $y$ given $y > 0$
+
+**Predicting Levels from Log Models:**
+
+When dependent variable is $\log(y)$, predicting the **level** of $y$ requires care:
+
+**Naive (WRONG)**:
+$$\hat{y} = \exp(\hat{\beta}_0 + \hat{\beta}_1 x_1 + \cdots + \hat{\beta}_k x_k)$$
+
+**Corrected (semi-log retransformation)**:
+$$\hat{y} = \exp(\hat{\beta}_0 + \hat{\beta}_1 x_1 + \cdots + \hat{\beta}_k x_k) \times \exp(\hat{\sigma}^2/2)$$
+
+where $\hat{\sigma}^2 = SSR/(n-k-1)$.
+
+**Reason**: Jensen's inequality - $E[\exp(u)] \neq \exp(E[u])$ when $u$ is random.
+
+**Example: Correct Prediction from Log Model**
+
+```python
+# Estimate wage equation
+wage1 = woo.data('wage1')
+log_wage_model = smf.ols('np.log(wage) ~ educ + exper + tenure', data=wage1).fit()
+
+# Predict for specific person
+new_person = pd.DataFrame({'educ': [16], 'exper': [10], 'tenure': [5]})
+
+# Naive prediction (WRONG)
+log_wage_pred = log_wage_model.predict(new_person)
+wage_naive = np.exp(log_wage_pred.values[0])
+
+# Corrected prediction (RIGHT)
+sigma_sq = log_wage_model.mse_resid  # = SSR / (n-k-1)
+smearing_factor = np.exp(sigma_sq / 2)
+wage_corrected = np.exp(log_wage_pred.values[0]) * smearing_factor
+
+retransform_comparison = pd.DataFrame({
+    'Method': ['Predicted log(wage)', 'Naive: exp(predicted)', 'Corrected: exp(pred) * correction'],
+    'Value': [log_wage_pred.values[0], wage_naive, wage_corrected],
+    'Interpretation': [
+        'Log scale',
+        'Underestimates true expected wage',
+        'Proper prediction of expected wage level'
+    ]
+})
+
+display(retransform_comparison.round(4))
+```
+
+## 6.4 Residual Analysis
+
+**Residuals** ($\hat{u}_i = y_i - \hat{y}_i$) provide crucial diagnostic information about model adequacy. Systematic patterns in residuals signal violations of Gauss-Markov assumptions.
+
+### 6.4.1 What Residuals Should Look Like
+
+Under the classical assumptions (MLR.1-MLR.6), residuals should:
+
+1. **Have mean zero** (guaranteed by OLS)
+2. **Be uncorrelated with predictors** (guaranteed by OLS)
+3. **Have constant variance** (homoskedasticity, MLR.5)
+4. **Show no patterns** when plotted against fitted values or predictors
+5. **Be approximately normal** (MLR.6, less critical for large samples)
+
+### 6.4.2 Residual Plots for Diagnostics
+
+**Plot 1: Residuals vs Fitted Values**
+
+Most important diagnostic plot! Look for:
+- **Horizontal band**: Good (homoskedasticity)
+- **Funnel shape**: Heteroskedasticity (Chapter 8)
+- **Curved pattern**: Functional form misspecification
+- **Outliers**: Influential observations
+
+**Plot 2: Residuals vs Each Predictor**
+
+Checks for:
+- Nonlinear relationships missed by model
+- Need for quadratic or interaction terms
+
+**Plot 3: Q-Q Plot (Quantile-Quantile)**
+
+Checks normality assumption:
+- Points on diagonal: Normal
+- Deviations at tails: Heavy or light tails
+- S-shape: Skewed distribution
+
+**Plot 4: Scale-Location Plot**
+
+Alternative check for homoskedasticity:
+- Plots $\sqrt{|\text{residuals}|}$ vs fitted values
+- Horizontal line suggests constant variance
+
+**Example: Comprehensive Residual Analysis**
+
+```python
+# Estimate model
+hprice1 = woo.data('hprice1')
+house_model = smf.ols('price ~ lotsize + sqrft + bdrms', data=hprice1).fit()
+
+# Get residuals and fitted values
+residuals = house_model.resid
+fitted = house_model.fittedvalues
+standardized_resid = house_model.resid_pearson
+
+# Create 2x2 subplot for diagnostics
+fig, axes = plt.subplots(2, 2, figsize=(12, 10))
+
+# Plot 1: Residuals vs Fitted
+axes[0, 0].scatter(fitted, residuals, alpha=0.6)
+axes[0, 0].axhline(y=0, color='r', linestyle='--')
+axes[0, 0].set_xlabel('Fitted Values')
+axes[0, 0].set_ylabel('Residuals')
+axes[0, 0].set_title('Residuals vs Fitted')
+axes[0, 0].grid(True, alpha=0.3)
+
+# Plot 2: Q-Q Plot for normality
+stats.probplot(residuals, dist="norm", plot=axes[0, 1])
+axes[0, 1].set_title('Normal Q-Q Plot')
+axes[0, 1].grid(True, alpha=0.3)
+
+# Plot 3: Scale-Location (sqrt of standardized residuals)
+axes[1, 0].scatter(fitted, np.sqrt(np.abs(standardized_resid)), alpha=0.6)
+axes[1, 0].set_xlabel('Fitted Values')
+axes[1, 0].set_ylabel('$\sqrt{|Standardized Residuals|}$')
+axes[1, 0].set_title('Scale-Location')
+axes[1, 0].grid(True, alpha=0.3)
+
+# Plot 4: Residuals vs sqrft (key predictor)
+axes[1, 1].scatter(hprice1['sqrft'], residuals, alpha=0.6)
+axes[1, 1].axhline(y=0, color='r', linestyle='--')
+axes[1, 1].set_xlabel('Square Footage')
+axes[1, 1].set_ylabel('Residuals')
+axes[1, 1].set_title('Residuals vs Square Footage')
+axes[1, 1].grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.show()
+```
+
+**How to Interpret:**
+
+1. **Funnel in residuals vs fitted** → Heteroskedasticity (use robust SEs, Chapter 8)
+2. **Curved pattern** → Add quadratic/interaction terms
+3. **Deviations from Q-Q diagonal** → Non-normal errors (okay if $n$ is large)
+4. **Few extreme outliers** → Check for data errors or influential observations
+
+### 6.4.3 Identifying Influential Observations
+
+Some observations have disproportionate influence on regression results. Key diagnostics:
+
+**1. Leverage**: How far $x_i$ is from $\bar{x}$
+- High leverage $\to$ observation can pull regression line
+
+**2. Studentized Residuals**: Residuals standardized by their standard error
+- $|r_i| > 3$ suggests outlier
+
+**3. Cook's Distance**: Combined measure of leverage and residual size
+- $D_i > 4/n$ suggests influential observation
+- $D_i > 1$ is very influential
+
+**Example: Influence Diagnostics**
+
+```python
+# Calculate influence measures
+from statsmodels.stats.outliers_influence import OLSInfluence
+
+influence = OLSInfluence(house_model)
+leverage = influence.hat_matrix_diag
+cooks_d = influence.cooks_distance[0]
+studentized_resid = influence.resid_studentized_internal
+
+# Identify influential observations
+influential = pd.DataFrame({
+    'Observation': range(len(leverage)),
+    'Leverage': leverage,
+    'Cooks D': cooks_d,
+    'Stud. Resid': studentized_resid,
+    'Influential': (cooks_d > 4/len(leverage)) | (np.abs(studentized_resid) > 3)
+})
+
+# Show top 5 most influential
+top_influential = influential.nlargest(5, 'Cooks D')
+display(top_influential.round(4))
+
+# Plot Cook's Distance
+plt.figure(figsize=(10, 4))
+plt.stem(range(len(cooks_d)), cooks_d, markerfmt=',', basefmt=' ')
+plt.axhline(y=4/len(leverage), color='r', linestyle='--', label='Threshold (4/n)')
+plt.xlabel('Observation Index')
+plt.ylabel("Cook's Distance")
+plt.title("Influence Plot: Cook's Distance")
+plt.legend()
+plt.grid(True, alpha=0.3)
+plt.show()
+```
+
+**What to Do with Influential Observations:**
+
+1. **Check for data errors**: Typos, incorrect units, etc.
+2. **Investigate substantively**: Are they legitimate unusual cases?
+3. **Report sensitivity**: Show results with and without influential observations
+4. **Use robust methods**: Robust regression (less sensitive to outliers)
+5. **DON'T automatically delete**: May represent important heterogeneity
+
+:::{important} Residual Analysis Best Practices
+:class: dropdown
+
+**Always**:
+- Plot residuals vs fitted values (most important!)
+- Check for a few influential observations
+- Investigate any clear patterns
+
+**Often**:
+- Plot residuals vs key predictors
+- Check Q-Q plot if assuming normality
+- Calculate Cook's distance for leverage
+
+**Sometimes**:
+- Use formal tests (Breusch-Pagan, White for heteroskedasticity)
+- Apply transformations based on residual patterns
+- Refit model excluding highly influential observations
+
+**Never**:
+- Delete observations just to improve R-squared
+- Ignore systematic patterns in residuals
+- Assume residuals are fine without checking
+:::
+
+## Chapter Summary
+
+This chapter covered essential practical issues in multiple regression analysis, focusing on model specification, functional form, and diagnostic checking. These tools help you build better models and avoid common pitfalls.
+
+**Key Concepts:**
+
+**1. Effects of Data Scaling (Section 6.1.1-6.1.2)**:
+- Multiplying $y$ by constant scales $\hat{\beta}$, $\text{se}(\hat{\beta})$, and $SSR$ by same constant
+- Multiplying $x_j$ by constant scales $\hat{\beta}_j$ and $\text{se}(\hat{\beta}_j)$ by reciprocal
+- **t-statistics and R-squared are invariant** to scaling
+- **Standardized coefficients** (beta coefficients) allow comparing importance across variables
+
+**2. Functional Form (Section 6.1.3-6.1.6)**:
+- **Log transformations**: Interpret coefficients as percentage effects, invariant to scaling
+- **Log-linear**: $\beta$ = percentage change in $y$ per unit change in $x$
+- **Log-log**: $\beta$ = elasticity (percentage change in $y$ per 1% change in $x$)
+- **Quadratic terms**: Allow nonlinear (U-shaped or inverted-U) relationships
+- **Interaction terms**: Allow effect of $x_1$ to depend on level of $x_2$
+
+**3. Goodness-of-Fit and Model Selection (Section 6.3)**:
+- **Adjusted R-squared** penalizes adding variables, prefer for model comparison
+- **AIC and BIC**: Lower is better, BIC penalizes complexity more heavily
+- **Too many variables**: Causes multicollinearity, overfitting, imprecise estimates
+- **Occam's Razor**: Prefer simpler models when fit is similar
+
+**4. Special Issues with Logs (Section 6.3.4)**:
+- **log(1 + y)** has interpretation problems - avoid when possible
+- **Inverse hyperbolic sine** better for handling zeros
+- **Predicting levels from log(y)**: Need retransformation correction $\exp(\hat{\sigma}^2/2)$
+
+**5. Prediction (Section 6.2)**:
+- **Confidence interval** for $E(y|x)$: Narrower, estimates mean
+- **Prediction interval** for new $y$: Wider, accounts for individual variation
+- Prediction intervals always wider than confidence intervals by factor of $\sqrt{1 + \text{leverage}}$
+
+**6. Residual Analysis (Section 6.4)**:
+- **Residual plots** reveal violations of assumptions
+- **Patterns** suggest heteroskedasticity or functional form problems
+- **Cook's distance** identifies influential observations
+- Always check residuals before trusting results!
+
+**Practical Workflow for Model Building:**
+
+1. **Start simple**: Begin with linear specification, key variables
+2. **Check residuals**: Look for patterns suggesting needed transformations
+3. **Add complexity thoughtfully**: Quadratics, interactions, logs as theory/diagnostics suggest
+4. **Compare models**: Use adjusted R-squared, AIC, BIC
+5. **Test restrictions**: F-tests for joint significance of added terms
+6. **Validate**: Check out-of-sample performance, sensitivity to outliers
+7. **Interpret carefully**: Remember scaling, functional form implications
+
+**Common Mistakes to Avoid:**
+
+- ✗ Including too many variables (overfitting)
+- ✗ Chasing high R-squared without theory
+- ✗ Ignoring residual patterns
+- ✗ Misinterpreting log coefficients
+- ✗ Using prediction intervals when you need confidence intervals (or vice versa)
+- ✗ Deleting influential observations without investigation
+
+**Connections to Other Chapters:**
+
+- **Chapter 3**: Bad controls, multicollinearity, functional form as specification issues
+- **Chapter 5**: Model selection relates to consistency (correct specification)
+- **Chapter 8**: Heteroskedasticity revealed by residual analysis, affects prediction intervals
+- **Chapter 9**: RESET test for functional form, proxy variables
+
+**Looking Forward:**
+
+- **Chapter 7**: Dummy variables (discrete functional form)
+- **Chapter 8**: Heteroskedasticity (variance patterns in residuals)  
+- **Chapter 9**: Specification tests (formal checks of functional form)
+
+**The Bottom Line:**
+
+Regression is an art as much as a science. Good practice combines:
+- **Economic theory**: What variables and functional forms make sense?
+- **Diagnostic checking**: Do residuals reveal problems?
+- **Model comparison**: Which specification fits best without overfitting?
+- **Robust inference**: Use methods that work even when assumptions fail
+
+Master these tools and you'll build better, more reliable regression models!

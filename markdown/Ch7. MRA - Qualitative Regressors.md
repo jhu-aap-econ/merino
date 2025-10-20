@@ -13,18 +13,20 @@ jupyter:
     name: python3
 ---
 
-# 7. Multiple Regression Analysis with Qualitative Regressors
+# Chapter 7: Multiple Regression Analysis with Qualitative Regressors
 
-This notebook explores the use of qualitative regressors, also known as categorical variables, in multiple regression analysis. Qualitative regressors allow us to incorporate non-numeric factors like gender, marital status, occupation, or region into our regression models. We will use dummy variables (also called indicator variables) to represent these qualitative factors numerically, enabling us to analyze their impact on a dependent variable alongside quantitative regressors.
+Incorporating categorical variables into regression models enables researchers to analyze the impact of non-numeric factors such as gender, marital status, occupation, or geographic region on economic outcomes. This chapter develops the theory and practice of using dummy variables (indicator variables) to represent qualitative factors numerically, allowing their inclusion alongside quantitative regressors in the OLS framework.
 
-We will use the `statsmodels` library in Python to perform Ordinary Least Squares (OLS) regressions and the `wooldridge` library to access datasets from the textbook "Introductory Econometrics" by Jeffrey M. Wooldridge.
+The presentation builds systematically from basic dummy variable techniques to advanced applications. We begin with binary dummy variables and their interpretation as intercept shifts (Section 7.1), extend to categorical variables with multiple categories (Section 7.2), examine interaction terms between qualitative and quantitative variables allowing for slope differences (Section 7.3), address the linear probability model for binary dependent variables (Section 7.4-7.6), develop difference-in-differences methods for program evaluation (Section 7.7), and conclude with the Chow test for structural breaks (Section 7.8). Throughout, we implement these methods using Python's statsmodels library with real datasets from applied econometric research.
 
 ```python
+import matplotlib.pyplot as plt
 import numpy as np  # noqa: F401
 import pandas as pd
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
 import wooldridge as wool
+from scipy import stats
 ```
 
 ## 7.1 Linear Regression with Dummy Variables as Regressors
@@ -649,3 +651,739 @@ The regression table `table_f` shows the estimated regression equation specifica
 - Interaction terms allow regression functions to differ across groups. Full interaction models allow both intercepts and slopes to vary.
 - Testing the joint significance of interaction terms helps determine if there are statistically significant differences in the slopes across groups.
 - Estimating separate regressions for each group is an alternative way to explore and compare regression functions across groups, and the results should be consistent with those from a full interaction model.
+
+## 7.6 The Linear Probability Model
+
+When the dependent variable is binary (takes only values 0 or 1), we can still use OLS to estimate the regression model. This is called the **linear probability model (LPM)** because the fitted values from the regression can be interpreted as estimated probabilities that the dependent variable equals one.
+
+**Binary dependent variables** in econometrics often represent choices or outcomes:
+
+- Labor force participation ($\text{inlf} = 1$ if in labor force, 0 otherwise)
+- College attendance ($\text{college} = 1$ if attended college, 0 otherwise)
+- Home ownership ($\text{owner} = 1$ if owns home, 0 otherwise)
+- Approval/rejection decisions ($\text{approve} = 1$ if approved, 0 otherwise)
+
+### 7.6.1 Model Specification and Interpretation
+
+For a binary outcome $y_i \in \{0, 1\}$, the linear probability model is:
+
+$$
+y_i = \beta_0 + \beta_1 x_{i1} + \beta_2 x_{i2} + \cdots + \beta_k x_{ik} + u_i
+$$
+
+Taking expectations conditional on the $x$ variables:
+
+$$
+E(y_i | x_{i1}, \ldots, x_{ik}) = \beta_0 + \beta_1 x_{i1} + \cdots + \beta_k x_{ik}
+$$
+
+Since $y_i$ is binary, $E(y_i | \mathbf{x}) = P(y_i = 1 | \mathbf{x})$. Therefore, the fitted values represent estimated probabilities:
+
+$$
+\hat{y}_i = \hat{\beta}_0 + \hat{\beta}_1 x_{i1} + \cdots + \hat{\beta}_k x_{ik} = \widehat{P(y_i = 1 | \mathbf{x})}
+$$
+
+**Interpretation of coefficients:**
+
+- $\beta_j$ represents the change in the probability that $y = 1$ for a one-unit increase in $x_j$, holding other variables constant
+- For example, if $\hat{\beta}_{\text{educ}} = 0.038$, then one additional year of education is associated with a 3.8 percentage point increase in the probability of the outcome
+
+### 7.6.2 Example: Labor Force Participation
+
+Let's examine married women's labor force participation using the `mroz` dataset:
+
+```python
+# Load data
+mroz = wool.data("mroz")
+
+# Create binary variable is not already numeric
+mroz["inlf_binary"] = (mroz["inlf"] == 1).astype(int)
+
+# Estimate linear probability model
+lpm = smf.ols(
+    formula="inlf ~ nwifeinc + educ + exper + I(exper**2) + age + kidslt6 + kidsge6",
+    data=mroz,
+)
+results_lpm = lpm.fit()
+
+# Display results
+table_lpm = pd.DataFrame(
+    {
+        "b": round(results_lpm.params, 6),
+        "se": round(results_lpm.bse, 6),
+        "t": round(results_lpm.tvalues, 4),
+        "pval": round(results_lpm.pvalues, 4),
+    },
+)
+print("Linear Probability Model: Labor Force Participation")
+table_lpm
+```
+
+**Interpretation:**
+
+Looking at key coefficients:
+
+- `educ`: Each additional year of education increases the probability of labor force participation by about 3.8 percentage points
+- `kidslt6`: Each additional child under age 6 decreases the probability of participation by about 26 percentage points
+- `nwifeinc`: Higher non-wife income decreases participation probability (income effect)
+
+### 7.6.3 Predicted Probabilities and Limitations
+
+```python
+# Calculate predicted probabilities
+mroz["pred_prob"] = results_lpm.fittedvalues
+
+# Examine range of predicted probabilities
+print(f"Range of predicted probabilities:")
+print(f"Minimum: {mroz['pred_prob'].min():.4f}")
+print(f"Maximum: {mroz['pred_prob'].max():.4f}")
+print(f"\nProportion of predictions outside [0, 1]:")
+outside_range = ((mroz["pred_prob"] < 0) | (mroz["pred_prob"] > 1)).sum()
+print(f"{outside_range} out of {len(mroz)} ({100*outside_range/len(mroz):.2f}%)")
+
+# Visualize predicted probabilities
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
+
+# Histogram of predicted probabilities
+ax1.hist(mroz["pred_prob"], bins=30, edgecolor="black", alpha=0.7)
+ax1.axvline(0, color="red", linestyle="--", linewidth=2, label="Valid range bounds")
+ax1.axvline(1, color="red", linestyle="--", linewidth=2)
+ax1.set_xlabel("Predicted Probability")
+ax1.set_ylabel("Frequency")
+ax1.set_title("Distribution of LPM Predicted Probabilities")
+ax1.legend()
+
+# Predicted vs actual
+ax2.scatter(
+    mroz["educ"],
+    mroz["inlf"],
+    alpha=0.3,
+    label="Actual (0 or 1)",
+    s=20,
+)
+# Sort by educ for smooth line
+mroz_sorted = mroz.sort_values("educ")
+ax2.plot(
+    mroz_sorted["educ"],
+    mroz_sorted["pred_prob"],
+    color="red",
+    linewidth=2,
+    label="Predicted probability",
+)
+ax2.axhline(0, color="gray", linestyle="--", alpha=0.5)
+ax2.axhline(1, color="gray", linestyle="--", alpha=0.5)
+ax2.set_xlabel("Years of Education")
+ax2.set_ylabel("Probability of Labor Force Participation")
+ax2.set_title("LPM: Education and Labor Force Participation")
+ax2.legend()
+ax2.set_ylim(-0.1, 1.1)
+
+plt.tight_layout()
+plt.show()
+```
+
+**Key Limitations of the LPM:**
+
+1. **Nonsensical predictions:** Fitted values can fall outside the $[0, 1]$ interval, which is problematic for probabilities
+2. **Heteroskedasticity:** The error variance is inherently heteroskedastic: $\text{Var}(u_i | \mathbf{x}) = p_i(1 - p_i)$ where $p_i$ is the true probability
+3. **Constant marginal effects:** The LPM assumes the effect of $x_j$ on the probability is constant across all values of $x$, which may be unrealistic
+4. **Linearity assumption:** True relationship between covariates and probabilities may be nonlinear
+
+**When to use LPM:**
+
+- Quick approximation and interpretation of effects
+- When most predicted probabilities fall within $[0, 1]$
+- For small to moderate effects where linearity is reasonable
+- As a benchmark to compare with nonlinear models (probit, logit)
+
+**Addressing heteroskedasticity:**
+
+Since LPM has heteroskedastic errors by construction, we should use **heteroskedasticity-robust standard errors** (covered in Chapter 8):
+
+```python
+# Re-estimate with robust standard errors
+results_lpm_robust = lpm.fit(cov_type="HC3")
+
+# Compare standard errors
+comparison = pd.DataFrame(
+    {
+        "Coefficient": round(results_lpm.params, 6),
+        "SE (usual)": round(results_lpm.bse, 6),
+        "SE (robust)": round(results_lpm_robust.bse, 6),
+    },
+)
+print("\nComparison of Standard Errors:")
+comparison
+```
+
+**Interpretation:**
+
+The robust standard errors account for heteroskedasticity and are generally larger than the usual OLS standard errors. When using LPM, always report robust standard errors for valid inference.
+
+**Connection to later chapters:**
+
+- Chapter 8 discusses heteroskedasticity and robust standard errors in detail
+- Chapter 17 introduces **probit** and **logit** models, which constrain predicted probabilities to $[0, 1]$ and allow for nonlinear probability responses
+
+## 7.7 Policy Analysis and Program Evaluation
+
+Dummy variables are essential tools for evaluating the effects of policy interventions and programs. When units (individuals, firms, regions) receive a treatment or participate in a program, we can use a **treatment dummy** to estimate the average treatment effect while controlling for observable characteristics.
+
+### 7.7.1 Regression Adjustment for Treatment Effects
+
+The basic program evaluation model is:
+
+$$
+y_i = \beta_0 + \delta_0 D_i + \beta_1 x_{i1} + \cdots + \beta_k x_{ik} + u_i
+$$
+
+where:
+
+- $D_i = 1$ if unit $i$ received the treatment (participated in program), 0 otherwise
+- $\delta_0$ is the **average treatment effect** (ATE) controlling for $x$ variables
+- $x$ variables are pre-treatment characteristics (covariates)
+
+**Interpretation:**
+
+- $\delta_0$ measures the average difference in outcomes between treatment and control groups, **holding all other covariates constant**
+- This is called **regression adjustment** because we adjust for observable differences between treatment and control groups
+- If treatment is randomly assigned and $x$ variables are pre-treatment, $\delta_0$ has a causal interpretation
+
+### 7.7.2 Example: Job Training Program Evaluation
+
+Consider evaluating a job training program's effect on earnings. We use hypothetical data similar to Wooldridge Example 7.9:
+
+```python
+# Simulate job training data (similar structure to real evaluations)
+np.random.seed(42)
+n = 500
+
+# Generate covariates (pre-treatment characteristics)
+educ = np.random.randint(10, 17, n)  # Years of education (10-16)
+age = np.random.randint(22, 55, n)  # Age (22-54)
+prior_earn = np.random.gamma(3, 5, n)  # Prior earnings (in thousands)
+
+# Treatment assignment (not fully random - selection bias)
+# People with lower prior earnings more likely to participate
+prob_treat = 0.3 + 0.2 * (prior_earn < prior_earn.mean())
+treatment = np.random.binomial(1, prob_treat)
+
+# Generate outcome (post-program earnings)
+# True treatment effect is $3,000
+earnings = (
+    2
+    + 1.5 * educ
+    + 0.3 * age
+    + 0.8 * prior_earn
+    + 3 * treatment  # True ATE = 3 (thousands)
+    + np.random.normal(0, 4, n)
+)
+
+# Create DataFrame
+train_data = pd.DataFrame(
+    {
+        "earnings": earnings,
+        "treatment": treatment,
+        "educ": educ,
+        "age": age,
+        "prior_earn": prior_earn,
+    },
+)
+
+print(f"Sample size: {n}")
+print(f"Treatment group: {treatment.sum()} ({100*treatment.mean():.1f}%)")
+print(f"Control group: {(1-treatment).sum()} ({100*(1-treatment).mean():.1f}%)")
+```
+
+**Naive comparison (without regression adjustment):**
+
+```python
+# Simple mean difference (biased if groups differ in observables)
+mean_treat = train_data[train_data["treatment"] == 1]["earnings"].mean()
+mean_control = train_data[train_data["treatment"] == 0]["earnings"].mean()
+naive_effect = mean_treat - mean_control
+
+print(f"\nNaive Comparison (Simple Difference in Means):")
+print(f"Average earnings (treatment group): ${mean_treat:.2f}k")
+print(f"Average earnings (control group): ${mean_control:.2f}k")
+print(f"Naive treatment effect: ${naive_effect:.2f}k")
+```
+
+This naive comparison may be biased if treatment and control groups differ in characteristics like education, age, or prior earnings.
+
+**Regression-adjusted estimate:**
+
+```python
+# Estimate with regression adjustment
+eval_model = smf.ols(
+    formula="earnings ~ treatment + educ + age + prior_earn",
+    data=train_data,
+)
+results_eval = eval_model.fit()
+
+# Display results
+table_eval = pd.DataFrame(
+    {
+        "b": round(results_eval.params, 4),
+        "se": round(results_eval.bse, 4),
+        "t": round(results_eval.tvalues, 4),
+        "pval": round(results_eval.pvalues, 4),
+    },
+)
+print("\nRegression-Adjusted Treatment Effect:")
+table_eval
+```
+
+**Interpretation:**
+
+- The coefficient on `treatment` is the **regression-adjusted treatment effect**
+- This controls for differences in education, age, and prior earnings between groups
+- The adjusted estimate should be closer to the true effect ($3,000) than the naive comparison
+- Standard error on `treatment` coefficient allows us to test $H_0: \delta_0 = 0$ (no treatment effect)
+
+### 7.7.3 Difference-in-Differences with Dummies
+
+When we have data before and after program implementation, we can use **difference-in-differences (DD)** to control for time-invariant unobservables:
+
+$$
+y_{it} = \beta_0 + \delta_0 (D_i \times \text{After}_t) + \beta_1 D_i + \beta_2 \text{After}_t + \mathbf{x}_{it}'\boldsymbol{\beta} + u_{it}
+$$
+
+where:
+
+- $D_i = 1$ for treatment group, 0 for control group
+- $\text{After}_t = 1$ for post-treatment period, 0 for pre-treatment
+- $D_i \times \text{After}_t$ is the **interaction term** (treatment effect)
+- $\delta_0$ is the DD estimator of the treatment effect
+
+**Intuition:**
+
+- $\beta_1$: Pre-existing difference between treatment and control groups
+- $\beta_2$: Time trend affecting both groups
+- $\delta_0$: Additional change in treatment group beyond time trend
+
+```python
+# Simulate difference-in-differences data
+np.random.seed(123)
+n_units = 250  # Units per group
+n_total = n_units * 2 * 2  # 2 groups * 2 time periods
+
+# Create panel structure
+unit_id = np.repeat(np.arange(n_units * 2), 2)
+time = np.tile([0, 1], n_units * 2)  # 0 = before, 1 = after
+treated = np.repeat([0, 1], n_units * 2)  # First 250 control, next 250 treated
+
+# Interaction term
+treat_after = treated * time
+
+# Generate outcome with true DD effect of 5
+# treated units have higher baseline (3)
+# time trend is 2 for everyone
+# treatment effect is 5
+y_dd = (
+    10
+    + 3 * treated  # Pre-existing difference
+    + 2 * time  # Time trend
+    + 5 * treat_after  # Treatment effect
+    + np.random.normal(0, 3, n_total)
+)
+
+dd_data = pd.DataFrame(
+    {
+        "y": y_dd,
+        "treated": treated,
+        "after": time,
+        "treat_after": treat_after,
+        "unit_id": unit_id,
+    },
+)
+
+# Estimate DD model
+dd_model = smf.ols(formula="y ~ treated + after + treat_after", data=dd_data)
+results_dd = dd_model.fit()
+
+# Display results
+table_dd = pd.DataFrame(
+    {
+        "b": round(results_dd.params, 4),
+        "se": round(results_dd.bse, 4),
+        "t": round(results_dd.tvalues, 4),
+        "pval": round(results_dd.pvalues, 4),
+    },
+)
+print("\nDifference-in-Differences Estimation:")
+table_dd
+```
+
+**Interpretation:**
+
+- `treated`: Pre-treatment difference between groups (approximately 3)
+- `after`: Common time trend (approximately 2)
+- `treat_after`: **DD estimate** of treatment effect (approximately 5)
+- The DD estimator controls for time-invariant differences between groups and common time trends
+
+**Key assumptions:**
+
+- **Parallel trends:** Without treatment, both groups would have followed the same trend
+- **No spillovers:** Control group not affected by treatment group's participation
+- **Stable composition:** Groups don't change composition over time
+
+## 7.8 Testing for Structural Breaks: The Chow Test
+
+When we suspect that a regression relationship differs across groups or time periods, we can formally test for **structural breaks** using the **Chow test**. This F-test determines whether coefficients differ significantly between subsamples.
+
+### 7.8.1 The Chow Test for Different Regression Functions
+
+Suppose we have data from two groups (or time periods) and want to test whether the regression function is the same for both.
+
+**Pooled model** (assumes same coefficients):
+
+$$
+y_i = \beta_0 + \beta_1 x_{i1} + \cdots + \beta_k x_{ik} + u_i \quad \text{for all } i
+$$
+
+**Separate models** (allows different coefficients):
+
+$$
+\begin{aligned}
+y_i &= \beta_{0,1} + \beta_{1,1} x_{i1} + \cdots + \beta_{k,1} x_{ik} + u_i \quad \text{for group 1} \\
+y_i &= \beta_{0,2} + \beta_{1,2} x_{i1} + \cdots + \beta_{k,2} x_{ik} + u_i \quad \text{for group 2}
+\end{aligned}
+$$
+
+**Chow test statistic:**
+
+$$
+F = \frac{(\text{SSR}_{\text{pooled}} - \text{SSR}_1 - \text{SSR}_2) / (k+1)}{(\text{SSR}_1 + \text{SSR}_2) / (n - 2(k+1))}
+$$
+
+where:
+
+- $\text{SSR}_{\text{pooled}}$: Sum of squared residuals from pooled regression
+- $\text{SSR}_1, \text{SSR}_2$: SSR from separate regressions for each group
+- $k+1$: Number of restrictions (all coefficients equal)
+- $n$: Total sample size
+
+Under $H_0: \beta_{0,1} = \beta_{0,2}, \beta_{1,1} = \beta_{1,2}, \ldots, \beta_{k,1} = \beta_{k,2}$, the statistic follows $F_{k+1, n-2(k+1)}$.
+
+### 7.8.2 Implementation using Interaction Terms
+
+An equivalent way to conduct the Chow test is using an **interaction model**:
+
+$$
+y_i = \beta_0 + \delta_0 D_i + \beta_1 x_{i1} + \delta_1 (D_i \times x_{i1}) + \cdots + \beta_k x_{ik} + \delta_k (D_i \times x_{ik}) + u_i
+$$
+
+where $D_i = 1$ for group 2, 0 for group 1.
+
+**Chow test as F-test:**
+
+$$
+H_0: \delta_0 = \delta_1 = \cdots = \delta_k = 0 \quad \text{(all interactions zero)}
+$$
+
+If we reject $H_0$, the regression functions differ significantly between groups.
+
+### 7.8.3 Example: Testing for Gender Differences in Returns to Education
+
+Let's test whether the wage-education relationship differs by gender:
+
+```python
+# Use wage1 data
+wage1 = wool.data("wage1")
+
+# Pooled model (assumes same coefficients for males and females)
+pooled_model = smf.ols(
+    formula="np.log(wage) ~ educ + exper + I(exper**2) + tenure + I(tenure**2)",
+    data=wage1,
+)
+results_pooled = pooled_model.fit()
+
+# Separate regressions
+# Male model
+male_model = smf.ols(
+    formula="np.log(wage) ~ educ + exper + I(exper**2) + tenure + I(tenure**2)",
+    data=wage1,
+    subset=(wage1["female"] == 0),
+)
+results_male = male_model.fit()
+
+# Female model
+female_model = smf.ols(
+    formula="np.log(wage) ~ educ + exper + I(exper**2) + tenure + I(tenure**2)",
+    data=wage1,
+    subset=(wage1["female"] == 1),
+)
+results_female = female_model.fit()
+
+# Compute Chow test statistic
+SSR_pooled = results_pooled.ssr
+SSR_male = results_male.ssr
+SSR_female = results_female.ssr
+SSR_unrestricted = SSR_male + SSR_female
+
+n = len(wage1)
+k = 5  # Number of slope coefficients (excluding intercept)
+df1 = k + 1  # Restrictions (all coefficients)
+df2 = n - 2 * (k + 1)  # Unrestricted model df
+
+chow_stat = ((SSR_pooled - SSR_unrestricted) / df1) / (SSR_unrestricted / df2)
+chow_pval = 1 - stats.f.cdf(chow_stat, df1, df2)
+
+print("\nChow Test for Structural Break (Gender Differences):")
+print(f"SSR pooled: {SSR_pooled:.4f}")
+print(f"SSR unrestricted (male + female): {SSR_unrestricted:.4f}")
+print(f"Chow F-statistic: {chow_stat:.4f}")
+print(f"Degrees of freedom: ({df1}, {df2})")
+print(f"P-value: {chow_pval:.6f}")
+print(
+    f"Critical value (5% level): {stats.f.ppf(0.95, df1, df2):.4f}",
+)
+
+if chow_pval < 0.05:
+    print("\nConclusion: REJECT null hypothesis - significant structural break")
+    print("The wage-education relationship differs significantly by gender")
+else:
+    print("\nConclusion: FAIL TO REJECT null hypothesis")
+    print("No evidence of structural break by gender")
+```
+
+**Alternative: F-test on interaction model**
+
+```python
+# Full interaction model
+interact_model = smf.ols(
+    formula="np.log(wage) ~ female * (educ + exper + I(exper**2) + tenure + I(tenure**2))",
+    data=wage1,
+)
+results_interact = interact_model.fit()
+
+# Test all interaction terms jointly
+# This tests H0: all interaction coefficients = 0
+# Equivalent to Chow test
+interaction_terms = [
+    "female:educ",
+    "female:exper",
+    "female:I(exper ** 2)",
+    "female:tenure",
+    "female:I(tenure ** 2)",
+    "female",  # Different intercept
+]
+
+# F-test for joint significance
+f_test_result = results_interact.f_test(
+    " + ".join([f"{term} = 0" for term in interaction_terms]),
+)
+
+print("\nF-test on Interaction Terms (Equivalent to Chow Test):")
+print(f"F-statistic: {f_test_result.fvalue:.4f}")
+print(f"P-value: {f_test_result.pvalue:.6f}")
+print("\nNote: This F-statistic should match the Chow test statistic")
+```
+
+### 7.8.4 Chow Test with Different Intercepts Only
+
+Sometimes we want to test only if intercepts differ (not slopes). This is a restricted version:
+
+$$
+H_0: \delta_0 = 0 \quad \text{(only intercept difference, slopes same)}
+$$
+
+This is simply a t-test on a single dummy variable:
+
+```python
+# Model with only intercept difference (no slope interactions)
+intercept_only = smf.ols(
+    formula="np.log(wage) ~ female + educ + exper + I(exper**2) + tenure + I(tenure**2)",
+    data=wage1,
+)
+results_intercept = intercept_only.fit()
+
+# Extract female coefficient (intercept shift)
+female_coef = results_intercept.params["female"]
+female_se = results_intercept.bse["female"]
+female_t = results_intercept.tvalues["female"]
+female_p = results_intercept.pvalues["female"]
+
+print("\nTest for Different Intercepts Only (Same Slopes):")
+print(f"Female coefficient (intercept shift): {female_coef:.6f}")
+print(f"Standard error: {female_se:.6f}")
+print(f"t-statistic: {female_t:.4f}")
+print(f"p-value: {female_p:.6f}")
+
+if female_p < 0.05:
+    print("\nConclusion: Intercepts differ significantly by gender")
+    print("(but this doesn't test whether slopes also differ)")
+```
+
+**Interpretation:**
+
+- The full Chow test (or F-test on all interactions) tests whether **any** coefficients differ
+- The intercept-only test is more restrictive and asks only whether the baseline wage differs
+- If the full Chow test rejects but the intercept-only test doesn't, this suggests slopes differ even if intercepts don't
+
+**Key insight:**
+
+The Chow test is essentially the same as testing the joint significance of all interaction terms in a fully interacted model. The interaction approach is more flexible because you can:
+
+1. Test for different intercepts only (one dummy)
+2. Test for different slopes only (slope interactions)
+3. Test for any differences (all interactions including intercept)
+
+This provides a comprehensive framework for testing structural stability across groups or time periods.
+
+## Chapter Summary
+
+Chapter 7 introduced qualitative (categorical) regressors into the multiple regression framework, expanding our ability to model economic relationships and evaluate policies.
+
+### Key Concepts
+
+**Dummy Variables:**
+
+- Binary variables taking values 0 or 1 to represent categories
+- Interpretation: $\beta_{\text{dummy}}$ is the average difference between groups, holding other variables constant
+- In log models: Percentage difference $\approx 100 \times \beta_{\text{dummy}}$ (exact: $100 \times [\exp(\beta) - 1]$)
+- Always exclude one category (reference group) to avoid perfect multicollinearity
+
+**Multiple Categories:**
+
+- Use $J-1$ dummies for $J$ categories
+- Coefficients measure differences relative to the omitted reference group
+- F-tests can test overall significance of categorical variables
+- ANOVA tables decompose variation within and between groups
+
+**Interactions:**
+
+- **Dummy-continuous:** Allow slope of continuous variable to differ across groups
+  - $y = \beta_0 + \delta_0 D + \beta_1 x + \delta_1 (D \times x)$
+  - For group $D=0$: slope is $\beta_1$
+  - For group $D=1$: slope is $\beta_1 + \delta_1$
+- **Dummy-dummy:** Allow effect of one dummy to vary across another dummy
+  - Interaction coefficient is the additional effect when both dummies are 1
+- **Full interactions:** Allow complete regression functions (intercepts and all slopes) to differ across groups
+
+**Linear Probability Model (LPM):**
+
+- OLS regression with binary (0/1) dependent variable
+- Fitted values are estimated probabilities: $\hat{P}(y=1|\mathbf{x})$
+- Coefficients represent marginal effects on probabilities (in percentage points)
+- Limitations: Predictions outside $[0,1]$, heteroskedastic errors, constant marginal effects
+- Always use robust standard errors with LPM
+- Alternative models: Probit and logit (Chapter 17)
+
+**Policy Evaluation:**
+
+- **Regression adjustment:** Control for observable differences using covariates
+  - Treatment effect $\delta$ from: $y = \beta_0 + \delta D_{\text{treat}} + \mathbf{x}'\boldsymbol{\beta} + u$
+- **Difference-in-differences:** Control for time-invariant unobservables
+  - DD estimator from: $y = \beta_0 + \delta_0 (D \times \text{After}) + \beta_1 D + \beta_2 \text{After} + u$
+  - Requires parallel trends assumption
+
+**Chow Test:**
+
+- Formal test for structural breaks (parameter stability across groups/time)
+- Tests $H_0$: All coefficients equal across groups
+- Implementation: Compare pooled vs separate regressions, or F-test on interactions
+- Flexible: Can test different intercepts only, different slopes only, or all differences
+
+### Python Implementation Patterns
+
+**Creating dummy variables:**
+
+- Automatic with categorical in formula: `y ~ C(region) + x1 + x2`
+- Manual creation: `data["female"] = (data["sex"] == "F").astype(int)`
+- Multiple categories: `pd.get_dummies(data["occupation"], drop_first=True, prefix="occ")`
+
+**Interactions in formulas:**
+
+- Dummy-continuous: `y ~ female * educ` expands to `female + educ + female:educ`
+- Full interaction: `y ~ female * (educ + exper + tenure)` includes all interactions
+
+**Testing with F-tests:**
+
+- Joint significance: `results.f_test("C(region)[T.midwest] = 0, C(region)[T.south] = 0")`
+- Chow test: `results.f_test("female = 0, female:educ = 0, female:exper = 0")`
+
+**Robust standard errors:**
+
+- For LPM and heteroskedasticity: `model.fit(cov_type="HC3")`
+
+### Common Pitfalls
+
+1. **Dummy variable trap:** Including all categories plus intercept causes perfect multicollinearity. Always exclude one reference group.
+
+2. **Misinterpreting log models:** In $\log(y) = \beta_0 + \delta D + \cdots$, the coefficient $\delta$ is NOT the percentage difference. Use $100 \times [\exp(\delta) - 1]$ for exact percentage.
+
+3. **Ignoring heteroskedasticity in LPM:** LPM has heteroskedastic errors by construction. Always use robust standard errors.
+
+4. **Extrapolating LPM:** Predictions outside $[0,1]$ are nonsensical. LPM works best when most fitted values are in $(0.2, 0.8)$.
+
+5. **Confusing treatment assignment with treatment effect:** Selection bias occurs when treatment group differs from control group in unobservables. Regression adjustment only controls for observables.
+
+6. **Forgetting interaction interpretation:** When $x_1$ and $x_2$ interact, the marginal effect of $x_1$ depends on the value of $x_2$ (and vice versa).
+
+### Connections
+
+**To previous chapters:**
+
+- **Chapter 3:** Dummy variables extend multiple regression to qualitative data
+- **Chapter 4:** Same inference tools (t-tests, F-tests) apply to dummy coefficients
+- **Chapter 6:** Interaction terms as generalization of functional form flexibility
+
+**To later chapters:**
+
+- **Chapter 8:** Heteroskedasticity-robust inference critical for LPM
+- **Chapter 13-14:** Panel data methods extend difference-in-differences
+- **Chapter 15:** Instrumental variables for endogenous treatment assignment
+- **Chapter 17:** Probit and logit models for binary outcomes (nonlinear alternatives to LPM)
+
+### Practical Guidance
+
+**When to use dummy variables:**
+
+- Modeling discrete categories (gender, region, industry)
+- Capturing seasonal or time effects
+- Policy evaluation (treatment/control comparisons)
+- Testing parameter stability (Chow test framework)
+
+**Choosing reference group:**
+
+- Pick largest or most natural comparison group
+- Be explicit about omitted category in interpretation
+- Results are invariant to choice (same F-tests), but interpretation changes
+
+**Interaction modeling strategy:**
+
+1. Start simple: Test dummy main effect only
+2. If theoretically motivated, add interactions
+3. Test joint significance of interactions (F-test)
+4. If interactions significant, interpret using predicted values or marginal effects at different values
+
+**Program evaluation best practices:**
+
+- Check balance of covariates across treatment/control groups
+- Use robust standard errors
+- If treatment not random, consider IV methods (Chapter 15) or panel methods (Chapters 13-14)
+- Report both naive (unadjusted) and regression-adjusted estimates for transparency
+
+**Reporting results:**
+
+- Clearly state reference group for categorical variables
+- For interactions, show predicted effects at meaningful values of moderating variables
+- Use visualization (predicted values plots) to clarify interaction effects
+- For LPM, always note predictions outside $[0,1]$ and use robust SEs
+
+### Learning Objectives Covered
+
+1. **7.1:** Define dummy variables and provide examples
+2. **7.2:** Interpret dummy variable coefficients in various functional forms
+3. **7.3:** Understand interactions among dummy variables
+4. **7.4:** Interpret interactions between dummy and continuous variables
+5. **7.5:** Incorporate multiple categorical variables using multiple dummies
+6. **7.6:** Understand purpose of Chow test for parameter stability
+7. **7.7:** Implement Chow test with different intercepts (restricted version)
+8. **7.8:** Define and interpret linear probability model for binary outcomes
+9. **7.9:** Use regression adjustment for program evaluation
+10. **7.10:** Interpret regression results with discrete dependent variables
+
+This chapter provided the tools to handle qualitative information in regression analysis, enabling richer modeling of economic relationships and rigorous evaluation of policies and programs.
