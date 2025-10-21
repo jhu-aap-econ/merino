@@ -15,6 +15,24 @@ jupyter:
 
 # Chapter 5: Multiple Regression Analysis - OLS Asymptotics
 
+:::{important} Learning Objectives
+:class: dropdown
+
+Upon completion of this chapter, readers will demonstrate proficiency in large-sample econometric analysis using Python by:
+
+**5.1** Implementing consistency checks for OLS estimators through Monte Carlo simulation using NumPy random number generation.
+
+**5.2** Computing large-sample test statistics and confidence intervals using asymptotic normal distributions via scipy.stats.
+
+**5.3** Applying heteroskedasticity-robust standard errors (HC0, HC1, HC2, HC3) using statsmodels cov_type parameter.
+
+**5.4** Conducting large-sample hypothesis tests with F-statistics and Chi-square distributions for joint restrictions.
+
+**5.5** Evaluating asymptotic efficiency of estimators through simulation studies comparing variance properties across sample sizes.
+
+**5.6** Implementing the Lagrange multiplier (LM) test as an alternative to Wald and likelihood ratio tests using statsmodels.
+:::
+
 Asymptotic theory provides the foundation for statistical inference when sample sizes are large, describing the limiting behavior of OLS estimators as $n \to \infty$. This chapter establishes consistency and asymptotic normality of OLS estimators, develops large-sample inference procedures, and addresses practical complications including heteroskedasticity-robust standard errors and asymptotically efficient estimation methods.
 
 The presentation builds from fundamental concepts to practical applications. We begin by establishing consistency and asymptotic normality under the Gauss-Markov assumptions (Section 5.1), demonstrate large-sample hypothesis testing and confidence interval construction (Section 5.2), examine asymptotic efficiency through the Gauss-Markov theorem's large-sample analog (Section 5.3), and conclude with robust inference methods when assumptions fail (Section 5.4). Throughout, we emphasize the practical relevance of asymptotic approximations for finite samples typically encountered in applied econometric research.

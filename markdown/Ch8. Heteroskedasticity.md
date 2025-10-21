@@ -15,6 +15,29 @@ jupyter:
 
 # Chapter 8: Heteroskedasticity
 
+:::{important} Learning Objectives
+:class: dropdown
+
+Upon completion of this chapter, readers will demonstrate proficiency in heteroskedasticity detection and correction using Python by:
+
+**8.1** Computing heteroskedasticity-robust standard errors using statsmodels get_robustcov_results with HC0, HC1, HC2, and HC3 covariance estimators.
+
+**8.2** Implementing the Breusch-Pagan test for heteroskedasticity using fitted values and residuals from OLS regression with statsmodels.
+
+**8.3** Conducting the White test for heteroskedasticity using squared regressors and cross-products through statsmodels diagnostic functions.
+
+**8.4** Estimating weighted least squares (WLS) models by specifying analytical weights in statsmodels WLS class when heteroskedasticity form is known.
+
+**8.5** Implementing feasible generalized least squares (FGLS) for heteroskedasticity correction using two-stage estimation with statsmodels.
+
+**8.6** Comparing OLS and heteroskedasticity-robust inference results by computing standard errors, t-statistics, and p-values under both approaches.
+
+**8.7** Analyzing linear probability models (LPM) with inherent heteroskedasticity using robust standard errors and comparing predictions to probability bounds.
+
+**8.8** Visualizing heteroskedasticity patterns through residual plots against fitted values and regressors using matplotlib and seaborn.
+
+:::
+
 Non-constant error variance (heteroskedasticity) represents one of the most common violations of classical regression assumptions in applied econometric work. This chapter examines the consequences of heteroskedasticity for OLS estimation and inference, develops formal tests for detecting its presence, and presents both robust inference methods and efficient estimation procedures that account for non-constant variance.
 
 The development proceeds from diagnosis to correction strategies. We establish that heteroskedasticity preserves consistency and unbiasedness of OLS but invalidates standard inference procedures (Section 8.1), introduce heteroskedasticity-robust standard errors as a general solution (Section 8.2), develop formal tests for detecting heteroskedasticity including the Breusch-Pagan and White tests (Section 8.3), examine the linear probability model as a context where heteroskedasticity is inherent (Section 8.4), and conclude with weighted least squares (WLS) as an efficient estimation method when the form of heteroskedasticity is known (Section 8.5). Throughout, we emphasize practical implementation and interpretation using Python's statsmodels library.

@@ -16,21 +16,6 @@
 # %% [markdown]
 # # 14. Advanced Panel Data Methods
 #
-# :::{important} Learning Objectives
-# :class: dropdown
-# By the end of this chapter, you should be able to:
-#
-# **14.1** Understand and apply the fixed effects (FE) estimator to control for unobserved heterogeneity in panel data.
-#
-# **14.2** Understand and apply the random effects (RE) estimator and when it is appropriate.
-#
-# **14.3** Use the correlated random effects (CRE) approach to test and relax RE assumptions.
-#
-# **14.4** Apply panel data methods to policy analysis and program evaluation.
-#
-# **14.5** Extend panel data methods to other data structures including repeated cross sections.
-# :::
-#
 # Advanced panel data methods provide researchers with powerful tools for addressing endogeneity arising from time-invariant unobserved heterogeneity. This chapter develops the fixed effects (FE) and random effects (RE) estimators, establishing the theoretical foundations, computational procedures, and inferential frameworks that make these approaches central to modern applied econometric analysis.
 #
 # The development proceeds systematically through the panel data toolkit. We establish the fixed effects estimator as the within transformation that eliminates individual-specific effects (Section 14.1), introduce the random effects estimator under the assumption that individual effects are uncorrelated with regressors (Section 14.2), develop the Hausman test for choosing between FE and RE specifications along with correlated random effects approaches that bridge the two methods (Section 14.3), examine robust inference procedures including clustered standard errors for panel data (Section 14.4), and extend these methods to unbalanced panels, repeated cross sections, and policy evaluation contexts (Section 14.5). Throughout, we implement estimators using Python's linearmodels package and demonstrate applications to labor economics, health economics, and development studies.

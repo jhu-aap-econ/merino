@@ -15,6 +15,28 @@ jupyter:
 
 # Chapter 4: Multiple Regression Analysis - Inference
 
+:::{important} Learning Objectives
+:class: dropdown
+
+Upon completion of this chapter, readers will demonstrate proficiency in statistical inference using Python by:
+
+**4.1** Conducting single-parameter hypothesis tests using statsmodels t-statistics and extracting p-values for one-sided and two-sided alternatives.
+
+**4.2** Computing confidence intervals for regression coefficients using normal and t-distributions via scipy.stats and statsmodels methods.
+
+**4.3** Implementing F-tests for joint hypotheses using statsmodels f_test and wald_test methods with restriction matrices.
+
+**4.4** Calculating and interpreting F-statistics from restricted and unrestricted regression models using sum of squared residuals.
+
+**4.5** Performing exclusion restriction tests through nested model comparisons with anova_lm from statsmodels.
+
+**4.6** Computing asymptotic test statistics and p-values using large-sample approximations from scipy.stats distributions.
+
+**4.7** Generating comprehensive regression tables with stargazer or custom pandas formatting displaying coefficients, standard errors, and significance levels.
+
+**4.8** Automating multiple comparison procedures and interpreting practical versus statistical significance in Python workflows.
+:::
+
 Statistical inference extends multiple regression analysis beyond point estimation to hypothesis testing and interval estimation. This chapter develops the theoretical and practical foundations for drawing conclusions about population parameters from sample data, enabling researchers to assess both statistical significance and practical importance of regression results.
 
 The organization proceeds systematically through the essential components of inference. We begin with the sampling distribution of OLS estimators and construction of standard errors (Section 4.1), develop hypothesis testing procedures for single coefficients (Section 4.2), extend to joint hypothesis tests involving multiple restrictions (Section 4.3), and examine confidence intervals alongside practical considerations for specification and reporting (Section 4.4-4.7). Throughout, we emphasize both theoretical foundations and computational implementation in Python.

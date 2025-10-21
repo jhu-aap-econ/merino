@@ -16,6 +16,31 @@
 # %% [markdown]
 # # Chapter 9: Specification and Data Issues
 #
+# :::{important} Learning Objectives
+# :class: dropdown
+#
+# Upon completion of this chapter, readers will demonstrate proficiency in specification testing and data quality analysis using Python by:
+#
+# **9.1** Conducting RESET tests for functional form misspecification using statsmodels diagnostic functions with fitted value polynomials.
+#
+# **9.2** Implementing Davidson-MacKinnon tests for comparing non-nested regression models using statsmodels hypothesis testing framework.
+#
+# **9.3** Detecting and analyzing measurement error bias in regression coefficients through simulation studies with NumPy random number generation.
+#
+# **9.4** Handling proxy variables for unobserved explanatory variables by including available substitutes in statsmodels OLS regressions.
+#
+# **9.5** Computing least absolute deviations (LAD) regression as a robust alternative to OLS using statsmodels QuantReg with median regression.
+#
+# **9.6** Identifying influential observations and outliers using standardized residuals, leverage statistics, and Cook's distance in statsmodels influence diagnostics.
+#
+# **9.7** Analyzing missing data patterns and implementing listwise deletion or imputation strategies using pandas missing data functions.
+#
+# **9.8** Visualizing functional form diagnostics through partial residual plots and component-plus-residual plots using statsmodels graphics.
+#
+# **9.9** Comparing OLS and robust regression results to assess sensitivity of conclusions to outliers and non-normality.
+#
+# :::
+#
 # Regression analysis beyond the basic OLS assumptions requires careful attention to several critical issues. This chapter addresses five key challenges that arise in empirical econometric work: functional form specification, measurement error in variables, missing data patterns, influential outliers, and robust estimation methods. Each issue can substantially affect coefficient estimates, standard errors, and statistical inference if not properly addressed.
 #
 # The organization follows a hierarchical development from foundational concepts to advanced applications. We begin with functional form misspecification and formal tests (Section 9.1), examine the distinct consequences of measurement error in dependent versus explanatory variables (Section 9.2), analyze missing data mechanisms and their implications (Section 9.3), identify and handle outlying observations (Section 9.4-9.5), and conclude with two important extensions: proxy variables for unobserved factors (Section 9.6) and models with random coefficients (Section 9.7).

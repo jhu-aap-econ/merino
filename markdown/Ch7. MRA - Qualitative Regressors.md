@@ -15,6 +15,28 @@ jupyter:
 
 # Chapter 7: Multiple Regression Analysis with Qualitative Regressors
 
+:::{important} Learning Objectives
+:class: dropdown
+
+Upon completion of this chapter, readers will demonstrate proficiency in categorical variable analysis using Python by:
+
+**7.1** Creating dummy variables from categorical data using pandas get_dummies and patsy C() categorical coding functions.
+
+**7.2** Estimating regression models with multiple category indicators and interpreting coefficients as group mean differences using statsmodels.
+
+**7.3** Implementing interaction terms between dummy and continuous variables using patsy formula syntax with colon operators.
+
+**7.4** Conducting Chow tests for structural breaks through F-tests comparing restricted and unrestricted models with statsmodels.
+
+**7.5** Estimating linear probability models (LPM) and computing heteroskedasticity-robust standard errors appropriate for binary outcomes.
+
+**7.6** Implementing difference-in-differences estimators for program evaluation using interaction terms between time and treatment dummies.
+
+**7.7** Visualizing group differences and interactions through categorical plots using seaborn catplot and interaction_plot functions.
+
+**7.8** Conducting post-estimation hypothesis tests for coefficient equality across groups using wald_test methods.
+:::
+
 Incorporating categorical variables into regression models enables researchers to analyze the impact of non-numeric factors such as gender, marital status, occupation, or geographic region on economic outcomes. This chapter develops the theory and practice of using dummy variables (indicator variables) to represent qualitative factors numerically, allowing their inclusion alongside quantitative regressors in the OLS framework.
 
 The presentation builds systematically from basic dummy variable techniques to advanced applications. We begin with binary dummy variables and their interpretation as intercept shifts (Section 7.1), extend to categorical variables with multiple categories (Section 7.2), examine interaction terms between qualitative and quantitative variables allowing for slope differences (Section 7.3), address the linear probability model for binary dependent variables (Section 7.4-7.6), develop difference-in-differences methods for program evaluation (Section 7.7), and conclude with the Chow test for structural breaks (Section 7.8). Throughout, we implement these methods using Python's statsmodels library with real datasets from applied econometric research.

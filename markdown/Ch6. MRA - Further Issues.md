@@ -15,6 +15,28 @@ jupyter:
 
 # Chapter 6: Multiple Regression Analysis - Further Issues
 
+:::{important} Learning Objectives
+:class: dropdown
+
+Upon completion of this chapter, readers will demonstrate proficiency in advanced regression modeling using Python by:
+
+**6.1** Implementing logarithmic transformations of variables using NumPy log functions and interpreting semi-elasticities and elasticities from regression output.
+
+**6.2** Estimating models with quadratic terms and computing turning points through coefficient manipulation and calculus in Python.
+
+**6.3** Creating and interpreting interaction terms between continuous and categorical variables using patsy formulas and pandas operations.
+
+**6.4** Computing standardized regression coefficients through z-score normalization with pandas and NumPy for comparing effect magnitudes.
+
+**6.5** Generating prediction intervals using statsmodels get_prediction method with confidence bands for out-of-sample forecasting.
+
+**6.6** Implementing adjusted R-squared calculations and conducting model comparison using information criteria (AIC, BIC) from statsmodels.
+
+**6.7** Visualizing nonlinear relationships and interactions through conditional effect plots using seaborn and matplotlib.
+
+**6.8** Automating functional form testing including quadratic specification tests and interaction significance assessment.
+:::
+
 Advanced applications of multiple regression require careful attention to model specification, functional form selection, and prediction methodology. This chapter extends foundational regression concepts to address practical challenges in empirical research: choosing appropriate transformations of variables, modeling interaction effects, incorporating quadratic relationships, and constructing prediction intervals that account for multiple sources of uncertainty.
 
 The development proceeds hierarchically from data scaling considerations to sophisticated modeling techniques. We examine how changes in measurement units affect coefficient interpretation (Section 6.1), introduce logarithmic transformations for modeling percentage effects and elasticities (Section 6.2), develop methods for incorporating quadratic and interaction terms (Section 6.3), address challenges in standardized coefficients and goodness-of-fit measures (Section 6.4), and conclude with prediction theory and interval construction (Section 6.5-6.6). Throughout, we implement these methods using Python's statsmodels library and illustrate applications with real datasets from econometric research.

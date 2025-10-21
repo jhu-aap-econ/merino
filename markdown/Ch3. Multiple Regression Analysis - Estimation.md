@@ -17,27 +17,28 @@ jupyter:
 
 :::{important} Learning Objectives
 :class: dropdown
-By the end of this chapter, you should be able to:
 
-**3.1** Explain the multiple regression framework, including why we extend beyond simple regression, the meaning of variables and parameters in the linear regression equation, and provide examples of applications in economics and behavioral sciences.
+Upon completion of this chapter, readers will demonstrate proficiency in implementing multiple regression using Python by:
 
-**3.2** Interpret parameters in multiple linear regression models as ceteris paribus effects, including cases with nonlinear transformations of variables, and explain how coefficients differ from simple regression interpretations.
+**3.1** Estimating multiple regression models using statsmodels formula API with pandas DataFrames and wooldridge datasets.
 
-**3.3** Apply OLS estimation mechanics by deriving the normal equations, computing fitted values and residuals for any observation, and understanding the matrix representation of multiple regression.
+**3.2** Computing OLS estimators through matrix operations using NumPy linear algebra functions for $\hat{\beta} = (X'X)^{-1}X'y$.
 
-**3.4** Evaluate multiple regression models by interpreting R-squared, comparing multiple regression results to simple regression, and understanding the "partialling out" interpretation of coefficients.
+**3.3** Extracting and interpreting regression results including coefficients, standard errors, t-statistics, and p-values from statsmodels output.
 
-**3.5** Analyze the five Gauss-Markov assumptions (linearity, random sampling, no perfect collinearity, zero conditional mean, and homoskedasticity) and explain their role in ensuring valid statistical inference.
+**3.4** Calculating fitted values, residuals, and R-squared measures programmatically to assess model goodness-of-fit.
 
-**3.6** Demonstrate understanding of unbiasedness conditions by identifying the minimum assumptions needed for unbiased OLS estimators and explain the importance of the Gauss-Markov theorem in justifying OLS as BLUE.
+**3.5** Diagnosing omitted variable bias through auxiliary regressions and comparing restricted versus unrestricted model specifications.
 
-**3.7** Diagnose and analyze omitted variable bias by determining when bias occurs, calculating the direction and magnitude of bias, and understanding the consequences for ceteris paribus interpretation.
+**3.6** Computing variance inflation factors (VIFs) using statsmodels to detect multicollinearity and assess precision of coefficient estimates.
 
-**3.8** Derive and apply variance formulas for OLS estimators, including the variance-covariance matrix under the Gauss-Markov assumptions and formulas for standard errors of slope coefficients.
+**3.7** Implementing robust covariance estimators (HC0, HC1, HC2, HC3) to obtain heteroskedasticity-robust standard errors.
 
-**3.9** Assess multicollinearity in multiple regression by calculating and interpreting variance inflation factors (VIFs), understanding why multicollinearity doesn't violate Gauss-Markov assumptions, and recognizing its impact on estimation precision.
+**3.8** Visualizing partial relationships through added variable plots and residual plots using seaborn and matplotlib.
 
-**3.10** Integrate multiple regression concepts by conducting comprehensive empirical analysis that includes model specification, estimation, interpretation, assumption checking, and policy or economic insights from real-world applications.
+**3.9** Conducting F-tests for joint hypothesis restrictions using statsmodels wald_test and f_test methods.
+
+**3.10** Automating comprehensive regression workflows including data preparation, model estimation, diagnostics, and results tabulation with pandas.
 :::
 
 Multiple regression analysis extends simple linear regression to accommodate multiple explanatory variables, reflecting the reality that economic outcomes depend on numerous simultaneous factors rather than a single cause. This chapter develops the theoretical foundations and practical implementation of Ordinary Least Squares (OLS) estimation in the multiple regression framework, establishing the conditions under which OLS provides unbiased, consistent estimates with desirable statistical properties.

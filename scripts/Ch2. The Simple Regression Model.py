@@ -18,25 +18,24 @@
 #
 # :::{important} Learning Objectives
 # :class: dropdown
-# By the end of this chapter, you should be able to:
 #
-# **2.1** List the assumptions of the simple linear regression model and interpret the parameters in the model.
+# Upon completion of this chapter, readers will demonstrate proficiency in implementing simple linear regression using Python by:
 #
-# **2.2** Apply the formulas for the slope and intercept estimates using ordinary least squares estimation.
+# **2.1** Implementing OLS estimation procedures using NumPy array operations to compute slope and intercept parameters from data matrices.
 #
-# **2.3** Use the formulas to calculate the fitted values and residuals, and list the properties of these statistics on any sample of data.
+# **2.2** Applying statsmodels formula API to estimate regression models and extract fitted values, residuals, and diagnostic statistics.
 #
-# **2.4** Compute and interpret the R-squared of a simple regression.
+# **2.3** Computing and interpreting goodness-of-fit measures including R-squared and standard error of regression using Python statistical libraries.
 #
-# **2.5** List and interpret the assumptions used to obtain unbiasedness of the ordinary least squares (OLS) estimator.
+# **2.4** Evaluating regression assumptions through residual analysis and diagnostic plots generated with matplotlib and seaborn.
 #
-# **2.6** Explain the meaning of the homoskedasticity (constant variance) assumption, and discuss its role in calculating the sampling variance of the OLS estimators.
+# **2.5** Implementing robust standard error calculations to address heteroskedasticity using statsmodels covariance estimators.
 #
-# **2.7** Discuss the limitations of the simple regression model for uncovering causal effects.
+# **2.6** Analyzing regression results with binary explanatory variables and interpreting coefficients as group mean differences.
 #
-# **2.8** Interpret the simple regression estimates in the case of a binary (dummy) explanatory variable.
+# **2.7** Conducting hypothesis tests and constructing confidence intervals using scipy.stats distributions and statsmodels inference methods.
 #
-# **2.9** Describe the potential outcomes framework for causal inference and explain how experimental interventions (randomized controlled trials) can be analyzed using simple regression.
+# **2.8** Visualizing regression relationships through scatter plots with fitted lines and confidence bands using matplotlib.
 # :::
 #
 # The Simple Linear Regression model provides a cornerstone for econometric and statistical analysis, establishing foundational methods for understanding relationships between two variables. This chapter explores the mechanics of Ordinary Least Squares (OLS) regression, develops intuition for interpreting results, and examines the crucial assumptions that underpin validity of inference.
@@ -1372,26 +1371,25 @@ ate_results = pd.DataFrame(
 
 display(ate_results.round(3))
 
-# Visualize the RCT results
-fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
+# Visualize the RCT results: Box plot comparing treatment and control
+fig, ax = plt.subplots(figsize=(10, 6))
 
-# Box plot comparing treatment and control
-rct_data.boxplot(column="outcome", by="treatment", ax=ax1)
-ax1.set_xlabel("Treatment Status")
-ax1.set_ylabel("Outcome")
-ax1.set_title("RCT: Treatment vs Control\n(Randomization ensures comparability)")
-ax1.set_xticklabels(["Control", "Treatment"])
-plt.sca(ax1)
+rct_data.boxplot(column="outcome", by="treatment", ax=ax)
+ax.set_xlabel("Treatment Status")
+ax.set_ylabel("Outcome")
+ax.set_title("RCT: Treatment vs Control\n(Randomization ensures comparability)")
+ax.set_xticklabels(["Control", "Treatment"])
+plt.sca(ax)
 plt.xticks([1, 2], ["Control (x=0)", "Treatment (x=1)"])
+plt.tight_layout()
 
 # Regression visualization
 plot_regression(
-    rct_data,
     "treatment",
     "outcome",
+    rct_data,
     model_rct,
     "Regression with Binary Treatment\n(Slope = Average Treatment Effect)",
-    ax=ax2,
 )
 
 plt.tight_layout()
